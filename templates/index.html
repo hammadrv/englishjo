@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة تعلم الإنجليزية | Present Simple - إدارة المحتوى والدروس</title>
+    <!-- Google Fonts: Cairo, Tajawal, Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="light-theme">
+
+    <!-- Global Header -->
+    <header class="top-nav-bar">
+        <div class="brand-title">
+            <i class="fa-solid fa-graduation-cap brand-icon"></i>
+            <span>منصة تعلم اللغة الإنجليزية</span>
+        </div>
+
+        <!-- CENTER TOP NAVIGATION BAR -->
+        <div class="top-center-nav">
+            <button id="topNavHomeBtn" class="top-nav-tab active">
+                <i class="fa-solid fa-house"></i> <span>🏠 الرئيسية (تطبيق الطالب)</span>
+            </button>
+            <button id="topNavStudioBtn" class="top-nav-tab">
+                <i class="fa-solid fa-sliders"></i> <span>⚙️ لوحة التحكم (إدارة المحتوى)</span>
+            </button>
+        </div>
+
+        <!-- LOGGED IN USER & LOGOUT -->
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <span style="font-weight: 800; font-size: 0.9rem; color: #0D9488; background: #F0FDFA; padding: 0.4rem 0.9rem; border-radius: 50px; border: 1px solid #CCFBF1;">
+                <i class="fa-solid fa-circle-user"></i> admin
+            </span>
+            <a href="/logout" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; background: #FEF2F2; border: 1px solid #FCA5A5; color: #DC2626; padding: 0.45rem 1rem; border-radius: 50px; font-weight: 800; font-size: 0.88rem; transition: all 0.2s ease;">
+                <i class="fa-solid fa-right-from-bracket"></i> خروج
+            </a>
+        </div>
+    </header>
+
+    <!-- MODE 1: STUDENT VIEW (SMARTPHONE FRAME) -->
+    <main id="presentationView" class="presentation-stage active">
+        <div class="mobile-device-wrapper">
+            
+            <!-- Smartphone Outer Frame -->
+            <div id="studentPhoneFrame" class="mobile-phone-frame theme-coral">
+                
+                <!-- Phone Top Status Bar & Dynamic Island Notch -->
+                <div class="mobile-status-bar">
+                    <span class="status-time">9:41</span>
+                    <div class="phone-dynamic-island"></div>
+                    <div class="status-icons">
+                        <i class="fa-solid fa-signal"></i>
+                        <i class="fa-solid fa-wifi"></i>
+                        <i class="fa-solid fa-battery-full"></i>
+                    </div>
+                </div>
+
+                <!-- SCREEN 1: STUDENT MAIN DASHBOARD (WELCOME & LESSONS LIST) -->
+                <div id="studentDashboardScreen" class="student-dashboard-screen">
+                    <div class="dashboard-hero-banner">
+                        <div class="dash-welcome-tag">مرحباً بك مجدداً 🎓</div>
+                        <h2 class="dash-main-title">منهاج اللغة الإنجليزية</h2>
+                        <div class="dash-progress-card">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>تم إنجاز 50% من الوحدة الأولى</span>
+                        </div>
+                    </div>
+
+                    <div class="unit-section-block">
+                        <h3 class="unit-header-title">
+                            <i class="fa-solid fa-folder-open"></i> الوحدة الأولى: قواعد المضارع البسيط
+                        </h3>
+
+                        <div class="lessons-cards-list">
+                            <!-- Lesson 1 Card -->
+                            <div class="lesson-nav-card" data-lesson-id="101">
+                                <div class="lesson-card-info">
+                                    <div class="lesson-card-badge">الدرس الأول</div>
+                                    <h4 class="lesson-card-title">المضارع البسيط في حالة الإثبات</h4>
+                                    <span class="lesson-card-sub">3 شرائح شرح + تمرين تفاعلي</span>
+                                </div>
+                                <div class="lesson-card-arrow"><i class="fa-solid fa-chevron-left"></i></div>
+                            </div>
+
+                            <!-- Lesson 2 Card -->
+                            <div class="lesson-nav-card" data-lesson-id="102">
+                                <div class="lesson-card-info">
+                                    <div class="lesson-card-badge">الدرس الثاني</div>
+                                    <h4 class="lesson-card-title">المضارع البسيط في حالة النفي</h4>
+                                    <span class="lesson-card-sub">3 شرائح شرح + تمرين تفاعلي</span>
+                                </div>
+                                <div class="lesson-card-arrow"><i class="fa-solid fa-chevron-left"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCREEN 2: EXPLANATION SLIDES STAGE -->
+                <div id="explanationStageContent" class="explanation-stage-wrapper hidden">
+                    <!-- Slide Header inside Mobile -->
+                    <div class="mobile-slide-header">
+                        <div class="header-step-counter">
+                            الشريحة <strong id="currentSlideNum">1</strong> من <strong id="totalSlidesNum">3</strong>
+                        </div>
+                        <button id="returnDashboardBtn" class="btn-path-sm">
+                            المسار <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                    </div>
+
+                    <!-- Segmented Progress Bar -->
+                    <div id="segmentedProgressBar" class="segmented-progress-bar">
+                        <!-- Dynamic Progress Segments -->
+                    </div>
+
+                    <!-- Dynamic Render Content Screen for Student -->
+                    <div id="studentScreenContent" class="mobile-screen-content">
+                        <!-- Dynamic Ordered Blocks for Student -->
+                    </div>
+
+                    <!-- Bottom Sticky Mobile Navigation -->
+                    <footer class="mobile-bottom-nav">
+                        <button id="nextSlideBtn" class="btn-next">
+                            <span>التالي</span> <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <button id="prevSlideBtn" class="btn-prev">
+                            السابق
+                        </button>
+                    </footer>
+                </div>
+
+                <!-- SCREEN 3: PRACTICE EXERCISE STAGE (MATCHING USER SCREENSHOT 100%) -->
+                <div id="exerciseStageContent" class="exercise-screen-wrapper hidden">
+                    
+                    <!-- Exercise Top Bar -->
+                    <div class="exercise-top-bar">
+                        <button id="exerciseBackBtn" class="btn-exercise-back">
+                            <i class="fa-solid fa-arrow-right"></i> رجوع
+                        </button>
+
+                        <div class="exercise-progress-container">
+                            <div class="exercise-progress-bar">
+                                <div id="exerciseProgressFill" class="exercise-progress-fill">
+                                    <div class="exercise-progress-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="exercise-header-titles">
+                            <div id="exerciseLessonTitle" class="exercise-lesson-name">الدرس الأول: المضارع البسيط في حالة الإثبات</div>
+                            <div id="exerciseQuestionCounter" class="exercise-question-counter">تمرين الدرس</div>
+                        </div>
+                    </div>
+
+                    <!-- Instruction Badge -->
+                    <div id="exerciseInstructionBadge" class="exercise-instruction-badge">
+                        اختر الكلمة المناسبة لإكمال الجملة
+                    </div>
+
+                    <!-- Sentence Translation Card -->
+                    <div id="exerciseSentenceAr" class="exercise-sentence-translation-box">
+                        البنت تقرأ قصة في المكتبة.
+                    </div>
+
+                    <!-- Pixar 3D Illustration Frame -->
+                    <div class="exercise-image-frame">
+                        <img id="exerciseImg" src="/static/images/girl_reading_library.jpg" alt="صورة التمرين 3D" class="exercise-img">
+                    </div>
+
+                    <!-- Question Sentence (Fill-in-the-blank) -->
+                    <div id="exerciseQuestionEn" class="exercise-question-sentence">
+                        She <span class="blank-space-line">___</span> a story in the library.
+                    </div>
+
+                    <!-- 3 Options Grid (Matching Screenshot) -->
+                    <div id="exerciseOptionsGrid" class="exercise-options-grid-3">
+                        <button class="btn-exercise-opt">writes</button>
+                        <button class="btn-exercise-opt">reads</button>
+                        <button class="btn-exercise-opt">eats</button>
+                    </div>
+
+                    <!-- Student Explanation Box on Solution -->
+                    <div id="exerciseStudentExplanation" class="exercise-explanation-box hidden" style="background: #ECFDF5; border: 1.5px solid #6EE7B7; color: #065F46; padding: 0.9rem 1.1rem; border-radius: 14px; font-size: 0.9rem; font-weight: 700; margin-top: 1rem;">
+                        <i class="fa-solid fa-lightbulb" style="color: #10B981;"></i> <span id="exerciseStudentExplanationText">...</span>
+                    </div>
+
+                    <!-- Exercise Wrong Answer Feedback Alert (Appears on Wrong Answer) -->
+                    <div id="exerciseWrongFeedbackCard" class="two-stage-wrong-alert hidden" style="background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; padding: 0.8rem 1rem; border-radius: 14px; margin-top: 1rem; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #DC2626; font-size: 1.1rem;"></i>
+                        <span id="exerciseWrongFeedbackText">تذكر أن الفاعل المفرد He يحتاج الفعل مضافاً إليه s.</span>
+                    </div>
+
+                    <!-- Exercise Stage 2 Result Reveal Card (Appears on Correct Answer 🎁) -->
+                    <div id="exerciseStage2ResultCard" class="discovery-result-card hidden" style="margin-top: 1rem; text-align: center; background: linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%); border: 2px solid #5EEAD4; padding: 1.2rem; border-radius: 20px;">
+                        <div id="exerciseStage2ResultTitle" class="discovery-result-header" style="font-size: 1rem; font-weight: 900; color: #0F766E;">أحسنت! ظهرت القاعدة 🎁</div>
+                        <div id="exerciseStage2RevealBadge" class="discovery-reveal-pronoun" style="font-size: 2.2rem; color: #0D9488; font-weight: 900; margin: 0.4rem 0;">He + plays</div>
+                        <div id="exerciseStage2RevealExplanation" class="discovery-reveal-explanation" style="font-size: 0.9rem; color: #115E59; font-weight: 700;">ممتاز! لاحظت أن He يحتاج الفعل مع s.</div>
+                        <button type="button" id="btnExerciseNextQuestion" class="btn-discovery-next-scene" style="margin-top: 0.9rem; width: 100%; justify-content: center; background: linear-gradient(135deg, #0D9488 0%, #059669 100%); color: white; border: none; padding: 0.8rem; border-radius: 12px; font-weight: 800; cursor: pointer;">
+                            السؤال التالي <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- MODE 2: TEACHER STUDIO (CONTENT MANAGEMENT DASHBOARD WITH UNITS & ACCORDION WORKSPACE) -->
+    <main id="studioView" class="studio-stage">
+        <div class="teacher-studio-container">
+            
+            <!-- STUDIO LEVEL 1: CONTENT MANAGEMENT OVERVIEW GRID (MATCHING SCREENSHOT 2) -->
+            <div id="studioLevel1" class="studio-level-container">
+                <div class="studio-top-header">
+                    <div class="header-titles">
+                        <span class="sub-badge">لوحة المدير</span>
+                        <h1 class="main-studio-title">إدارة المحتوى</h1>
+                        <p class="sub-instruction">اختر الوحدة، ثم افتح الدرس الذي تريد العمل عليه.</p>
+                    </div>
+
+                    <button id="closeStudioBtn1" class="btn-preview-mobile">
+                        <i class="fa-solid fa-mobile-screen-button"></i> <span>معاينة شاشة الطالب</span>
+                    </button>
+                </div>
+
+                <!-- STATS COUNTERS BAR (MATCHING SCREENSHOT 2) -->
+                <div class="stats-summary-bar">
+                    <div class="stat-card-box">
+                        <div class="stat-num">6</div>
+                        <div class="stat-label">الوحدات</div>
+                    </div>
+                    <div class="stat-card-box">
+                        <div class="stat-num text-teal">12</div>
+                        <div class="stat-label">الدروس</div>
+                    </div>
+                    <div class="stat-card-box">
+                        <div class="stat-num text-blue">172</div>
+                        <div class="stat-label">الأسئلة الفعالة</div>
+                    </div>
+                    <div class="stat-card-box">
+                        <div class="stat-num text-gray">0</div>
+                        <div class="stat-label">المعطلة</div>
+                    </div>
+                </div>
+
+                <!-- UNITS OVERVIEW GRID (MATCHING SCREENSHOT 2) -->
+                <div class="units-overview-grid">
+                    
+                    <!-- UNIT 1 CARD -->
+                    <div class="unit-manager-card" data-unit-id="1">
+                        <div class="unit-card-badge-row">
+                            <span class="badge-active">محتوى فعال</span>
+                            <div class="unit-icon-circle bg-teal-soft">🏃</div>
+                        </div>
+                        <div class="unit-card-body">
+                            <span class="unit-type-tag">وحدة تعليمية</span>
+                            <h3 class="unit-title-ar">الوحدة الأولى: المضارع البسيط</h3>
+                            <p class="unit-title-en">Present Simple – Everyday Actions</p>
+                        </div>
+                        <div class="unit-card-footer">
+                            <div class="unit-stats-info">
+                                <span>2 دروس</span> • <span>24 سؤال</span> • <span>2 شرح مخصص</span>
+                            </div>
+                            <div class="unit-open-arrow"><i class="fa-solid fa-arrow-left"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- UNIT 2 CARD -->
+                    <div class="unit-manager-card" data-unit-id="2">
+                        <div class="unit-card-badge-row">
+                            <span class="badge-active">محتوى فعال</span>
+                            <div class="unit-icon-circle bg-peach-soft">🖼️</div>
+                        </div>
+                        <div class="unit-card-body">
+                            <span class="unit-type-tag">وحدة تعليمية</span>
+                            <h3 class="unit-title-ar">الوحدة الثانية: ضمائر الفاعل المصورة</h3>
+                            <p class="unit-title-en">Picture-Based Subject Pronouns</p>
+                        </div>
+                        <div class="unit-card-footer">
+                            <div class="unit-stats-info">
+                                <span>3 دروس</span> • <span>69 سؤال</span> • <span>1 شرح مخصص</span>
+                            </div>
+                            <div class="unit-open-arrow"><i class="fa-solid fa-arrow-left"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- UNIT 3 CARD -->
+                    <div class="unit-manager-card" data-unit-id="3">
+                        <div class="unit-card-badge-row">
+                            <span class="badge-active">محتوى فعال</span>
+                            <div class="unit-icon-circle bg-blue-soft">🔤</div>
+                        </div>
+                        <div class="unit-card-body">
+                            <span class="unit-type-tag">وحدة تعليمية</span>
+                            <h3 class="unit-title-ar">الوحدة الثالثة: أفعال الكينونة</h3>
+                            <p class="unit-title-en">Be Verbs – am / is / are</p>
+                        </div>
+                        <div class="unit-card-footer">
+                            <div class="unit-stats-info">
+                                <span>3 دروس</span> • <span>39 سؤال</span> • <span>0 شرح مخصص</span>
+                            </div>
+                            <div class="unit-open-arrow"><i class="fa-solid fa-arrow-left"></i></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- STUDIO LEVEL 2: UNIT WORKSPACE & INLINE ACCORDION LESSONS (MATCHING SCREENSHOT 3 & USER REQUEST) -->
+            <div id="studioLevel2" class="studio-level-container hidden">
+                <div class="studio-breadcrumb-row">
+                    <button id="backToUnitsGridBtn" class="btn-breadcrumb">
+                        <i class="fa-solid fa-arrow-right"></i> جميع الوحدات
+                    </button>
+                </div>
+
+                <div class="unit-workspace-header">
+                    <div class="unit-header-info">
+                        <span class="sub-badge">مساحة عمل الوحدة</span>
+                        <h2 id="selectedUnitTitle" class="unit-workspace-title">الوحدة الأولى: المضارع البسيط</h2>
+                        <span id="selectedUnitSub" class="unit-workspace-sub">انقر على أي درس لتمدده ورؤية محتوياته في نفس المكان</span>
+                    </div>
+
+                    <button class="btn-edit-unit-name">
+                        <i class="fa-solid fa-pen"></i> تعديل اسم الوحدة والدروس
+                    </button>
+                </div>
+
+                <!-- ACCORDION LESSONS LIST IN UNIT (INLINE EXPANSION IN PLACE) -->
+                <div id="unitLessonsList" class="unit-lessons-list">
+                    
+                    <!-- LESSON 1 ACCORDION CARD -->
+                    <div class="lesson-manager-card" data-lesson-id="101">
+                        
+                        <!-- Lesson Header Bar (Clickable Anywhere) -->
+                        <div class="lesson-card-header">
+                            <div class="lesson-card-right">
+                                <span class="lesson-num-badge">01</span>
+                                <div>
+                                    <span class="lesson-tag">الدرس الأول</span>
+                                    <h3 class="lesson-name-ar">الدرس الأول: المضارع البسيط في حالة الإثبات</h3>
+                                    <span class="lesson-name-en">Lesson 1 – Present Simple – Affirmative</span>
+                                </div>
+                            </div>
+
+                            <div class="lesson-card-left">
+                                <div class="lesson-meta-badges">
+                                    <span class="meta-badge purple">12 سؤال</span>
+                                    <span class="meta-badge teal">شرائح شرح</span>
+                                    <span class="meta-badge peach">شرح مخصص</span>
+                                </div>
+                                <div class="accordion-toggle-arrow"><i class="fa-solid fa-chevron-down"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- LESSON INLINE ACCORDION BODY (EXPANDS UNDER CARD IN PLACE) -->
+                        <div class="lesson-accordion-body">
+                            
+                            <!-- TOP TAB NAVIGATION BAR INSIDE ACCORDION -->
+                            <div class="studio-tabs-bar">
+                                <button class="studio-tab-btn active" data-tab-target="exp">
+                                    <i class="fa-solid fa-book-open"></i> <span>الشرح</span>
+                                </button>
+                                <button class="studio-tab-btn" data-tab-target="prac">
+                                    <i class="fa-solid fa-dumbbell"></i> <span>التدريب (التمرين التفاعلي)</span>
+                                </button>
+                            </div>
+
+                            <!-- TAB 1: EXPLANATION SLIDES CONTENT -->
+                            <div class="tab-panel-exp tab-content-panel active">
+                                <div class="tab-explanation-header">
+                                    <div>
+                                        <span class="sub-badge-teal">شرائح الشرح الحالية</span>
+                                        <p class="tab-explanation-sub">تظهر الشرائح للطالب بهذا الترتيب عند دخول الدرس الأول.</p>
+                                    </div>
+
+                                    <div class="tab-action-btns">
+                                        <button class="btn-add-slide btn-open-template-picker" style="background: var(--coral-primary);">
+                                            <i class="fa-solid fa-plus"></i> إضافة شريحة شرح
+                                        </button>
+                                        <button class="btn-preview-mobile btn-preview-student-slide">
+                                            <i class="fa-solid fa-mobile-screen-button"></i> معاينة الشريحة
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic Slides Sequence List for Lesson 1 -->
+                                <div class="slides-sequence-list lesson-1-slides-list">
+                                    <!-- Slides Rendered Dynamically Here -->
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: PRACTICE EXERCISE CONTENT -->
+                            <div class="tab-panel-prac tab-content-panel hidden">
+                                <div class="studio-exercise-summary-card lesson-1-ex-summary">
+                                    <!-- Exercise Summary Rendered Dynamically Here -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- LESSON 2 ACCORDION CARD -->
+                    <div class="lesson-manager-card" data-lesson-id="102">
+                        
+                        <!-- Lesson Header Bar (Clickable Anywhere) -->
+                        <div class="lesson-card-header">
+                            <div class="lesson-card-right">
+                                <span class="lesson-num-badge">02</span>
+                                <div>
+                                    <span class="lesson-tag">الدرس الثاني</span>
+                                    <h3 class="lesson-name-ar">الدرس الثاني: المضارع البسيط في حالة النفي</h3>
+                                    <span class="lesson-name-en">Lesson 2 – Present Simple – Negative</span>
+                                </div>
+                            </div>
+
+                            <div class="lesson-card-left">
+                                <div class="lesson-meta-badges">
+                                    <span class="meta-badge purple">12 سؤال</span>
+                                    <span class="meta-badge teal">شرائح شرح</span>
+                                    <span class="meta-badge peach">شرح مخصص</span>
+                                </div>
+                                <div class="accordion-toggle-arrow"><i class="fa-solid fa-chevron-down"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- LESSON INLINE ACCORDION BODY -->
+                        <div class="lesson-accordion-body">
+                            
+                            <!-- TOP TAB NAVIGATION BAR INSIDE ACCORDION -->
+                            <div class="studio-tabs-bar">
+                                <button class="studio-tab-btn active" data-tab-target="exp">
+                                    <i class="fa-solid fa-layer-group"></i> <span>📚 1 شرائح شرح الدرس والتنقل</span>
+                                </button>
+                                <button class="studio-tab-btn" data-tab-target="prac">
+                                    <i class="fa-solid fa-pen-ruler"></i> <span>✏️ 2 التمرين التفاعلي للدرس</span>
+                                </button>
+                                <button class="studio-tab-btn" data-tab-target="reinf">
+                                    <i class="fa-solid fa-bolt"></i> <span>⚡ 3 مرحلة التقوية للدرس</span>
+                                </button>
+                            </div>
+
+                            <!-- TAB 1: EXPLANATION SLIDES CONTENT -->
+                            <div class="tab-panel-exp tab-content-panel active">
+                                <div class="tab-explanation-header">
+                                    <div>
+                                        <span class="sub-badge-teal">شرائح الشرح الحالية</span>
+                                        <p class="tab-explanation-sub">تظهر الشرائح للطالب بهذا الترتيب عند دخول الدرس الثاني.</p>
+                                    </div>
+
+                                    <div class="tab-action-btns">
+                                        <button class="btn-add-slide btn-open-template-picker" style="background: var(--coral-primary);">
+                                            <i class="fa-solid fa-plus"></i> إضافة شريحة شرح
+                                        </button>
+                                        <button class="btn-preview-mobile btn-preview-student-slide">
+                                            <i class="fa-solid fa-mobile-screen-button"></i> معاينة الشريحة
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="slides-sequence-list lesson-2-slides-list">
+                                    <!-- Slides Rendered Dynamically Here -->
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: PRACTICE EXERCISE CONTENT -->
+                            <div class="tab-panel-prac tab-content-panel hidden">
+                                <div class="tab-explanation-header">
+                                    <div>
+                                        <span class="sub-badge-teal">التمرين التفاعلي التابع للدرس الثاني</span>
+                                        <p class="tab-explanation-sub">تعديل السؤال والترجمة والصورة الـ 3D والخيارات التي تظهر للطالب بعد الشرح.</p>
+                                    </div>
+
+                                    <button class="btn-add-slide btn-open-live-ex-modal" style="background: var(--teal-primary);">
+                                        <i class="fa-solid fa-pen-ruler"></i> محرر التمرين بالمعاينة الحية
+                                    </button>
+                                </div>
+
+                                <div class="studio-exercise-summary-card lesson-2-ex-summary">
+                                    <!-- Exercise Summary Rendered Dynamically Here -->
+                                </div>
+                            </div>
+
+                            <!-- TAB 3: REINFORCEMENT CONTENT -->
+                            <div class="tab-panel-reinf tab-content-panel hidden">
+                                <div class="tab-explanation-header" style="flex-wrap: wrap; gap: 1rem;">
+                                    <div>
+                                        <span class="sub-badge-teal" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">⚡ مرحلة التقوية بالدرس</span>
+                                        <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--text-navy); margin: 0.2rem 0;">مرحلة تقوية المفاهيم بعد التمرين</h2>
+                                        <p class="tab-explanation-sub" style="margin: 0;">تحديد نوع التقوية المناسبة للدرس (شرح إضافي أو تمارين إضافية) وتعديل محتواها.</p>
+                                    </div>
+
+                                    <!-- Reinforcement Type Radio Selector -->
+                                    <div class="reinforcement-type-selector" style="display: flex; background: #F1F5F9; padding: 0.3rem; border-radius: 50px; border: 1.5px solid #CBD5E1; gap: 0.3rem;">
+                                        <button type="button" class="btn-reinf-type active" data-reinf-type="slides" style="border: none; padding: 0.5rem 1.1rem; border-radius: 50px; font-weight: 800; font-size: 0.88rem; cursor: pointer; background: #FFFFFF; color: #D97706; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                                            📚 شرح تقوية (شرائح إضافية)
+                                        </button>
+                                        <button type="button" class="btn-reinf-type" data-reinf-type="exercise" style="border: none; padding: 0.5rem 1.1rem; border-radius: 50px; font-weight: 800; font-size: 0.88rem; cursor: pointer; background: transparent; color: #64748B;">
+                                            ✏️ تمرين تقوية (أسئلة إضافية)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="studio-reinforcement-summary-card" style="margin-top: 1.5rem;">
+                                    <!-- Reinforcement Content Rendered Dynamically Here -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                <div class="add-lesson-row" style="margin-top: 1.5rem; text-align: center;">
+                    <button type="button" id="btnAddLessonBtn" class="btn-add-lesson-large" style="background: linear-gradient(135deg, #0D9488 0%, #059669 100%); color: #FFFFFF; border: none; padding: 0.9rem 2rem; border-radius: 16px; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3); display: inline-flex; align-items: center; gap: 0.6rem; transition: transform 0.2s ease;">
+                        <i class="fa-solid fa-plus-circle" style="font-size: 1.2rem;"></i> ➕ أضف درساً جديداً للوحدة
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL: EDIT UNIT NAME -->
+    <div id="editUnitModal" class="edit-modal-backdrop hidden">
+        <div class="modal-dialog-container" style="max-width: 500px; background: #FFFFFF; border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 0.8rem; margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-weight:800; color:#0F172A;"><i class="fa-solid fa-pen icon-emerald"></i> تعديل اسم الوحدة</h3>
+                <button type="button" id="closeUnitModalBtn" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="editUnitForm">
+                <input type="hidden" id="formUnitId" value="1">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-weight: 700; display:block; margin-bottom:0.4rem;">اسم الوحدة بالعربية</label>
+                    <input type="text" id="formUnitTitleAr" class="form-control" style="width:100%; padding:0.75rem; border-radius:10px; border:1px solid #CBD5E1;" placeholder="الوحدة الأولى: قواعد المضارع البسيط">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.2rem;">
+                    <label style="font-weight: 700; display:block; margin-bottom:0.4rem;">اسم الوحدة بالإنجليزية</label>
+                    <input type="text" id="formUnitTitleEn" class="form-control" style="width:100%; padding:0.75rem; border-radius:10px; border:1px solid #CBD5E1;" placeholder="Unit 1 – Present Simple Grammar">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+                    <button type="button" id="cancelUnitModalBtn" class="btn-secondary" style="padding:0.6rem 1.2rem; border-radius:10px; border:1px solid #CBD5E1; background:#F1F5F9;">إلغاء</button>
+                    <button type="submit" class="btn-primary" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0D9488; color:#FFF; border:none; font-weight:700;">حفظ تغييرات الوحدة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT LESSON NAME -->
+    <div id="editLessonModal" class="edit-modal-backdrop hidden">
+        <div class="modal-dialog-container" style="max-width: 500px; background: #FFFFFF; border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 0.8rem; margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-weight:800; color:#0F172A;"><i class="fa-solid fa-pen-to-square icon-emerald"></i> تعديل اسم الدرس</h3>
+                <button type="button" id="closeLessonModalBtn" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="editLessonForm">
+                <input type="hidden" id="formLessonEditId" value="101">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-weight: 700; display:block; margin-bottom:0.4rem;">اسم الدرس بالعربية</label>
+                    <input type="text" id="formLessonTitleAr" class="form-control" style="width:100%; padding:0.75rem; border-radius:10px; border:1px solid #CBD5E1;" placeholder="الدرس الأول: المضارع البسيط في حالة الإثبات">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.2rem;">
+                    <label style="font-weight: 700; display:block; margin-bottom:0.4rem;">اسم الدرس بالإنجليزية</label>
+                    <input type="text" id="formLessonTitleEn" class="form-control" style="width:100%; padding:0.75rem; border-radius:10px; border:1px solid #CBD5E1;" placeholder="Lesson 1 – Present Simple – Affirmative">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+                    <button type="button" id="cancelLessonModalBtn" class="btn-secondary" style="padding:0.6rem 1.2rem; border-radius:10px; border:1px solid #CBD5E1; background:#F1F5F9;">إلغاء</button>
+                    <button type="submit" class="btn-primary" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0D9488; color:#FFF; border:none; font-weight:700;">حفظ تغييرات الدرس</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD NEW LESSON -->
+    <div id="addNewLessonModal" class="edit-modal-backdrop hidden">
+        <div class="modal-dialog-container" style="max-width: 500px; background: #FFFFFF; border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 0.8rem; margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-weight:800; color:#0F172A;"><i class="fa-solid fa-plus-circle icon-emerald"></i> إضافة درس جديد للوحدة</h3>
+                <button type="button" id="closeAddLessonModalBtn" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="addNewLessonForm">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-weight: 700; display:block; margin-bottom:0.4rem;">عنوان الدرس الجديد (بالعربية)</label>
+                    <input type="text" id="formNewLessonTitleAr" class="form-control" style="width:100%; padding:0.75rem; border-radius:10px; border:1px solid #CBD5E1;" placeholder="المضارع البسيط في حالة السؤال" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1.2rem;">
+                    <label style="font-weight: 700; display:block; margin-bottom:0.4rem;">عنوان الدرس الجديد (بالإنجليزية)</label>
+                    <input type="text" id="formNewLessonTitleEn" class="form-control" style="width:100%; padding:0.75rem; border-radius:10px; border:1px solid #CBD5E1;" placeholder="Present Simple – Questions" required>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+                    <button type="button" id="cancelAddLessonModalBtn" class="btn-secondary" style="padding:0.6rem 1.2rem; border-radius:10px; border:1px solid #CBD5E1; background:#F1F5F9;">إلغاء</button>
+                    <button type="submit" class="btn-primary" style="padding:0.6rem 1.4rem; border-radius:10px; background:#0D9488; color:#FFF; border:none; font-weight:700;">➕ أضف الدرس الآن</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: PICK EXERCISE QUESTION TEMPLATE -->
+    <div id="addExerciseTemplateModal" class="edit-modal-backdrop hidden">
+        <div class="template-picker-modal-container" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3><i class="fa-solid fa-pen-ruler"></i> اختر نوع قالب سؤال التمرين الجديد</h3>
+                    <span class="sub-desc-span">قوالب متنوعة لأسئلة التمرين التفاعلي</span>
+                </div>
+                <button id="closeExerciseTemplatePickerBtn" class="btn-close-modal">&times;</button>
+            </div>
+
+            <div class="template-picker-cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; padding: 1.2rem;">
+                
+                <!-- EXERCISE OPTION 1: MULTIPLE CHOICE -->
+                <div class="picker-exercise-option" data-type="multiple_choice" style="background: #FFFFFF; border: 2px solid #E2E8F0; border-radius: 16px; padding: 1.2rem; cursor: pointer; transition: all 0.2s ease;">
+                    <div class="picker-icon-box bg-teal" style="width: 48px; height: 48px; border-radius: 12px; background: #CCFBF1; color: #0D9488; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <h4 style="font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">سؤال اختيار من متعدد</h4>
+                    <p style="font-size: 0.85rem; color: #64748B;">جملة رئيسية مع 3 خيارات اختيار وتصحيح تلقائي فورياً.</p>
+                    <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #0D9488; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف هذا القالب</button>
+                </div>
+
+                <!-- EXERCISE OPTION 2: FILL IN BLANK -->
+                <div class="picker-exercise-option" data-type="fill_in_blank" style="background: #FFFFFF; border: 2px solid #E2E8F0; border-radius: 16px; padding: 1.2rem; cursor: pointer; transition: all 0.2s ease;">
+                    <div class="picker-icon-box bg-purple" style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
+                        <i class="fa-solid fa-i-cursor"></i>
+                    </div>
+                    <h4 style="font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">سؤال إكمال الفراغ</h4>
+                    <p style="font-size: 0.85rem; color: #64748B;">ترك فراغ في الجملة واختيار الكلمة الصحيحة المناسبة للمكان.</p>
+                    <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #7C3AED; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف هذا القالب</button>
+                </div>
+
+                <!-- EXERCISE OPTION 3: IMAGE MATCH -->
+                <div class="picker-exercise-option" data-type="image_choice" style="background: #FFFFFF; border: 2px solid #E2E8F0; border-radius: 16px; padding: 1.2rem; cursor: pointer; transition: all 0.2s ease;">
+                    <div class="picker-icon-box bg-peach" style="width: 48px; height: 48px; border-radius: 12px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
+                        <i class="fa-solid fa-image"></i>
+                    </div>
+                    <h4 style="font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">سؤال مطابقة الصورة والحدث</h4>
+                    <p style="font-size: 0.85rem; color: #64748B;">عرض صورة المشهد واختيار الجملة التي تصف الصورة بدقة.</p>
+                    <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #EA580C; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف هذا القالب</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: PICK TEMPLATE WITH REALISTIC SMARTPHONE DEVICE MOCKUPS -->
+    <div id="addSlideTemplateModal" class="edit-modal-backdrop hidden">
+        <div class="template-picker-modal-container">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3><i class="fa-solid fa-wand-magic-sparkles"></i> اختر نوع القالب للشريحة الجديدة</h3>
+                    <span class="sub-desc-span">معاينة كاملة على شاشة موبايل حقيقية قبل الاختيار</span>
+                </div>
+                <button id="closeTemplatePickerBtn" class="btn-close-modal">&times;</button>
+            </div>
+
+            <div class="template-picker-cards-grid">
+                
+                <!-- OPTION 1: GRAMMAR RULE TEMPLATE -->
+                <div class="picker-card-option" data-type="rule">
+                    <div class="card-option-header">
+                        <div class="picker-icon-box bg-purple"><i class="fa-solid fa-book-open"></i></div>
+                        <div>
+                            <h4>قالب شرح قاعدة</h4>
+                            <p>تركيب القاعدة والمثال</p>
+                        </div>
+                    </div>
+                    
+                    <div class="picker-phone-frame">
+                        <div class="picker-status-bar">
+                            <span>9:41</span>
+                            <div class="picker-island"></div>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                        <div class="picker-phone-header">
+                            <span>الشريحة 1 من 6</span>
+                            <span class="picker-badge-sm">قاعدة</span>
+                        </div>
+                        <div class="picker-progress-row">
+                            <span class="p-seg active"></span><span class="p-seg"></span><span class="p-seg"></span>
+                        </div>
+                        <div class="picker-phone-content">
+                            <div class="welcome-badge">Present Simple</div>
+                            <h5 class="hero-title-en">Present<br>Simple</h5>
+                            <img src="/static/images/girl_school.jpg" alt="قالب قاعدة" class="picker-slide-img">
+                            <div class="mini-preview-card teal-bg-preview">
+                                <strong>Subject + Verb + Object</strong>
+                                <span>تركيب القاعدة الرئيسي</span>
+                            </div>
+                            <div class="mini-preview-card peach-bg-preview">
+                                <strong>I go to school every day.</strong>
+                                <span>مثال توضيحي</span>
+                            </div>
+                        </div>
+                        <div class="picker-phone-nav">
+                            <span class="p-nav-btn active">التالي ➔</span>
+                            <span class="p-nav-btn">السابق</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف هذا القالب</button>
+                </div>
+
+                <!-- OPTION 2: INTERACTIVE QUIZ TEMPLATE -->
+                <div class="picker-card-option" data-type="quiz">
+                    <div class="card-option-header">
+                        <div class="picker-icon-box bg-pink"><i class="fa-solid fa-circle-question"></i></div>
+                        <div>
+                            <h4>قالب اختبار تفاعلي</h4>
+                            <p>تمرين تفاعلي ومطابقة الإجابات</p>
+                        </div>
+                    </div>
+
+                    <div class="picker-phone-frame">
+                        <div class="picker-status-bar">
+                            <span>9:41</span>
+                            <div class="picker-island"></div>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                        <div class="picker-phone-header">
+                            <span>الشريحة 1 من 6</span>
+                            <span class="picker-badge-sm purple-tag">تمرين</span>
+                        </div>
+                        <div class="picker-progress-row">
+                            <span class="p-seg active"></span><span class="p-seg"></span><span class="p-seg"></span>
+                        </div>
+                        <div class="picker-phone-content">
+                            <div class="welcome-badge text-purple">تمرين تفاعلي</div>
+                            <h5 class="hero-title-en text-purple">Interactive Quiz</h5>
+                            <div class="mini-quiz-question">She ______ to school every morning.</div>
+                            <div class="mini-quiz-grid">
+                                <span class="mini-quiz-btn">go</span>
+                                <span class="mini-quiz-btn correct">goes <i class="fa-solid fa-check"></i></span>
+                            </div>
+                            <div class="mini-quiz-feedback">
+                                <i class="fa-solid fa-circle-check"></i> إجابة صحيحة! مع المفرد نضيف es.
+                            </div>
+                        </div>
+                        <div class="picker-phone-nav">
+                            <span class="p-nav-btn active purple-btn">التالي ➔</span>
+                            <span class="p-nav-btn">السابق</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف هذا القالب</button>
+                </div>
+
+                <!-- OPTION 3: VISUAL HERO TEMPLATE -->
+                <div class="picker-card-option" data-type="visual">
+                    <div class="card-option-header">
+                        <div class="picker-icon-box bg-teal"><i class="fa-solid fa-image"></i></div>
+                        <div>
+                            <h4>قالب وسائط 3D</h4>
+                            <p>تركيز بصري على الصورة الكبيرة</p>
+                        </div>
+                    </div>
+
+                    <div class="picker-phone-frame">
+                        <div class="picker-status-bar">
+                            <span>9:41</span>
+                            <div class="picker-island"></div>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                        <div class="picker-phone-header">
+                            <span>الشريحة 1 من 6</span>
+                            <span class="picker-badge-sm teal-tag">وسائط</span>
+                        </div>
+                        <div class="picker-progress-row">
+                            <span class="p-seg active"></span><span class="p-seg"></span><span class="p-seg"></span>
+                        </div>
+                        <div class="picker-phone-content">
+                            <div class="welcome-badge text-teal">عادة يومية</div>
+                            <h5 class="hero-title-en text-teal">Daily Routine</h5>
+                            <img src="/static/images/kids_football.jpg" alt="وسائط 3D" class="picker-slide-img-large">
+                            <div class="mini-preview-card peach-bg-preview">
+                                <strong>We play football every Friday.</strong>
+                            </div>
+                        </div>
+                        <div class="picker-phone-nav">
+                            <span class="p-nav-btn active teal-btn">التالي ➔</span>
+                            <span class="p-nav-btn">السابق</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف هذا القالب</button>
+                </div>
+
+                <!-- OPTION 4: AUDIO PRONUNCIATION TEMPLATE -->
+                <div class="picker-card-option" data-type="audio">
+                    <div class="card-option-header">
+                        <div class="picker-icon-box bg-amber"><i class="fa-solid fa-volume-high"></i></div>
+                        <div>
+                            <h4>قالب نطق وصوت</h4>
+                            <p>تدريب استماع الجمل بالإنجليزية</p>
+                        </div>
+                    </div>
+
+                    <div class="picker-phone-frame">
+                        <div class="picker-status-bar">
+                            <span>9:41</span>
+                            <div class="picker-island"></div>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                        <div class="picker-phone-header">
+                            <span>الشريحة 1 من 6</span>
+                            <span class="picker-badge-sm amber-tag">صوت</span>
+                        </div>
+                        <div class="picker-progress-row">
+                            <span class="p-seg active"></span><span class="p-seg"></span><span class="p-seg"></span>
+                        </div>
+                        <div class="picker-phone-content">
+                            <div class="welcome-badge text-amber">تدريب استماع</div>
+                            <h5 class="hero-title-en text-amber">Listen & Repeat</h5>
+                            <img src="/static/images/child_breakfast.jpg" alt="نطق وصوت" class="picker-slide-img">
+                            <div class="mini-audio-bar">
+                                <i class="fa-solid fa-volume-high audio-icon"></i>
+                                <span>انقر للاستماع لنطق الجملة</span>
+                            </div>
+                        </div>
+                        <div class="picker-phone-nav">
+                            <span class="p-nav-btn active amber-btn">التالي ➔</span>
+                            <span class="p-nav-btn">السابق</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف هذا القالب</button>
+                </div>
+
+                <!-- OPTION 5: TWO-STAGE COMPOUND SLIDE TEMPLATE (MATCHING USER SCREENSHOTS 100%) -->
+                <div class="picker-card-option" data-type="two_stage">
+                    <div class="card-option-header">
+                        <div class="picker-icon-box bg-emerald"><i class="fa-solid fa-layer-group"></i></div>
+                        <div>
+                            <h4>✨ قالب الشريحة المركبة (مرحلتين)</h4>
+                            <p>شريحة واحدة بمرحلتين: تخمين ➔ كشف القاعدة</p>
+                        </div>
+                    </div>
+
+                    <div class="picker-phone-frame">
+                        <div class="picker-status-bar">
+                            <span>9:41</span>
+                            <div class="picker-island"></div>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                        <div class="picker-phone-header">
+                            <span>المشهد 1 من 4</span>
+                            <span class="picker-badge-sm emerald-tag">مرحلتين</span>
+                        </div>
+                        <div class="picker-progress-row">
+                            <span class="p-seg active"></span><span class="p-seg"></span><span class="p-seg"></span>
+                        </div>
+                        <div class="picker-phone-content">
+                            <div class="welcome-badge text-emerald">اكتشف القاعدة بنفسك</div>
+                            <h5 style="font-size: 0.8rem; font-weight: 800; color: var(--text-navy);">اختر الجملة الصحيحة للصورة</h5>
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <span class="mini-quiz-btn correct" style="font-size: 0.68rem; padding: 0.25rem;">He plays football.</span>
+                                <span class="mini-quiz-btn" style="font-size: 0.68rem; padding: 0.25rem;">He play football.</span>
+                            </div>
+                            <div class="mini-preview-card teal-bg-preview" style="text-align: center; margin-top: 0.3rem;">
+                                <strong style="font-size: 0.95rem;">He + plays</strong>
+                                <span style="font-size: 0.68rem;">ممتاز! لاحظت أن He يحتاج s.</span>
+                            </div>
+                        </div>
+                        <div class="picker-phone-nav">
+                            <span class="p-nav-btn active emerald-btn">المشهد التالي ➔</span>
+                            <span class="p-nav-btn">السابق</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف هذا القالب</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: SLIDE EDIT MODAL -->
+    <div id="slideEditModal" class="edit-modal-backdrop hidden">
+        <div class="edit-modal-split-container">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3><i class="fa-solid fa-cubes"></i> استوديو بناء وترتيب المكونات (Visual Block Builder)</h3>
+                    <!-- Modal Stage Switcher Wrapper for Compound Slides -->
+                    <div id="modalStageSwitcherWrapper" class="modal-stage-switcher-wrapper hidden">
+                        <label><i class="fa-solid fa-layer-group"></i> التنقل بين مراحل الشريحة المركبة:</label>
+                        <div class="stage-toggle-btn-group">
+                            <button type="button" id="btnHeaderStage1" class="btn-header-stage active" onclick="switchModalStage(1)">
+                                <span>1️⃣ المرحلة الأولى: التخمين</span>
+                            </button>
+                            <button type="button" id="btnHeaderStage2" class="btn-header-stage" onclick="switchModalStage(2)">
+                                <span>2️⃣ المرحلة الثانية: كشف القاعدة 🎁</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button id="closeModalBtn" class="btn-close-modal">&times;</button>
+            </div>
+
+            <div class="modal-split-body">
+                <div class="modal-form-col">
+                    <form id="slideEditForm" class="slide-edit-form">
+                        <input type="hidden" id="formSlideId">
+                        <input type="hidden" id="formTemplateTypeVal" value="rule">
+
+                        <div class="form-section-card highlight-teal">
+                            <div class="section-title"><i class="fa-solid fa-palette"></i> المخطط اللوني للشريحة (Color Theme)</div>
+                            <div class="palette-picker-row">
+                                <button type="button" class="palette-btn active" data-theme="coral" style="background: linear-gradient(135deg, #FF6B57, #0D9488);"><span>مرجاني مبهج</span></button>
+                                <button type="button" class="palette-btn" data-theme="navy" style="background: linear-gradient(135deg, #1E3A8A, #3B82F6);"><span>أزرق تعليمي</span></button>
+                                <button type="button" class="palette-btn" data-theme="purple" style="background: linear-gradient(135deg, #7C3AED, #EC4899);"><span>بنفسجي ملكي</span></button>
+                                <button type="button" class="palette-btn" data-theme="forest" style="background: linear-gradient(135deg, #059669, #10B981);"><span>غابات نعناعي</span></button>
+                            </div>
+                        </div>
+
+                        <div class="block-builder-toolbar">
+                            <span class="toolbar-hint"><i class="fa-solid fa-arrow-up-z-a"></i> اسحب أو استخدم الأسهم (⬆️ ⬇️) لترتيب ظهور العناصر للطالب:</span>
+                            <button type="button" id="addNewBlockBtn" class="btn-add-block-sm"><i class="fa-solid fa-plus"></i> إضافة عنصر جديد للشريحة</button>
+                        </div>
+
+                        <div id="dynamicBlocksContainer" class="dynamic-blocks-container"></div>
+
+                        <div class="form-group notes-group-block">
+                            <label for="formTeacherNotes"><i class="fa-solid fa-user-tie"></i> ملاحظات وإرشادات المعلم أثناء الشرح</label>
+                            <textarea id="formTeacherNotes" rows="2" placeholder="اكتب نصائح أو تلميحات لمساعدتك عند الشرح..."></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-next"><i class="fa-solid fa-floppy-disk"></i> حفظ التغييرات والترتيب</button>
+                            <button type="button" id="deleteSlideBtn" class="btn-delete"><i class="fa-solid fa-trash"></i> حذف الشريحة</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-preview-col">
+                    <div class="live-preview-sticky">
+                        <div id="livePhoneFrame" class="full-mini-phone-frame theme-coral">
+                            <div class="mini-status-bar">
+                                <span>9:41</span>
+                                <div class="mini-island"></div>
+                                <div class="status-icons">
+                                    <i class="fa-solid fa-signal"></i>
+                                    <i class="fa-solid fa-wifi"></i>
+                                    <i class="fa-solid fa-battery-full"></i>
+                                </div>
+                            </div>
+
+                            <div class="mobile-slide-header">
+                                <div class="header-step-counter">الشريحة <strong id="livePreviewSlideNum">1</strong> من <strong>6</strong></div>
+                                <button class="btn-path-sm">المسار <i class="fa-solid fa-arrow-left"></i></button>
+                            </div>
+
+                            <div class="segmented-progress-bar">
+                                <div class="progress-segment active"></div>
+                                <div class="progress-segment"></div>
+                                <div class="progress-segment"></div>
+                                <div class="progress-segment"></div>
+                                <div class="progress-segment"></div>
+                                <div class="progress-segment"></div>
+                            </div>
+
+                            <div id="livePreviewScreenContent" class="full-mini-screen-content"></div>
+
+                            <footer class="mobile-bottom-nav">
+                                <button class="btn-next"><span>التالي</span> <i class="fa-solid fa-arrow-left"></i></button>
+                                <button class="btn-prev">السابق</button>
+                            </footer>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: LIVE EXERCISE EDIT MODAL (VISUAL BLOCK BUILDER FOR EXERCISES) -->
+    <div id="exerciseEditModal" class="edit-modal-backdrop hidden">
+        <div class="edit-modal-split-container">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3><i class="fa-solid fa-cubes"></i> استوديو بناء وتعديل التمرين التفاعلي (Visual Block Builder)</h3>
+                    <span class="live-indicator"><i class="fa-solid fa-bolt"></i> معاينة حية فورية ومباشرة</span>
+                </div>
+                <button id="closeExerciseModalBtn" class="btn-close-modal">&times;</button>
+            </div>
+
+            <div class="modal-split-body">
+                <div class="modal-form-col">
+                    <form id="exerciseEditForm" class="slide-edit-form">
+                        <input type="hidden" id="formExerciseId">
+
+                        <div class="form-section-card highlight-teal">
+                            <div class="section-title"><i class="fa-solid fa-palette"></i> المخطط اللوني للتمرين (Color Theme)</div>
+                            <div class="ex-palette-picker-row palette-picker-row">
+                                <button type="button" class="ex-palette-btn palette-btn active" data-theme="coral" style="background: linear-gradient(135deg, #FF6B57, #0D9488);"><span>مرجاني مبهج</span></button>
+                                <button type="button" class="ex-palette-btn palette-btn" data-theme="navy" style="background: linear-gradient(135deg, #1E3A8A, #3B82F6);"><span>أزرق تعليمي</span></button>
+                                <button type="button" class="ex-palette-btn palette-btn" data-theme="purple" style="background: linear-gradient(135deg, #7C3AED, #EC4899);"><span>بنفسجي ملكي</span></button>
+                                <button type="button" class="ex-palette-btn palette-btn" data-theme="forest" style="background: linear-gradient(135deg, #059669, #10B981);"><span>غابات نعناعي</span></button>
+                            </div>
+                        </div>
+
+                        <div class="block-builder-toolbar">
+                            <span class="toolbar-hint"><i class="fa-solid fa-arrow-up-z-a"></i> استخدم الأسهم (⬆️ ⬇️) لترتيب مكونات تمرين الطالب:</span>
+                        </div>
+
+                        <div id="dynamicExBlocksContainer" class="dynamic-blocks-container">
+                            <!-- Exercise Block Cards Rendered Dynamically Here -->
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-next"><i class="fa-solid fa-floppy-disk"></i> حفظ التمرين والترتيب</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-preview-col">
+                    <div class="live-preview-sticky">
+                        <div id="liveExPhoneFrame" class="full-mini-phone-frame theme-coral">
+                            <div class="mini-status-bar">
+                                <span>9:41</span>
+                                <div class="mini-island"></div>
+                                <div class="status-icons">
+                                    <i class="fa-solid fa-signal"></i>
+                                    <i class="fa-solid fa-wifi"></i>
+                                    <i class="fa-solid fa-battery-full"></i>
+                                </div>
+                            </div>
+
+                            <div class="exercise-screen-wrapper" style="padding: 1rem;">
+                                <div class="exercise-top-bar">
+                                    <button class="btn-exercise-back" type="button"><i class="fa-solid fa-arrow-right"></i> رجوع</button>
+                                    <div class="exercise-progress-container">
+                                        <div class="exercise-progress-bar">
+                                            <div class="exercise-progress-fill"><div class="exercise-progress-dot"></div></div>
+                                        </div>
+                                    </div>
+                                    <div class="exercise-header-titles">
+                                        <div class="exercise-lesson-name">معاينة مباشرة</div>
+                                        <div class="exercise-question-counter">تمرين تفاعلي</div>
+                                    </div>
+                                </div>
+
+                                <div class="stage-switcher-tabs" style="display: flex; gap: 0.3rem; margin-top: 0.6rem; background: #E2E8F0; padding: 0.25rem; border-radius: 12px;">
+                                    <button type="button" id="btnExPreviewStage1" class="btn-stage-tab active" onclick="switchExModalPreviewStage(1)" style="flex:1; border:none; padding:0.35rem 0.3rem; border-radius:9px; font-weight:800; font-size:0.72rem; cursor:pointer; background:#FFFFFF; color:#0D9488; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">1️⃣ السؤال</button>
+                                    <button type="button" id="btnExPreviewStage2" class="btn-stage-tab" onclick="switchExModalPreviewStage(2)" style="flex:1; border:none; padding:0.35rem 0.3rem; border-radius:9px; font-weight:800; font-size:0.72rem; cursor:pointer; background:transparent; color:#475569;">2️⃣ صحيحة 🎁</button>
+                                    <button type="button" id="btnExPreviewStage3" class="btn-stage-tab" onclick="switchExModalPreviewStage(3)" style="flex:1; border:none; padding:0.35rem 0.3rem; border-radius:9px; font-weight:800; font-size:0.72rem; cursor:pointer; background:transparent; color:#475569;">3️⃣ خاطئة ⚠️</button>
+                                </div>
+
+                                <div id="liveExPreviewContent" style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.8rem;">
+                                    <!-- Live Exercise Smartphone Preview Rendered Dynamically Here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: INSERTER MODAL TO ADD ANY BLOCK IN ANY POSITION -->
+    <div id="addBlockMenuModal" class="edit-modal-backdrop hidden">
+        <div class="add-block-menu-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-plus-circle"></i> اختر العنصر المراد إضافته للشريحة</h3>
+                <button id="closeAddBlockMenuBtn" class="btn-close-modal">&times;</button>
+            </div>
+            
+            <div class="add-block-options-grid">
+                <div class="block-option-item" data-block-type="rule_box">
+                    <i class="fa-solid fa-book-open icon-teal"></i>
+                    <div>
+                        <strong>صندوق تركيب القاعدة (Mint Box)</strong>
+                        <span>إضافة بطاقة توضيحية لمعادلة الشرح والقانون</span>
+                    </div>
+                </div>
+
+                <div class="block-option-item" data-block-type="example_box">
+                    <i class="fa-solid fa-lightbulb icon-peach"></i>
+                    <div>
+                        <strong>صندوق مثال توضيحي (Warm Peach)</strong>
+                        <span>إضافة مثال تطبيقي بالجملة الإنجليزية والترجمة</span>
+                    </div>
+                </div>
+
+                <div class="block-option-item" data-block-type="image_box">
+                    <i class="fa-solid fa-image icon-blue"></i>
+                    <div>
+                        <strong>صورة توضيحية 3D (Pixar Visual)</strong>
+                        <span>عرض صورة كرتونية شارحة للدرس</span>
+                    </div>
+                </div>
+
+                <div class="block-option-item" data-block-type="discovery_block">
+                    <i class="fa-solid fa-compass icon-emerald"></i>
+                    <div>
+                        <strong>مكون اكتشف القاعدة بنفسك (Guided Discovery)</strong>
+                        <span>إضافة مشهد تفاعلي بسؤال وخيارات 2x2 وكارت النتيجة</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">تم الحفظ بنجاح!</span>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

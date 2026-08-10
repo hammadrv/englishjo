@@ -1,0 +1,350 @@
+{
+  "units": [
+    {
+      "id": 1,
+      "title_ar": "الوحدة الأولى: قواعد المضارع البسيط",
+      "title_en": "Unit 1: Present Simple Rules",
+      "lessons": [
+        {
+          "id": 101,
+          "title_ar": "الدرس الأول: المضارع البسيط في حالة الإثبات",
+          "title_en": "Lesson 1: Present Simple - Affirmative",
+          "slides": [
+            {
+              "id": 1,
+              "template_type": "two_stage",
+              "welcome_badge": "اكتشف القاعدة بنفسك",
+              "title_ar": "الدرس الأول: المضارع البسيط في حالة الإثبات",
+              "description_ar": "أن يكوّن الطالب جملة مثبتة صحيحة ويميز متى يستخدم الفعل الأساسي ومتى يضيف s أو es.",
+              "scene_badge": "المشهد 1 من 4",
+              "question_ar": "اختر الجملة الصحيحة للصورة.",
+              "options": [
+                "He plays football.",
+                "He play football.",
+                "He playing football."
+              ],
+              "correct_index": 0,
+              "hint_note": "ابحث عن He ثم راقب نهاية الفعل.",
+              "result_title": "أحسنت! ظهرت القاعدة",
+              "reveal_badge": "He + plays",
+              "reveal_explanation": "ممتاز! لاحظت أن He يحتاج الفعل مع s.",
+              "image": "/static/images/kids_football.jpg",
+              "teacher_notes": "دع الطلاب يلاحظون حركة الشخصية في الصورة أولاً، ثم اطلب منهم اختيار الجملة الصحيحة وملاحظة حرف s في الإجابة.",
+              "blocks_order": [
+                "two_stage_block"
+              ]
+            },
+            {
+              "id": 2,
+              "template_type": "two_stage",
+              "welcome_badge": "اكتشف القاعدة بنفسك",
+              "title_ar": "قاعدة الفاعل المؤنث المفرد She",
+              "description_ar": "أن يلاحظ الطالب إضافة حرف s مع الضمير المؤنث She بنفس طريقة الضمير He.",
+              "scene_badge": "المشهد 2 من 4",
+              "question_ar": "اختر الجملة المعبرة عن الصورة بدقة.",
+              "options": [
+                "She reads a book.",
+                "She read a book.",
+                "She reading a book."
+              ],
+              "correct_index": 0,
+              "hint_note": "انتبه لحرف s المضاف لنهاية فعل القراءة.",
+              "result_title": "أحسنت! اكتشفت القاعدة ببراعة",
+              "reveal_badge": "She + reads",
+              "reveal_explanation": "رائع! الفاعل المفرد She يأخذ الفعل مضافاً إليه حرف s أيضاً.",
+              "image": "/static/images/girl_reading_library.jpg",
+              "teacher_notes": "قارن مع المشهد الأول لتثبيت فكرة أن المفرد المذكر والمؤنث كلاهما يأخذان s مع الفعل.",
+              "blocks_order": [
+                "two_stage_block"
+              ]
+            },
+            {
+              "id": 3,
+              "template_type": "rule",
+              "welcome_badge": "مرحباً بك في أسهل شرح للغة الإنجليزية",
+              "title_ar": "المضارع البسيط في حالة الإثبات",
+              "title_en": "Present\nSimple",
+              "description_ar": "نستخدم المضارع البسيط للتعبير عن العادات والأحداث اليومية والحقائق الثابتة.",
+              "description_en": "We use the Present Simple for daily habits, routines, and permanent facts.",
+              "rule_title": "Subject + Verb(s/es) + Object",
+              "rule_desc": "مع المفرد (He / She / It) نضيف (s/es) للفعل، ومع الجمع نستخدم الفعل كما هو.",
+              "example_en": "She plays tennis every afternoon.",
+              "example_ar": "هي تلعب التنس كل يوم بعد الظهر.",
+              "image": "/static/images/girl_school.jpg",
+              "teacher_notes": "ركز على شرح إشارة إضافة s للفعل عند وجود الفاعل المفرد She.",
+              "blocks_order": [
+                "badge_title",
+                "description",
+                "image_box",
+                "rule_box",
+                "example_box"
+              ]
+            },
+            {
+              "id": 4,
+              "template_type": "rule",
+              "welcome_badge": "شرح حالات الفاعل المفرد",
+              "title_ar": "إضافة حرف (s) للفاعل المفرد",
+              "title_en": "Adding (S)\nto Verbs",
+              "description_ar": "عندما يكون الفاعل مفرد مثل (He, She, It) يجب إضافة حرف s إلى نهاية الفعل.",
+              "description_en": "When the subject is singular (He, She, It), add (s) to the main verb.",
+              "rule_title": "He / She / It ➔ Verb + S",
+              "rule_desc": "مثال: He walks, She drinks, It rains.",
+              "example_en": "He drinks milk every morning.",
+              "example_ar": "هو يشرب الحليب كل صباح.",
+              "image": "/static/images/child_breakfast.jpg",
+              "teacher_notes": "شجع الطلاب على قراءة مثال شرب الحليب بصوت مرتفع لتثبيت النطق.",
+              "blocks_order": [
+                "badge_title",
+                "description",
+                "image_box",
+                "rule_box",
+                "example_box"
+              ]
+            },
+            {
+              "id": 5,
+              "template_type": "rule",
+              "welcome_badge": "تدريب استماع ونطق الجمل",
+              "title_ar": "استمع ورردد الجملة بصوت واضح",
+              "title_en": "Listen &\nRepeat",
+              "description_ar": "استمع للنطق الصحيح للجملة باللغة الإنجليزية ثم كررها بنفس الطريقة.",
+              "description_en": "Listen carefully to the English pronunciation and repeat out loud.",
+              "rule_title": "Daily Routine Practice",
+              "rule_desc": "التدريب الصوتي المباشر على النطق الصحيح للعبارات اليومية.",
+              "example_en": "They play football together every Friday.",
+              "example_ar": "هم يلعبون كرة القدم معاً كل يوم جمعة.",
+              "image": "/static/images/kids_football.jpg",
+              "teacher_notes": "انقر على زر الصوت للاستماع مع الطلاب.",
+              "blocks_order": [
+                "badge_title",
+                "description",
+                "image_box",
+                "example_box"
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "id": 1,
+              "instruction_badge": "اختر الكلمة المناسبة لإكمال الجملة",
+              "sentence_ar": "البنت تقرأ قصة في المكتبة.",
+              "question_en": "She ___ a story in the library.",
+              "options": [
+                "writes",
+                "reads",
+                "eats"
+              ],
+              "correct_index": 1,
+              "explanation": "reads هي الإجابة الصحيحة لأن الفاعل مفرد مؤنث (She) والجملة تصف قراءة القصة.",
+              "image": "/static/images/girl_reading_library.jpg"
+            }
+          ],
+          "reinforcement_type": "slides",
+          "reinforcement_slides": [
+            {
+              "id": 911,
+              "welcome_badge": "تقوية المفاهيم ⚡",
+              "title_ar": "قاعدة الفاعل المفرد (He, She, It)",
+              "description_ar": "تذكر دائماً: مع الضمائر المفردة (He, She, It) يجب إضافة s أو es إلى نهاية الفعل في حالة الإثبات.",
+              "image": "/static/images/girl_reading_library.jpg",
+              "linked_exercise_id": 1
+            },
+            {
+              "id": 912,
+              "welcome_badge": "تقوية المفاهيم ⚡",
+              "title_ar": "قاعدة الفاعل الجمع (They, We, You, I)",
+              "description_ar": "مع ضمائر الجمع والضمير I يبقى الفعل في صورته المجردة الأصلية دون أي إضافة (مثال: They play, We eat).",
+              "image": "/static/images/kids_football.jpg",
+              "linked_exercise_id": "all"
+            },
+            {
+              "id": 913,
+              "welcome_badge": "السر النحوي 💡",
+              "title_ar": "ملخص الإثبات للمضارع البسيط",
+              "description_ar": "مفرد ➔ Verb + s/es | جمع / I ➔ Base Verb. خريطة ذهنية سريعة قبل الاختبار النهائي.",
+              "image": "/static/images/child_breakfast.jpg",
+              "linked_exercise_id": "all"
+            }
+          ],
+          "reinforcement_exercises": [
+            {
+              "id": 921,
+              "instruction_badge": "تحدي التقوية والتثبيت ⚡",
+              "sentence_ar": "هو يلعب كرة القدم كل يوم سَبْت.",
+              "question_en": "He _____ football every Saturday.",
+              "options": [
+                "plays",
+                "play",
+                "playing"
+              ],
+              "correct_index": 0,
+              "wrong_note": "تذكر أن الفاعل المفرد He يحتاج الفعل مضافاً إليه حرف s.",
+              "result_title": "أحسنت! ظهرت القاعدة 🎁",
+              "reveal_badge": "He + plays",
+              "reveal_explanation": "ممتاز! استخدمنا plays مضافاً إليها s لأن الفاعل مفرد He.",
+              "image": "/static/images/kids_football.jpg",
+              "linked_exercise_id": 1
+            },
+            {
+              "id": 922,
+              "instruction_badge": "تحدي التقوية والتثبيت ⚡",
+              "sentence_ar": "هم يتناولون طعام الفطور في الصباح.",
+              "question_en": "They _____ breakfast in the morning.",
+              "options": [
+                "eats",
+                "eat",
+                "eating"
+              ],
+              "correct_index": 1,
+              "wrong_note": "مع الفاعل الجمع They نستخدم الفعل مجرداً بدون حرف s.",
+              "result_title": "ممتاز! أتقنت القاعدة 🎁",
+              "reveal_badge": "They + eat",
+              "reveal_explanation": "رائع! استخدمنا eat بدون s لأن الفاعل جمع They.",
+              "image": "/static/images/child_breakfast.jpg",
+              "linked_exercise_id": "all"
+            },
+            {
+              "id": 923,
+              "instruction_badge": "تحدي التقوية والتثبيت ⚡",
+              "sentence_ar": "البنت تذهب إلى المدرسة بالباص.",
+              "question_en": "The girl _____ to school by bus.",
+              "options": [
+                "go",
+                "goes",
+                "going"
+              ],
+              "correct_index": 1,
+              "wrong_note": "الفاعل المفرد The girl يعامل معاملة She ونضيف es للفعل goes.",
+              "result_title": "أحسنت! ظهرت القاعدة 🎁",
+              "reveal_badge": "The girl + goes",
+              "reveal_explanation": "ممتاز! استخدمنا goes مضافاً إليها es لأن الفاعل مفرد مؤنث.",
+              "image": "/static/images/girl_school.jpg",
+              "linked_exercise_id": "all"
+            }
+          ],
+          "exam_questions": [
+            {
+              "id": 951,
+              "instruction_badge": "📝 الاختبار النهائي لتقييم الإتقان 🎯",
+              "sentence_ar": "هو يستمع إلى الموسيقى كل مساء.",
+              "question_en": "He _____ to music every evening.",
+              "options": [
+                "listens",
+                "listen",
+                "listening"
+              ],
+              "correct_index": 0,
+              "explanation": "نستخدم listens مضافاً إليها s لأن الفاعل مفرد He في حالة الإثبات.",
+              "result_title": "إجابة صحيحة مذهلة! 🎉",
+              "reveal_badge": "He + listens",
+              "reveal_explanation": "ممتاز! الفاعل المفرد يأخذ الفعل مع s.",
+              "image": "/static/images/kids_football.jpg"
+            },
+            {
+              "id": 952,
+              "instruction_badge": "📝 الاختبار النهائي لتقييم الإتقان 🎯",
+              "sentence_ar": "نحن نعيش في بيت كبير.",
+              "question_en": "We _____ in a big house.",
+              "options": [
+                "lives",
+                "live",
+                "living"
+              ],
+              "correct_index": 1,
+              "explanation": "نستخدم live بدون s لأن الفاعل جمع We.",
+              "result_title": "إجابة صحيحة مذهلة! 🎉",
+              "reveal_badge": "We + live",
+              "reveal_explanation": "ممتاز! الفاعل الجمع يأخذ الفعل كما هو.",
+              "image": "/static/images/child_breakfast.jpg"
+            },
+            {
+              "id": 953,
+              "instruction_badge": "📝 الاختبار النهائي لتقييم الإتقان 🎯",
+              "sentence_ar": "أختي تتحدث اللغة الإنجليزية ببراعة.",
+              "question_en": "My sister _____ English very well.",
+              "options": [
+                "speak",
+                "speaks",
+                "speaking"
+              ],
+              "correct_index": 1,
+              "explanation": "أختي My sister مفرد غائب وتأخذ speaks مضافاً إليها s.",
+              "result_title": "إجابة صحيحة مذهلة! 🎉",
+              "reveal_badge": "My sister + speaks",
+              "reveal_explanation": "رائع! الفاعل المفرد يحتاج الفعل مضافاً إليه s.",
+              "image": "/static/images/girl_reading_library.jpg"
+            }
+          ]
+        },
+        {
+          "id": 102,
+          "title_ar": "الدرس الثاني: المضارع البسيط في حالة النفي",
+          "title_en": "Lesson 2: Present Simple - Negative",
+          "slides": [
+            {
+              "id": 6,
+              "template_type": "two_stage",
+              "welcome_badge": "اكتشف طريقة النفي بنفسك",
+              "title_ar": "نفي الفاعل المفرد مع أداة Doesn't",
+              "description_ar": "أن يكتشف الطالب كيفية استخدام أداة النفي doesn't مع الأفعال.",
+              "scene_badge": "المشهد 1 من 2",
+              "question_ar": "اختر أداة النفي المناسبة للفاعل المفرد.",
+              "options": [
+                "He doesn't play tennis.",
+                "He don't play tennis.",
+                "He not play tennis."
+              ],
+              "correct_index": 0,
+              "hint_note": "لاحظ الأداة التي ترجع الفعل لحالته الأصلية المجردة.",
+              "result_title": "أحسنت! ظهرت أداة النفي",
+              "reveal_badge": "He + doesn't",
+              "reveal_explanation": "ممتاز! نستخدم doesn't لنفي الفاعل المفرد ومحي زيادة s.",
+              "image": "/static/images/girl_reading_library.jpg",
+              "teacher_notes": "تأكد من تنبيه الطلاب لأن الفعل يرجع لأصله المجرد بعد doesn't.",
+              "blocks_order": [
+                "two_stage_block"
+              ]
+            },
+            {
+              "id": 7,
+              "template_type": "rule",
+              "welcome_badge": "قواعد نفي المضارع البسيط",
+              "title_ar": "استخدام (don't) و (doesn't)",
+              "title_en": "Present Simple\nNegative Form",
+              "description_ar": "لنفي الجملة في المضارع البسيط نستخدم don't أو doesn't متبوعة بالفعل المجرد.",
+              "description_en": "To make negative sentences, use don't or doesn't + base verb.",
+              "rule_title": "Subject + don't / doesn't + Verb (base)",
+              "rule_desc": "مع المفرد نستخدم doesn't ومع الجمع والضمير I نستخدم don't.",
+              "example_en": "They don't eat fast food on weekdays.",
+              "example_ar": "هم لا يأكلون الوجبات السريعة في أيام الأسبوع.",
+              "image": "/static/images/kids_football.jpg",
+              "teacher_notes": "اطلب من الطلاب مقارنة الجملة الإيجابية والجملة المنفية.",
+              "blocks_order": [
+                "badge_title",
+                "description",
+                "image_box",
+                "rule_box",
+                "example_box"
+              ]
+            }
+          ],
+          "exercise": {
+            "id": 2,
+            "instruction_badge": "اختر أداة النفي المناسبة للجملة",
+            "sentence_ar": "هو لا يلعب كرة القدم يوم الأحد.",
+            "question_en": "He ___ play football on Sunday.",
+            "options": [
+              "don't",
+              "doesn't",
+              "is not"
+            ],
+            "correct_index": 1,
+            "explanation": "doesn't هي الأداة الصحيحة لأن الفاعل مفرد (He).",
+            "image": "/static/images/kids_football.jpg"
+          }
+        }
+      ]
+    }
+  ]
+}

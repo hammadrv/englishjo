@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول | منصة تعلم اللغة الإنجليزية</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@500;700;800;900&family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F766E 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --coral-primary: #FF6B57;
+            --teal-primary: #0D9488;
+            --text-navy: #0F172A;
+            --text-muted: #64748B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient Glowing Background Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 1;
+            opacity: 0.5;
+        }
+        .orb-1 { width: 350px; height: 350px; background: #FF6B57; top: -50px; right: -50px; }
+        .orb-2 { width: 400px; height: 400px; background: #0D9488; bottom: -80px; left: -80px; }
+
+        .login-card-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 32px;
+            padding: 2.8rem 2.2rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+            animation: cardAppear 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.2rem;
+        }
+
+        .login-brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: #F0FDFA;
+            border: 1.5px solid #CCFBF1;
+            color: #0D9488;
+            padding: 0.45rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .login-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--text-navy);
+            margin-bottom: 0.3rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .alert-error {
+            background: #FEF2F2;
+            border: 1.5px solid #FCA5A5;
+            color: #991B1B;
+            padding: 0.8rem 1.2rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .form-group {
+            margin-bottom: 1.4rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 1.2rem;
+            color: #94A3B8;
+            font-size: 1.1rem;
+            transition: color 0.2s ease;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.9rem 3.2rem 0.9rem 1.2rem;
+            border: 2px solid #E2E8F0;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-navy);
+            background: #FFFFFF;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--teal-primary);
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+        }
+
+        .form-control:focus + .input-icon {
+            color: var(--teal-primary);
+        }
+
+        .toggle-password-btn {
+            position: absolute;
+            left: 1rem;
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.2rem;
+            transition: color 0.2s ease;
+        }
+
+        .toggle-password-btn:hover {
+            color: var(--text-navy);
+        }
+
+        .btn-submit-login {
+            width: 100%;
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 1rem;
+            border-radius: 18px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(13, 148, 136, 0.3);
+            transition: all 0.25s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 2rem;
+        }
+
+        .btn-submit-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(13, 148, 136, 0.4);
+            background: linear-gradient(135deg, #0F766E 0%, #115E59 100%);
+        }
+
+        .btn-submit-login:active {
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            margin-top: 1.8rem;
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="login-card-container">
+        <div class="login-header">
+            <div class="login-brand-badge">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>منصة تعلم اللغة الإنجليزية</span>
+            </div>
+            <h1 class="login-title">تسجيل الدخول الاستوديو</h1>
+            <p class="login-subtitle">أدخل بيانات الحساب للوصول لإدارة المناهج والدروس</p>
+        </div>
+
+        {% if error %}
+        <div class="alert-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="username">اسم المستخدم (User)</label>
+                <div class="input-wrapper">
+                    <input type="text" id="username" name="username" class="form-control" placeholder="أدخل اسم المستخدم" required value="{{ username or '' }}">
+                    <i class="fa-solid fa-user input-icon"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">كلمة المرور (Password)</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required style="padding-left: 3rem;">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <button type="button" class="toggle-password-btn" id="btnTogglePassword" title="إظهار/إخفاء كلمة المرور">
+                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit-login">
+                <span>تسجيل الدخول</span>
+                <i class="fa-solid fa-right-to-bracket"></i>
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <span>جميع الحقوق محفوظة © منصة Present Simple التفاعلية 2026</span>
+        </div>
+    </div>
+
+    <script>
+        const btnTogglePassword = document.getElementById('btnTogglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        if (btnTogglePassword && passwordInput && eyeIcon) {
+            btnTogglePassword.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                if (type === 'text') {
+                    eyeIcon.className = 'fa-solid fa-eye-slash';
+                } else {
+                    eyeIcon.className = 'fa-solid fa-eye';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

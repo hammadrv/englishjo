@@ -413,15 +413,21 @@ def get_slides():
 def add_slide():
     payload = request.get_json() or {}
     lesson_id = payload.get('lesson_id', 101)
+    is_reinf = 1 if payload.get("is_reinforcement") else 0
 
     conn = get_db_connection()
     c = conn.cursor()
 
+    c.execute('SELECT MAX(sort_order) FROM slides WHERE lesson_id = ? AND is_reinforcement = ?', (lesson_id, is_reinf))
+    max_row = c.fetchone()
+    max_order = max_row[0] if (max_row and max_row[0] is not None) else -1
+    next_sort_order = max_order + 1
+
     c.execute('''
         INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en, description_ar, description_en,
         rule_title, rule_desc, example_en, example_ar, image, teacher_notes, scene_badge, question_ar, hint_note, wrong_note,
-        options_json, correct_index, result_title, reveal_badge, reveal_explanation, reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        options_json, correct_index, result_title, reveal_badge, reveal_explanation, reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         lesson_id,
         payload.get("template_type", "two_stage"),
@@ -448,7 +454,8 @@ def add_slide():
         payload.get("reveal_note", ""),
         json.dumps(payload.get("blocks_order", []), ensure_ascii=False),
         str(payload.get("linked_exercise_id", "all")),
-        1 if payload.get("is_reinforcement") else 0
+        is_reinf,
+        next_sort_order
     ))
     new_id = c.lastrowid
     conn.commit()

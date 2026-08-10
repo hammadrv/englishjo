@@ -121,6 +121,18 @@ def init_db():
         )
     ''')
 
+    # Custom Templates Table (Saved Templates created by Teachers)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS custom_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            icon TEXT DEFAULT '⭐',
+            data_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     conn.commit()
 
     # Automatic One-Time Migration from slides.json if DB is empty
@@ -717,6 +729,57 @@ def update_exam_question(question_id):
 @login_required
 def delete_exam_question(question_id):
     return delete_exercise(question_id)
+
+@app.route('/api/custom_templates', methods=['GET'])
+def get_custom_templates():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM custom_templates ORDER BY id DESC")
+    rows = c.fetchall()
+
+    templates_list = []
+    for r in rows:
+        templates_list.append({
+            "id": r["id"],
+            "name": r["name"],
+            "category": r["category"],
+            "icon": r["icon"] or "⭐",
+            "data": json.loads(r["data_json"] or "{}"),
+            "created_at": r["created_at"]
+        })
+    conn.close()
+    return jsonify({"success": True, "custom_templates": templates_list})
+
+@app.route('/api/custom_templates', methods=['POST'])
+@login_required
+def save_custom_template():
+    payload = request.get_json() or {}
+    name = payload.get("name", "قالب مخصص جديد").strip()
+    category = payload.get("category", "slide") # 'slide' or 'exercise'
+    icon = payload.get("icon", "⭐")
+    template_data = payload.get("data", {})
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO custom_templates (name, category, icon, data_json)
+        VALUES (?, ?, ?, ?)
+    ''', (name, category, icon, json.dumps(template_data, ensure_ascii=False)))
+    new_id = c.lastrowid
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True, "new_template_id": new_id, "message": "تم حفظ القالب المخصص بنجاح!"})
+
+@app.route('/api/custom_templates/<int:template_id>', methods=['DELETE'])
+@login_required
+def delete_custom_template(template_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM custom_templates WHERE id = ?", (template_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "message": "تم حذف القالب المخصص بنجاح"})
 
 if __name__ == '__main__':
     print("=" * 60)

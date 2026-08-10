@@ -3579,3 +3579,279 @@ function resetDiscoveryStage(slideId) {
         qStage.classList.remove('hidden');
     }
 }
+
+// ==========================================
+// 🌟 CUSTOM TEMPLATES MANAGEMENT SYSTEM (حفظ وتوليد القوالب المخصصة للمعلم)
+// ==========================================
+
+async function loadAndRenderCustomTemplates() {
+    try {
+        const res = await fetch('/api/custom_templates');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const customTemplates = data.custom_templates || [];
+
+        // 1. Render Custom Slide Templates in #addSlideTemplateModal
+        const slidePickerGrid = document.querySelector('#addSlideTemplateModal .template-picker-cards-grid');
+        if (slidePickerGrid) {
+            const existingCustomHeader = slidePickerGrid.querySelector('.custom-templates-header-section');
+            if (existingCustomHeader) existingCustomHeader.remove();
+            slidePickerGrid.querySelectorAll('.custom-slide-template-card').forEach(c => c.remove());
+
+            const slideTemplates = customTemplates.filter(t => t.category === 'slide');
+            if (slideTemplates.length > 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'custom-templates-header-section';
+                headerDiv.style.cssText = 'grid-column: 1 / -1; margin: 1.5rem 0 0.5rem 0; border-top: 2px dashed #CBD5E1; padding-top: 1rem; display: flex; align-items: center; justify-content: space-between;';
+                headerDiv.innerHTML = `
+                    <h3 style="margin: 0; font-weight: 900; color: #D97706; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-star" style="color: #F59E0B;"></i> ⭐ القوالب المخصصة المحفوظة بواسطة المعلم (${slideTemplates.length})
+                    </h3>
+                `;
+                slidePickerGrid.appendChild(headerDiv);
+
+                slideTemplates.forEach(tpl => {
+                    const tCard = document.createElement('div');
+                    tCard.className = 'picker-card-option custom-slide-template-card';
+                    tCard.style.cssText = 'border: 2px solid #FCD34D; background: #FFFBEB; position: relative;';
+                    tCard.innerHTML = `
+                        <button type="button" class="btn-delete-custom-tpl" data-tpl-id="${tpl.id}" title="حذف القالب" style="position: absolute; top: 10px; left: 10px; border: none; background: #FEE2E2; color: #EF4444; border-radius: 50%; width: 28px; height: 28px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;">&times;</button>
+                        <div class="card-option-header">
+                            <div class="picker-icon-box" style="background: #FEF3C7; color: #D97706; font-size: 1.3rem;">⭐</div>
+                            <div>
+                                <h4 style="color: #92400E;">${tpl.name}</h4>
+                                <p style="color: #B45309;">قالب مخصص تم حفظه حديثاً</p>
+                            </div>
+                        </div>
+                        <div class="picker-phone-frame" style="padding: 1rem; text-align: center; background: #FFF; border-radius: 14px; margin: 0.8rem 0; border: 1px dashed #FBBF24;">
+                            <div style="font-weight: 800; color: #78350F; font-size: 0.95rem;">${tpl.data.title_ar || tpl.name}</div>
+                            <div style="font-size: 0.82rem; color: #92400E; margin-top: 0.3rem;">${tpl.data.description_ar || 'مكونات مخصصة جاهزة للإدراج مباشرة'}</div>
+                        </div>
+                        <button type="button" class="btn-select-custom-slide-tpl" style="width: 100%; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #FFF; border: none; padding: 0.7rem; border-radius: 12px; font-weight: 800; cursor: pointer; font-family: inherit;">
+                            <i class="fa-solid fa-plus-circle"></i> استخدام هذا القالب المخصص
+                        </button>
+                    `;
+
+                    tCard.querySelector('.btn-delete-custom-tpl').onclick = async (e) => {
+                        e.stopPropagation();
+                        if (!confirm(`هل أنت تأكد من رغبتك في حذف القالب المخصص (${tpl.name})؟`)) return;
+                        await fetch(`/api/custom_templates/${tpl.id}`, { method: 'DELETE' });
+                        loadAndRenderCustomTemplates();
+                        showToast('تم حذف القالب المخصص بنجاح');
+                    };
+
+                    tCard.querySelector('.btn-select-custom-slide-tpl').onclick = async (e) => {
+                        e.stopPropagation();
+                        const addSlideTemplateModal = document.getElementById('addSlideTemplateModal');
+                        if (addSlideTemplateModal) addSlideTemplateModal.classList.add('hidden');
+
+                        const slideData = JSON.parse(JSON.stringify(tpl.data));
+                        slideData.lesson_id = currentLesson ? currentLesson.id : 101;
+                        
+                        try {
+                            const addRes = await fetch('/api/slides', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(slideData)
+                            });
+                            const addData = await addRes.json();
+                            if (addData.success) {
+                                curriculumData = addData.curriculum;
+                                if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
+                                if (currentLesson && currentUnit) currentLesson = currentUnit.lessons.find(l => l.id === currentLesson.id) || currentUnit.lessons[0];
+                                renderStudioLessonsList();
+                                showToast(`⭐ تم إنشاء الشريحة بنجاح من القالب المخصص: ${tpl.name}`);
+                            }
+                        } catch (err) {
+                            showToast('تعذر إضافة الشريحة من القالب المخصص');
+                        }
+                    };
+
+                    slidePickerGrid.appendChild(tCard);
+                });
+            }
+        }
+
+        // 2. Render Custom Exercise Templates in #addExerciseTemplateModal
+        const exPickerGrid = document.querySelector('#addExerciseTemplateModal .template-picker-cards-grid');
+        if (exPickerGrid) {
+            const existingCustomHeader = exPickerGrid.querySelector('.custom-ex-header-section');
+            if (existingCustomHeader) existingCustomHeader.remove();
+            exPickerGrid.querySelectorAll('.custom-ex-template-card').forEach(c => c.remove());
+
+            const exTemplates = customTemplates.filter(t => t.category === 'exercise');
+            if (exTemplates.length > 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'custom-ex-header-section';
+                headerDiv.style.cssText = 'grid-column: 1 / -1; margin: 1.5rem 0 0.5rem 0; border-top: 2px dashed #CBD5E1; padding-top: 1rem; display: flex; align-items: center; justify-content: space-between;';
+                headerDiv.innerHTML = `
+                    <h3 style="margin: 0; font-weight: 900; color: #D97706; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-star" style="color: #F59E0B;"></i> ⭐ قوالب التمارين المخصصة المحفوظة (${exTemplates.length})
+                    </h3>
+                `;
+                exPickerGrid.appendChild(headerDiv);
+
+                exTemplates.forEach(tpl => {
+                    const tCard = document.createElement('div');
+                    tCard.className = 'picker-exercise-option custom-ex-template-card';
+                    tCard.style.cssText = 'border: 2px solid #FCD34D; background: #FFFBEB; border-radius: 16px; padding: 1.2rem; position: relative;';
+                    tCard.innerHTML = `
+                        <button type="button" class="btn-delete-custom-tpl" data-tpl-id="${tpl.id}" title="حذف القالب" style="position: absolute; top: 10px; left: 10px; border: none; background: #FEE2E2; color: #EF4444; border-radius: 50%; width: 28px; height: 28px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;">&times;</button>
+                        <div class="picker-icon-box" style="width: 48px; height: 48px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
+                            🎯
+                        </div>
+                        <h4 style="font-weight: 800; color: #92400E; margin-bottom: 0.4rem;">${tpl.name}</h4>
+                        <p style="font-size: 0.85rem; color: #B45309;">${tpl.data.question_en || 'تمرين مخصص مجهز مسبقاً'}</p>
+                        <button type="button" class="btn-select-custom-ex-tpl" style="margin-top: 1rem; width: 100%; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: inherit;">➕ أضف هذا القالب المخصص</button>
+                    `;
+
+                    tCard.querySelector('.btn-delete-custom-tpl').onclick = async (e) => {
+                        e.stopPropagation();
+                        if (!confirm(`هل أنت تأكد من حذف قالب التمرين المخصص (${tpl.name})؟`)) return;
+                        await fetch(`/api/custom_templates/${tpl.id}`, { method: 'DELETE' });
+                        loadAndRenderCustomTemplates();
+                        showToast('تم حذف قالب التمرين المخصص');
+                    };
+
+                    tCard.querySelector('.btn-select-custom-ex-tpl').onclick = async (e) => {
+                        e.stopPropagation();
+                        const addExerciseTemplateModal = document.getElementById('addExerciseTemplateModal');
+                        if (addExerciseTemplateModal) addExerciseTemplateModal.classList.add('hidden');
+
+                        const exData = JSON.parse(JSON.stringify(tpl.data));
+                        exData.lesson_id = currentLesson ? currentLesson.id : 101;
+
+                        try {
+                            const addRes = await fetch('/api/exercises', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(exData)
+                            });
+                            const addData = await addRes.json();
+                            if (addData.success) {
+                                curriculumData = addData.curriculum;
+                                renderStudioLessonsList();
+                                showToast(`⭐ تم إنشاء التمرين من القالب المخصص: ${tpl.name}`);
+                            }
+                        } catch (err) {
+                            showToast('تعذر إضافة التمرين من القالب المخصص');
+                        }
+                    };
+
+                    exPickerGrid.appendChild(tCard);
+                });
+            }
+        }
+    } catch (err) {}
+}
+
+// Wire Event Listeners for Save as Custom Template Buttons
+document.addEventListener('DOMContentLoaded', () => {
+    loadAndRenderCustomTemplates();
+
+    const btnSaveCustomSlideTemplate = document.getElementById('btnSaveCustomSlideTemplate');
+    if (btnSaveCustomSlideTemplate) {
+        btnSaveCustomSlideTemplate.addEventListener('click', async () => {
+            if (!currentSlide) {
+                showToast('الرجاء اختيار شريحة أولاً لحفظها كقالب!');
+                return;
+            }
+            const tplName = prompt('ادخل اسماً مميزاً للقالب المخصص الجديد:', currentSlide.title_ar || 'قالب شرح مخصص');
+            if (!tplName || !tplName.trim()) return;
+
+            const slideDataToSave = {
+                template_type: currentSlide.template_type || 'two_stage',
+                welcome_badge: document.getElementById('formWelcomeBadge')?.value || currentSlide.welcome_badge || '',
+                title_ar: document.getElementById('formTitleAr')?.value || currentSlide.title_ar || '',
+                title_en: document.getElementById('formTitleEn')?.value || currentSlide.title_en || '',
+                description_ar: document.getElementById('formDescriptionAr')?.value || currentSlide.description_ar || '',
+                description_en: currentSlide.description_en || '',
+                rule_title: currentSlide.rule_title || '',
+                rule_desc: currentSlide.rule_desc || '',
+                example_en: currentSlide.example_en || '',
+                example_ar: currentSlide.example_ar || '',
+                image: document.getElementById('formImageSelect')?.value || currentSlide.image || '/static/images/girl_school.jpg',
+                teacher_notes: document.getElementById('formTeacherNotes')?.value || currentSlide.teacher_notes || '',
+                scene_badge: currentSlide.scene_badge || '',
+                question_ar: currentSlide.question_ar || '',
+                hint_note: currentSlide.hint_note || '',
+                wrong_note: currentSlide.wrong_note || '',
+                options: currentSlide.options || [],
+                correct_index: currentSlide.correct_index || 0,
+                result_title: currentSlide.result_title || '',
+                reveal_badge: currentSlide.reveal_badge || '',
+                reveal_explanation: currentSlide.reveal_explanation || '',
+                reveal_note: currentSlide.reveal_note || '',
+                blocks_order: activeBlocksOrder || currentSlide.blocks_order || []
+            };
+
+            try {
+                const res = await fetch('/api/custom_templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: tplName.trim(),
+                        category: 'slide',
+                        icon: '⭐',
+                        data: slideDataToSave
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('⭐ تم حفظ الشريحة كقالب مخصص بنجاح في داتابيز المعلم!');
+                    loadAndRenderCustomTemplates();
+                }
+            } catch (err) {
+                showToast('تعذر حفظ القالب المخصص');
+            }
+        });
+    }
+
+    const btnSaveCustomExerciseTemplate = document.getElementById('btnSaveCustomExerciseTemplate');
+    if (btnSaveCustomExerciseTemplate) {
+        btnSaveCustomExerciseTemplate.addEventListener('click', async () => {
+            if (!currentExercise) {
+                showToast('الرجاء فتح تمرين أولاً لحفظه كقالب!');
+                return;
+            }
+            const tplName = prompt('ادخل اسماً مميزاً للقالب المخصص للتمرين:', currentExercise.instruction_badge || 'قالب تمرين مخصص');
+            if (!tplName || !tplName.trim()) return;
+
+            const exDataToSave = {
+                question_type: currentExercise.question_type || 'multiple_choice',
+                instruction_badge: document.getElementById('exFormInstructionBadge')?.value || currentExercise.instruction_badge || '',
+                sentence_ar: document.getElementById('exFormSentenceAr')?.value || currentExercise.sentence_ar || '',
+                question_en: document.getElementById('exFormQuestionEn')?.value || currentExercise.question_en || '',
+                options: [
+                    document.getElementById('exFormOpt0')?.value || '',
+                    document.getElementById('exFormOpt1')?.value || '',
+                    document.getElementById('exFormOpt2')?.value || ''
+                ],
+                correct_index: parseInt(document.getElementById('exFormCorrectIndex')?.value || 0),
+                explanation: document.getElementById('exFormExplanation')?.value || currentExercise.explanation || '',
+                image: document.getElementById('exFormImageSelect')?.value || currentExercise.image || '/static/images/kids_football.jpg'
+            };
+
+            try {
+                const res = await fetch('/api/custom_templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: tplName.trim(),
+                        category: 'exercise',
+                        icon: '🎯',
+                        data: exDataToSave
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('⭐ تم حفظ التمرين كقالب مخصص بنجاح في داتابيز المعلم!');
+                    loadAndRenderCustomTemplates();
+                }
+            } catch (err) {
+                showToast('تعذر حفظ قالب التمرين المخصص');
+            }
+        });
+    }
+});

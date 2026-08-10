@@ -2434,6 +2434,7 @@ function renderDynamicBlockEditors() {
 // Open Edit Slide Modal Dialog
 function openEditModal(slide, idx) {
     if (!slide) return;
+    currentSlide = slide;
     document.getElementById('formSlideId').value = slide.id;
 
     if (slide.blocks_order && slide.blocks_order.length > 0) {
@@ -3750,37 +3751,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSaveCustomSlideTemplate = document.getElementById('btnSaveCustomSlideTemplate');
     if (btnSaveCustomSlideTemplate) {
         btnSaveCustomSlideTemplate.addEventListener('click', async () => {
-            if (!currentSlide) {
-                showToast('الرجاء اختيار شريحة أولاً لحفظها كقالب!');
-                return;
-            }
-            const tplName = prompt('ادخل اسماً مميزاً للقالب المخصص الجديد:', currentSlide.title_ar || 'قالب شرح مخصص');
+            const defaultName = (currentSlide && currentSlide.title_ar) ? currentSlide.title_ar : 'قالب شرح مخصص';
+            const tplName = prompt('ادخل اسماً مميزاً للقالب المخصص الجديد:', defaultName);
             if (!tplName || !tplName.trim()) return;
 
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : '';
+            };
+
             const slideDataToSave = {
-                template_type: currentSlide.template_type || 'two_stage',
-                welcome_badge: document.getElementById('formWelcomeBadge')?.value || currentSlide.welcome_badge || '',
-                title_ar: document.getElementById('formTitleAr')?.value || currentSlide.title_ar || '',
-                title_en: document.getElementById('formTitleEn')?.value || currentSlide.title_en || '',
-                description_ar: document.getElementById('formDescriptionAr')?.value || currentSlide.description_ar || '',
-                description_en: currentSlide.description_en || '',
-                rule_title: currentSlide.rule_title || '',
-                rule_desc: currentSlide.rule_desc || '',
-                example_en: currentSlide.example_en || '',
-                example_ar: currentSlide.example_ar || '',
-                image: document.getElementById('formImageSelect')?.value || currentSlide.image || '/static/images/girl_school.jpg',
-                teacher_notes: document.getElementById('formTeacherNotes')?.value || currentSlide.teacher_notes || '',
-                scene_badge: currentSlide.scene_badge || '',
-                question_ar: currentSlide.question_ar || '',
-                hint_note: currentSlide.hint_note || '',
-                wrong_note: currentSlide.wrong_note || '',
-                options: currentSlide.options || [],
-                correct_index: currentSlide.correct_index || 0,
-                result_title: currentSlide.result_title || '',
-                reveal_badge: currentSlide.reveal_badge || '',
-                reveal_explanation: currentSlide.reveal_explanation || '',
-                reveal_note: currentSlide.reveal_note || '',
-                blocks_order: activeBlocksOrder || currentSlide.blocks_order || []
+                template_type: document.getElementById('formTemplateTypeVal')?.value || (currentSlide ? currentSlide.template_type : 'two_stage'),
+                welcome_badge: getVal('formWelcomeBadge') || (currentSlide ? currentSlide.welcome_badge : ''),
+                title_ar: getVal('formTitleAr') || (currentSlide ? currentSlide.title_ar : 'قالب شرح مخصص'),
+                title_en: getVal('formTitleEn') || (currentSlide ? currentSlide.title_en : ''),
+                description_ar: getVal('formDescriptionAr') || (currentSlide ? currentSlide.description_ar : ''),
+                description_en: currentSlide ? currentSlide.description_en : '',
+                rule_title: getVal('formRuleTitle') || (currentSlide ? currentSlide.rule_title : ''),
+                rule_desc: getVal('formRuleDesc') || (currentSlide ? currentSlide.rule_desc : ''),
+                example_en: getVal('formExampleEn') || (currentSlide ? currentSlide.example_en : ''),
+                example_ar: getVal('formExampleAr') || (currentSlide ? currentSlide.example_ar : ''),
+                image: getVal('formCustomImageUrl') || getVal('formImageSelect') || (currentSlide ? currentSlide.image : '/static/images/girl_school.jpg'),
+                teacher_notes: getVal('formTeacherNotes') || (currentSlide ? currentSlide.teacher_notes : ''),
+                scene_badge: getVal('formTwoStageSceneBadge') || getVal('formDiscSceneBadge') || (currentSlide ? currentSlide.scene_badge : 'المشهد 1 من 4'),
+                question_ar: getVal('formTwoStageQuestion') || getVal('formDiscQuestion') || (currentSlide ? currentSlide.question_ar : 'اختر الجملة الصحيحة للصورة.'),
+                hint_note: getVal('formTwoStageHintNote') || (currentSlide ? currentSlide.hint_note : ''),
+                wrong_note: getVal('formTwoStageWrongNote') || (currentSlide ? currentSlide.wrong_note : ''),
+                options: [
+                    getVal('formTwoStageOpt0') || getVal('formDiscOpt0') || (currentSlide && currentSlide.options ? currentSlide.options[0] : 'He plays football.'),
+                    getVal('formTwoStageOpt1') || getVal('formDiscOpt1') || (currentSlide && currentSlide.options ? currentSlide.options[1] : 'He play football.'),
+                    getVal('formTwoStageOpt2') || getVal('formDiscOpt2') || (currentSlide && currentSlide.options ? currentSlide.options[2] : 'He playing football.')
+                ],
+                correct_index: currentSlide ? (currentSlide.correct_index || 0) : 0,
+                result_title: getVal('formTwoStageResultTitle') || getVal('formDiscResultTitle') || (currentSlide ? currentSlide.result_title : 'أحسنت! ظهرت القاعدة'),
+                reveal_badge: getVal('formTwoStageRevealBadge') || getVal('formDiscRevealBadge') || (currentSlide ? currentSlide.reveal_badge : 'He + plays'),
+                reveal_explanation: getVal('formTwoStageRevealExplanation') || getVal('formDiscRevealExplanation') || (currentSlide ? currentSlide.reveal_explanation : 'ممتاز! لاحظت أن He يحتاج الفعل مع s.'),
+                reveal_note: getVal('formDiscRevealNote') || (currentSlide ? currentSlide.reveal_note : ''),
+                blocks_order: activeBlocksOrder || (currentSlide ? currentSlide.blocks_order : ['two_stage_block'])
             };
 
             try {

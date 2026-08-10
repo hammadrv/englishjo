@@ -1643,10 +1643,22 @@ async function createNewSlideWithTemplate(templateType) {
         newSlideData.example_en = "She plays tennis every afternoon.";
         newSlideData.example_ar = "هي تلعب التنس كل يوم بعد الظهر.";
         newSlideData.image = "/static/images/girl_school.jpg";
-    } else if (templateType === 'quiz') {
-        newSlideData.welcome_badge = "تمرين تفاعلي";
-        newSlideData.title_en = "Interactive\nQuiz";
-        newSlideData.blocks_order = ['badge_title', 'description', 'rule_box'];
+    } else if (templateType === 'quiz' || templateType === 'discovery' || templateType === 'two_stage') {
+        newSlideData.template_type = "two_stage";
+        newSlideData.welcome_badge = "تمرين واختبار تفاعلي";
+        newSlideData.title_ar = "اختبر معلوماتك في القاعدة";
+        newSlideData.description_ar = "اختر الإجابة الصحيحة لإظهار النتيجة وكشف القاعدة فوراً.";
+        newSlideData.scene_badge = "سؤال تفاعلي ✏️";
+        newSlideData.question_ar = "She _____ to school every morning.";
+        newSlideData.options = ["goes", "go", "going"];
+        newSlideData.correct_index = 0;
+        newSlideData.hint_note = "انتبه لحرف (es) مع الضمير المفرد She.";
+        newSlideData.result_title = "إجابة صحيحة ممتازة! 🎉";
+        newSlideData.reveal_badge = "She + goes";
+        newSlideData.reveal_explanation = "إجابة رائعة! الفاعل المفرد She يأخذ الفعل مضافاً إليه es.";
+        newSlideData.wrong_note = "تذكر أن الفاعل المفرد She يتطلب إضافة es للفعل.";
+        newSlideData.image = "/static/images/girl_school.jpg";
+        newSlideData.blocks_order = ['two_stage_block'];
     } else if (templateType === 'visual') {
         newSlideData.welcome_badge = "وسائط وسيناريو 3D";
         newSlideData.title_en = "Daily Routine";
@@ -1660,21 +1672,6 @@ async function createNewSlideWithTemplate(templateType) {
         newSlideData.example_ar = "هو يأكل إفطاراً صحياً كل يوم.";
         newSlideData.image = "/static/images/child_breakfast.jpg";
         newSlideData.blocks_order = ['badge_title', 'description', 'image_box', 'example_box'];
-    } else if (templateType === 'discovery' || templateType === 'two_stage') {
-        newSlideData.template_type = "two_stage";
-        newSlideData.welcome_badge = "اكتشف القاعدة بنفسك";
-        newSlideData.title_ar = "الدرس الأول: المضارع البسيط في حالة الإثبات";
-        newSlideData.description_ar = "أن يكوّن الطالب جملة مثبتة صحيحة ويميز متى يستخدم الفعل الأساسي ومتى يضيف s أو es.";
-        newSlideData.scene_badge = "المشهد 1 من 4";
-        newSlideData.question_ar = "اختر الجملة الصحيحة للصورة.";
-        newSlideData.options = ["He plays football.", "He play football.", "He playing football."];
-        newSlideData.correct_index = 0;
-        newSlideData.hint_note = "ابحث عن He ثم راقب نهاية الفعل.";
-        newSlideData.result_title = "أحسنت! ظهرت القاعدة";
-        newSlideData.reveal_badge = "He + plays";
-        newSlideData.reveal_explanation = "ممتاز! لاحظت أن He يحتاج الفعل مع s.";
-        newSlideData.image = "/static/images/kids_football.jpg";
-        newSlideData.blocks_order = ['two_stage_block'];
     }
 
     try {

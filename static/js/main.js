@@ -15,6 +15,114 @@ let activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 
 let hiddenBlocksMap = {};
 let insertTargetIndex = null;
 
+function stripHtml(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html || '';
+    return (div.textContent || div.innerText || '').trim();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+function normalizeRichTextHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html || '';
+    const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'MARK', 'BR', 'UL', 'OL', 'LI', 'P', 'DIV']);
+    const blockTags = new Set(['P', 'DIV']);
+
+    template.content.querySelectorAll('*').forEach(el => {
+        if (!allowedTags.has(el.tagName)) {
+            el.replaceWith(...Array.from(el.childNodes));
+            return;
+        }
+
+        Array.from(el.attributes).forEach(attr => el.removeAttribute(attr.name));
+    });
+
+    let cleaned = template.innerHTML
+        .replace(/<div><br><\/div>/gi, '<br>')
+        .replace(/<p><br><\/p>/gi, '<br>');
+
+    blockTags.forEach(tag => {
+        const lower = tag.toLowerCase();
+        cleaned = cleaned
+            .replace(new RegExp(`<${lower}>`, 'gi'), '')
+            .replace(new RegExp(`</${lower}>`, 'gi'), '<br>');
+    });
+
+    return cleaned.replace(/(<br>\s*){3,}/gi, '<br><br>').trim();
+}
+
+function richTextEditorHtml(targetId, placeholder, direction = 'rtl') {
+    return `
+        <div class="mini-rich-editor" data-rich-wrapper="${targetId}">
+            <div class="mini-rich-toolbar" role="toolbar" aria-label="أدوات تنسيق الشرح">
+                <button type="button" class="mini-rich-btn" data-rich-command="bold" title="غامق"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-command="italic" title="مائل"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-command="underline" title="تحته خط"><i class="fa-solid fa-underline"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-action="mark" title="تمييز"><i class="fa-solid fa-highlighter"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-command="insertUnorderedList" title="نقاط"><i class="fa-solid fa-list-ul"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-command="insertOrderedList" title="ترقيم"><i class="fa-solid fa-list-ol"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-action="clear" title="إزالة التنسيق"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="mini-rich-surface ${direction === 'ltr' ? 'ltr' : ''}" contenteditable="true" data-rich-editor="${targetId}" data-placeholder="${placeholder}"></div>
+            <textarea id="${targetId}" class="rich-hidden-field" tabindex="-1"></textarea>
+        </div>
+    `;
+}
+
+function initRichTextEditors(scope = document) {
+    scope.querySelectorAll('[data-rich-editor]').forEach(editor => {
+        if (editor.dataset.richReady === 'true') return;
+
+        const target = document.getElementById(editor.dataset.richEditor);
+        if (target) editor.innerHTML = target.value || '';
+
+        const syncTarget = () => {
+            if (!target) return;
+            target.value = normalizeRichTextHtml(editor.innerHTML);
+            editor.innerHTML = target.value;
+            currentFormDataStore[editor.dataset.richEditor === 'formDescriptionAr' ? 'description_ar' : 'description_en'] = target.value;
+            updateLivePreview();
+        };
+
+        editor.addEventListener('input', () => {
+            if (target) target.value = normalizeRichTextHtml(editor.innerHTML);
+            updateLivePreview();
+        });
+
+        editor.addEventListener('blur', syncTarget);
+
+        editor.addEventListener('paste', e => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+
+        const wrapper = editor.closest('.mini-rich-editor');
+        wrapper?.querySelectorAll('[data-rich-command], [data-rich-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                editor.focus();
+                if (btn.dataset.richAction === 'clear') {
+                    document.execCommand('removeFormat', false, null);
+                } else if (btn.dataset.richAction === 'mark') {
+                    const selection = window.getSelection();
+                    const selectedText = selection ? selection.toString() : '';
+                    document.execCommand('insertHTML', false, `<mark>${escapeHtml(selectedText || 'نص مهم')}</mark>`);
+                } else {
+                    document.execCommand(btn.dataset.richCommand, false, btn.dataset.richValue || null);
+                }
+                syncTarget();
+            });
+        });
+
+        editor.dataset.richReady = 'true';
+    });
+}
+
 function syncCurriculumState(nextCurriculum, preferredLessonId = null, options = {}) {
     if (!nextCurriculum || !Array.isArray(nextCurriculum.units)) return null;
 
@@ -1039,7 +1147,7 @@ function renderAccordionLessonContent(card, lessonId) {
                 <div class="seq-info-box">
                     <div class="seq-category">${slide.welcome_badge || 'شرح قاعدة'}</div>
                     <h3 class="seq-title">${slide.title_ar || slide.title_en}</h3>
-                    <p class="seq-desc">${slide.description_ar || ''}</p>
+                    <p class="seq-desc">${stripHtml(slide.description_ar || '')}</p>
                 </div>
 
                 <div class="seq-actions-box">
@@ -1323,7 +1431,7 @@ function renderAccordionLessonContent(card, lessonId) {
                     <div class="seq-info-box">
                         <div class="seq-category" style="background: #FEF3C7; color: #92400E;">${rSlide.welcome_badge || 'تقوية المفاهيم'}</div>
                         <h3 class="seq-title">${rSlide.title_ar || rSlide.title_en || 'شريحة تقوية'}</h3>
-                        <p class="seq-desc">${rSlide.description_ar || ''}</p>
+                        <p class="seq-desc">${stripHtml(rSlide.description_ar || '')}</p>
 
                         <div class="reinf-linking-box" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem; background: #FFFBEB; padding: 0.35rem 0.7rem; border-radius: 10px; border: 1px solid #FCD34D; flex-wrap: wrap;">
                             <span style="font-weight: 800; font-size: 0.8rem; color: #92400E;"><i class="fa-solid fa-link"></i> تظهر عند الخطأ في:</span>
@@ -1815,8 +1923,8 @@ function renderBlocksHtmlForData(slide, blockOrder) {
         } else if (blockType === 'description') {
             html += `
                 <div class="desc-block">
-                    <h3 class="desc-ar-text">${slide.description_ar || ''}</h3>
-                    <p class="desc-en-text">${slide.description_en || ''}</p>
+                    <div class="desc-ar-text">${slide.description_ar || ''}</div>
+                    <div class="desc-en-text">${slide.description_en || ''}</div>
                 </div>
             `;
         } else if (blockType === 'image_box' && slide.image) {
@@ -1851,7 +1959,7 @@ function renderBlocksHtmlForData(slide, blockOrder) {
                     </div>
 
                     <h2 class="discovery-main-title">🧭 ${slide.title_ar || 'اكتشف القاعدة بنفسك'}</h2>
-                    <p class="discovery-sub-desc">${slide.description_ar || 'انظر إلى المشهد أولاً، ثم حدد ما الذي تراه.'}</p>
+                    <div class="discovery-sub-desc">${slide.description_ar || 'انظر إلى المشهد أولاً، ثم حدد ما الذي تراه.'}</div>
 
                     <div class="discovery-scene-badge">${slide.scene_badge || 'المشهد 1 من 4'}</div>
 
@@ -1901,7 +2009,7 @@ function renderBlocksHtmlForData(slide, blockOrder) {
                     </div>
 
                     <h2 class="discovery-main-title">${slide.title_ar || 'الدرس الأول: المضارع البسيط في حالة الإثبات'}</h2>
-                    <p class="discovery-sub-desc">${slide.description_ar || ''}</p>
+                    <div class="discovery-sub-desc">${slide.description_ar || ''}</div>
 
                     ${slide.image ? `
                         <div class="mobile-image-frame" style="margin-bottom: 0.8rem;">
@@ -2150,11 +2258,11 @@ function renderDynamicBlockEditors() {
             fieldsHtml = `
                 <div class="form-group">
                     <label>الشرح النصي الرئيسي (بالعربية)</label>
-                    <textarea id="formDescriptionAr" rows="2" placeholder="نستخدم المضارع البسيط لنتحدث عن عادة تتكرر..."></textarea>
+                    ${richTextEditorHtml('formDescriptionAr', 'اكتب الشرح الموجه للطلاب هنا...', 'rtl')}
                 </div>
                 <div class="form-group">
                     <label>الشرح باللغة الإنجليزية (English Subtitle)</label>
-                    <textarea id="formDescriptionEn" rows="2" class="en-font" placeholder="We use the present simple to talk about..."></textarea>
+                    ${richTextEditorHtml('formDescriptionEn', 'Add your english explanation subtitle here...', 'ltr')}
                 </div>
             `;
         } else if (blockType === 'rule_box') {
@@ -2463,6 +2571,7 @@ function renderDynamicBlockEditors() {
 
     // Restore typed text back into newly created DOM inputs
     restoreCurrentFormState();
+    initRichTextEditors(container);
 }
 
 // Open Edit Slide Modal Dialog
@@ -2591,8 +2700,8 @@ function renderBlocksHtmlForModalPreview(slide, blockOrder) {
             html += `
                 <div class="preview-block-item" data-block-id="description">
                     <div class="desc-block">
-                        <h3 class="desc-ar-text" data-field-target="formDescriptionAr" style="cursor:pointer;">${slide.description_ar || ''}</h3>
-                        <p class="desc-en-text" data-field-target="formDescriptionEn" style="cursor:pointer;">${slide.description_en || ''}</p>
+                        <div class="desc-ar-text" data-field-target="formDescriptionAr" style="cursor:pointer;">${slide.description_ar || ''}</div>
+                        <div class="desc-en-text" data-field-target="formDescriptionEn" style="cursor:pointer;">${slide.description_en || ''}</div>
                     </div>
                 </div>
             `;
@@ -2634,7 +2743,7 @@ function renderBlocksHtmlForModalPreview(slide, blockOrder) {
                             <button class="btn-discovery-options-header" type="button">خيارات الشرح ➔</button>
                         </div>
                         <h2 class="discovery-main-title">🧭 ${slide.title_ar || 'اكتشف القاعدة بنفسك'}</h2>
-                        <p class="discovery-sub-desc">${slide.description_ar || 'انظر إلى المشهد أولاً، ثم حدد ما الذي تراه.'}</p>
+                        <div class="discovery-sub-desc">${slide.description_ar || 'انظر إلى المشهد أولاً، ثم حدد ما الذي تراه.'}</div>
                         <div class="discovery-scene-badge">${slide.scene_badge || 'المشهد 1 من 5'}</div>
                         ${slide.image ? `
                             <div class="mobile-image-frame" style="margin-bottom: 0.8rem;">
@@ -2665,7 +2774,7 @@ function renderBlocksHtmlForModalPreview(slide, blockOrder) {
                         </div>
 
                         <h2 class="discovery-main-title" data-field-target="formTitleAr" style="cursor:pointer;">${slide.title_ar || 'الدرس الأول: المضارع البسيط في حالة الإثبات'}</h2>
-                        <p class="discovery-sub-desc" data-field-target="formDescriptionAr" style="cursor:pointer;">${slide.description_ar || ''}</p>
+                        <div class="discovery-sub-desc" data-field-target="formDescriptionAr" style="cursor:pointer;">${slide.description_ar || ''}</div>
 
                         ${slide.image ? `
                             <div class="mobile-image-frame" data-field-target="formImageSelect" style="margin-bottom: 0.8rem; cursor:pointer;">
@@ -2770,7 +2879,9 @@ function updateLivePreview() {
 
         targetEl.addEventListener('click', (e) => {
             if (targetInput) {
-                targetInput.focus();
+                const richEditor = document.querySelector(`[data-rich-editor="${targetInputId}"]`);
+                if (richEditor) richEditor.focus();
+                else targetInput.focus();
                 if (formGroup) {
                     formGroup.classList.add('field-hover-highlight');
                     setTimeout(() => formGroup.classList.remove('field-hover-highlight'), 2500);
@@ -3658,7 +3769,7 @@ async function loadAndRenderCustomTemplates() {
                         </div>
                         <div class="picker-phone-frame" style="padding: 1rem; text-align: center; background: #FFF; border-radius: 14px; margin: 0.8rem 0; border: 1px dashed #FBBF24;">
                             <div style="font-weight: 800; color: #78350F; font-size: 0.95rem;">${tpl.data.title_ar || tpl.name}</div>
-                            <div style="font-size: 0.82rem; color: #92400E; margin-top: 0.3rem;">${tpl.data.description_ar || 'مكونات مخصصة جاهزة للإدراج مباشرة'}</div>
+                            <div style="font-size: 0.82rem; color: #92400E; margin-top: 0.3rem;">${stripHtml(tpl.data.description_ar || 'مكونات مخصصة جاهزة للإدراج مباشرة')}</div>
                         </div>
                         <button type="button" class="btn-select-custom-slide-tpl" style="width: 100%; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #FFF; border: none; padding: 0.7rem; border-radius: 12px; font-weight: 800; cursor: pointer; font-family: inherit;">
                             <i class="fa-solid fa-plus-circle"></i> استخدام هذا القالب المخصص

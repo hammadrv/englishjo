@@ -929,6 +929,7 @@ body.light-theme {
     min-height: 0;
     height: auto;
     max-height: 100%;
+    zoom: 0.75;
     box-sizing: border-box;
     padding-left: 0.35rem;
     padding-bottom: 0.8rem;
@@ -989,6 +990,7 @@ body.light-theme {
 
 @media (max-width: 992px) {
     #exerciseEditModal .edit-modal-split-container { height: 96vh; max-height: 96vh; padding: 0.8rem; }
+    #exerciseEditModal .modal-form-col { zoom: 1; }
     #exerciseEditModal .modal-header { align-items: flex-start; }
     #exerciseEditModal .modal-title-group h3 { font-size: 1rem; }
     #exerciseEditModal .modal-preview-col { min-height: 300px; margin-top: 0.8rem; }

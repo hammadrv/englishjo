@@ -5,6 +5,7 @@ SERVER="${ENGLISHJO_SERVER:-root@37.27.98.74}"
 APP_DIR="${ENGLISHJO_SERVER_DIR:-/var/www/present_simple_app}"
 SERVICE="${ENGLISHJO_SERVICE:-present_simple.service}"
 BRANCH="${ENGLISHJO_BRANCH:-main}"
+HEALTH_URL="${ENGLISHJO_HEALTH_URL:-https://eng.englishjo.com/}"
 MESSAGE="${1:-Update EnglishJo}"
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -44,7 +45,8 @@ find '$APP_DIR' \
 '$APP_DIR/venv/bin/pip' install -r '$APP_DIR/requirements.txt'
 systemctl restart '$SERVICE'
 systemctl is-active --quiet '$SERVICE'
+curl -fsS 'http://127.0.0.1:5050/' >/dev/null
 "
 
-curl -fsS "http://37.27.98.74:5050/" >/dev/null
+curl -fsSL "$HEALTH_URL" >/dev/null
 echo "Deployed to $SERVER:$APP_DIR and restarted $SERVICE."

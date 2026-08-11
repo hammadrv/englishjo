@@ -14,6 +14,12 @@ let currentActiveTheme = 'coral';
 let activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
 let hiddenBlocksMap = {};
 let insertTargetIndex = null;
+const richTextStateKeys = {
+    formDescriptionAr: 'description_ar',
+    formDescriptionEn: 'description_en',
+    formExampleEn: 'example_en',
+    formExampleAr: 'example_ar'
+};
 
 function stripHtml(html) {
     const div = document.createElement('div');
@@ -85,7 +91,8 @@ function initRichTextEditors(scope = document) {
             if (!target) return;
             target.value = normalizeRichTextHtml(editor.innerHTML);
             editor.innerHTML = target.value;
-            currentFormDataStore[editor.dataset.richEditor === 'formDescriptionAr' ? 'description_ar' : 'description_en'] = target.value;
+            const stateKey = richTextStateKeys[editor.dataset.richEditor];
+            if (stateKey) currentFormDataStore[stateKey] = target.value;
             updateLivePreview();
         };
 
@@ -2285,11 +2292,11 @@ function renderDynamicBlockEditors() {
                 <div class="form-row">
                     <div class="form-group">
                         <label>الجملة بالإنجليزية</label>
-                        <input type="text" id="formExampleEn" class="en-font" placeholder="I go to school every day.">
+                        ${richTextEditorHtml('formExampleEn', 'She plays tennis every afternoon.', 'ltr')}
                     </div>
                     <div class="form-group">
                         <label>الترجمة بالعربية</label>
-                        <input type="text" id="formExampleAr" placeholder="أنا أذهب إلى المدرسة كل يوم.">
+                        ${richTextEditorHtml('formExampleAr', 'هي تلعب التنس كل يوم بعد الظهر.', 'rtl')}
                     </div>
                 </div>
             `;
@@ -3911,7 +3918,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 title_ar: getVal('formTitleAr') || (currentSlide ? currentSlide.title_ar : 'قالب شرح مخصص'),
                 title_en: getVal('formTitleEn') || (currentSlide ? currentSlide.title_en : ''),
                 description_ar: getVal('formDescriptionAr') || (currentSlide ? currentSlide.description_ar : ''),
-                description_en: currentSlide ? currentSlide.description_en : '',
+                description_en: getVal('formDescriptionEn') || (currentSlide ? currentSlide.description_en : ''),
                 rule_title: getVal('formRuleTitle') || (currentSlide ? currentSlide.rule_title : ''),
                 rule_desc: getVal('formRuleDesc') || (currentSlide ? currentSlide.rule_desc : ''),
                 example_en: getVal('formExampleEn') || (currentSlide ? currentSlide.example_en : ''),

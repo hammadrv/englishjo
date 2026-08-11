@@ -342,6 +342,25 @@ body.light-theme {
 .label-peach { color: var(--peach-text); }
 .example-en { font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 900; color: #9A3412; direction: ltr; margin-bottom: 0.2rem; }
 .example-ar { font-size: 1rem; font-weight: 700; color: var(--peach-text); }
+.example-en ul,
+.example-en ol,
+.example-ar ul,
+.example-ar ol {
+    margin: 0.35rem 1.2rem;
+    padding: 0;
+    text-align: inherit;
+}
+.example-en li,
+.example-ar li {
+    margin: 0.15rem 0;
+}
+.example-en mark,
+.example-ar mark {
+    background: #FED7AA;
+    color: inherit;
+    padding: 0.05rem 0.2rem;
+    border-radius: 6px;
+}
 
 .mobile-bottom-nav { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.2rem; background: #FFFFFF; border-top: 1px solid var(--border-color); }
 .btn-next { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--coral-primary); color: #FFFFFF; padding: 0.75rem 2rem; border-radius: 50px; border: none; font-family: inherit; font-size: 1.1rem; font-weight: 800; cursor: pointer; box-shadow: var(--shadow-coral); }
@@ -1281,6 +1300,10 @@ body.light-theme {
     font-weight: 700;
     line-height: 1.55;
     outline: none;
+}
+.form-row .mini-rich-surface {
+    min-height: 76px;
+    max-height: 140px;
 }
 .mini-rich-surface.ltr {
     direction: ltr;

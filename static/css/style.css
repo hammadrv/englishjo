@@ -928,11 +928,17 @@ body.light-theme {
 #exerciseEditModal .modal-form-col {
     min-height: 0;
     height: auto;
+    max-height: 100%;
     box-sizing: border-box;
     padding-left: 0.35rem;
     padding-bottom: 0.8rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     scroll-padding-bottom: 4rem;
+}
+#exerciseEditModal {
+    overflow: hidden !important;
 }
 #exerciseEditModal .slide-edit-form {
     gap: 0.65rem;
@@ -1616,6 +1622,10 @@ body.light-theme {
 html, body {
     width: 100%;
     overflow-x: hidden;
+}
+
+body.exercise-modal-open {
+    overflow: hidden;
 }
 
 @media (max-width: 1200px) {

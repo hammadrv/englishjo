@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (addBlockMenuModal) addBlockMenuModal.classList.add('hidden');
             if (slideEditModal) slideEditModal.classList.add('hidden');
             if (addSlideTemplateModal) addSlideTemplateModal.classList.add('hidden');
-            if (exerciseEditModal) exerciseEditModal.classList.add('hidden');
+            setExerciseEditModalOpen(false);
         }
     });
 
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close Live Exercise Modal
     if (closeExerciseModalBtn) {
         closeExerciseModalBtn.addEventListener('click', () => {
-            if (exerciseEditModal) exerciseEditModal.classList.add('hidden');
+            setExerciseEditModalOpen(false);
         });
     }
 
@@ -924,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const lessonId = parseInt(expandedCard.dataset.lessonId);
                         renderAccordionLessonContent(expandedCard, lessonId);
                     }
-                    if (exerciseEditModal) exerciseEditModal.classList.add('hidden');
+                    setExerciseEditModalOpen(false);
                     showToast('🎉 تم حفظ التمرين الموديولي والترتيب بنجاح!');
                 }
             } catch (err) {
@@ -3440,6 +3440,12 @@ function switchExModalPreviewStage(stageNum) {
 }
 
 // Open Live Exercise Editor Modal with Visual Block Builder
+function setExerciseEditModalOpen(isOpen) {
+    const modal = document.getElementById('exerciseEditModal');
+    if (modal) modal.classList.toggle('hidden', !isOpen);
+    document.body.classList.toggle('exercise-modal-open', isOpen);
+}
+
 function openExerciseEditModal() {
     if (!currentExercise && currentLesson) currentExercise = currentLesson.exercise;
     if (!currentExercise) return;
@@ -3468,8 +3474,7 @@ function openExerciseEditModal() {
     renderExDynamicBlocks();
     updateExerciseLivePreview();
 
-    const exerciseEditModal = document.getElementById('exerciseEditModal');
-    if (exerciseEditModal) exerciseEditModal.classList.remove('hidden');
+    setExerciseEditModalOpen(true);
 }
 
 // Apply Theme Palette for Exercise Preview

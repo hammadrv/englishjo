@@ -1056,8 +1056,9 @@ function renderAccordionLessonContent(card, lessonId) {
                     const res = await fetch(`/api/slides/${slide.id}`, { method: 'DELETE' });
                     const data = await res.json();
                     if (data.success) {
-                        lesson.slides = data.slides;
-                        slides = lesson.slides;
+                        curriculumData = data.curriculum;
+                        if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
+                        if (currentLesson && currentUnit) currentLesson = currentUnit.lessons.find(l => l.id === lessonId) || currentUnit.lessons[0];
                         renderAccordionLessonContent(card, lessonId);
                         showToast('تم حذف الشريحة بنجاح');
                     }

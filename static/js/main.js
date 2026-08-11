@@ -679,6 +679,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     curriculumData = data.curriculum;
                     if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
                     renderUnitLessonsList();
+                    // Re-rendering the lesson list resets the default tab to Explanation.
+                    // Return to the exercise tab because the action started there.
+                    const lessonCard = [...document.querySelectorAll('.lesson-manager-card')]
+                        .find(card => Number(card.dataset.lessonId) === Number(lessonId));
+                    lessonCard?.querySelector('.studio-tab-btn[data-tab-target="prac"]')?.click();
                     if (templateType === 'text_quiz_5' && currentUnit) {
                         currentLesson = currentUnit.lessons.find(lesson => lesson.id === lessonId) || currentLesson;
                         currentExercise = currentLesson?.exercises?.find(exercise => exercise.id === data.new_exercise_id) || currentLesson?.exercise;

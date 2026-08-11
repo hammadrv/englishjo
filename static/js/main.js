@@ -3,6 +3,7 @@ let curriculumData = null;
 let currentUnit = null;
 let currentLesson = null;
 let slides = [];
+let currentSlide = null;
 let currentExercise = null;
 
 let currentIndex = 0;
@@ -13,6 +14,41 @@ let currentActiveTheme = 'coral';
 let activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
 let hiddenBlocksMap = {};
 let insertTargetIndex = null;
+
+function syncCurriculumState(nextCurriculum, preferredLessonId = null, options = {}) {
+    if (!nextCurriculum || !Array.isArray(nextCurriculum.units)) return null;
+
+    const previousUnitId = currentUnit ? currentUnit.id : null;
+    const targetLessonId = preferredLessonId || (currentLesson ? currentLesson.id : null);
+    curriculumData = nextCurriculum;
+
+    currentUnit = curriculumData.units.find(u => u.id === previousUnitId)
+        || curriculumData.units.find(u => targetLessonId && (u.lessons || []).some(l => l.id === targetLessonId))
+        || curriculumData.units[0]
+        || null;
+
+    if (!currentUnit) {
+        currentLesson = null;
+        slides = [];
+        currentExercise = null;
+        return null;
+    }
+
+    currentLesson = (currentUnit.lessons || []).find(l => l.id === targetLessonId)
+        || (currentUnit.lessons || [])[0]
+        || null;
+
+    if (!currentLesson) {
+        slides = [];
+        currentExercise = null;
+        return null;
+    }
+
+    const preferReinforcement = options.preferReinforcement || (currentSlide && currentSlide.is_reinforcement);
+    slides = preferReinforcement ? (currentLesson.reinforcement_slides || []) : (currentLesson.slides || []);
+    currentExercise = currentLesson.exercise || ((currentLesson.exercises || [])[0]) || null;
+    return currentLesson;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // Stage Screens
@@ -596,12 +632,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    slides = data.slides;
-                    if (currentLesson) currentLesson.slides = slides;
-                    
                     const expandedCard = document.querySelector('.lesson-manager-card.expanded');
+                    const lessonId = expandedCard ? parseInt(expandedCard.dataset.lessonId) : (currentLesson ? currentLesson.id : null);
+                    syncCurriculumState(data.curriculum, lessonId, { preferReinforcement: currentSlide && currentSlide.is_reinforcement });
+
                     if (expandedCard) {
-                        const lessonId = parseInt(expandedCard.dataset.lessonId);
                         renderAccordionLessonContent(expandedCard, lessonId);
                     }
                     if (slideEditModal) slideEditModal.classList.add('hidden');
@@ -1683,13 +1718,11 @@ async function createNewSlideWithTemplate(templateType) {
         });
         const data = await res.json();
         if (data.success) {
-            if (data.curriculum) curriculumData = data.curriculum;
-            slides = data.slides;
-            if (currentLesson) currentLesson.slides = slides;
-            
             const expandedCard = document.querySelector('.lesson-manager-card.expanded');
+            const lessonId = expandedCard ? parseInt(expandedCard.dataset.lessonId) : (currentLesson ? currentLesson.id : null);
+            syncCurriculumState(data.curriculum, lessonId);
+
             if (expandedCard) {
-                const lessonId = parseInt(expandedCard.dataset.lessonId);
                 renderAccordionLessonContent(expandedCard, lessonId);
             }
             showToast('✨ تم إضافة الشريحة للدرس بنجاح ويتم عرض جميع الشرائح الآن!');
@@ -2177,7 +2210,7 @@ function renderDynamicBlockEditors() {
                     <span id="slideUploadStatusText" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-top: 0.3rem; display: block;">صيغ مدعومة: JPG, PNG, WEBP, GIF</span>
                 </div>
                 <div id="customUrlContainer" class="form-group hidden">
-                    <input type="url" id="formCustomImageUrl" placeholder="https://example.com/image.jpg">
+                    <input type="text" id="formCustomImageUrl" placeholder="https://example.com/image.jpg">
                 </div>
             `;
         } else if (blockType === 'discovery_block') {

@@ -933,10 +933,25 @@ body.light-theme {
     box-sizing: border-box;
     padding-left: 0.35rem;
     padding-bottom: 0.8rem;
-    overflow-y: auto;
+    overflow-y: scroll;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
     scroll-padding-bottom: 4rem;
+}
+#exerciseEditModal .modal-form-col::-webkit-scrollbar {
+    width: 12px;
+}
+#exerciseEditModal .modal-form-col::-webkit-scrollbar-track {
+    background: #E2E8F0;
+    border-radius: 10px;
+}
+#exerciseEditModal .modal-form-col::-webkit-scrollbar-thumb {
+    background: #94A3B8;
+    border: 3px solid #E2E8F0;
+    border-radius: 10px;
+}
+#exerciseEditModal .modal-form-col {
+    scrollbar-color: #94A3B8 #E2E8F0;
 }
 #exerciseEditModal {
     overflow: hidden !important;
@@ -983,9 +998,14 @@ body.light-theme {
 #exerciseEditModal .text-quiz-correct-label { margin-top: 0.4rem; margin-bottom: 0.2rem; font-size: 0.72rem; }
 #exerciseEditModal .text-quiz-correct-select { padding: 0.42rem 0.6rem; font-size: 0.78rem; }
 #exerciseEditModal .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
     margin-top: 0.45rem;
     padding-top: 0.55rem;
-    padding-bottom: 1rem;
+    padding-bottom: 0.85rem;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
 }
 
 @media (max-width: 992px) {

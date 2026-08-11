@@ -175,7 +175,9 @@ function textQuizQuestionToEditorHtml(question) {
 function collectTextQuizQuestionsFromEditor() {
     return Array.from({ length: 5 }, (_, index) => {
         const editor = document.getElementById(`formTextQuizQ${index}`);
-        const lines = richTextPlainLines(editor ? editor.value : '');
+        const editorSurface = document.querySelector(`[data-rich-editor="formTextQuizQ${index}"]`);
+        const editorHtml = editorSurface ? editorSurface.innerHTML : (editor ? editor.value : '');
+        const lines = richTextPlainLines(editorHtml);
         const options = lines.slice(1, 4);
         while (options.length < 3) options.push('');
         return {
@@ -913,6 +915,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     curriculumData = data.curriculum;
                     if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
+                    if (currentUnit && currentLesson) {
+                        currentLesson = currentUnit.lessons.find(lesson => lesson.id === currentLesson.id) || currentLesson;
+                        currentExercise = currentLesson.exercises?.find(exercise => exercise.id === exId) || currentLesson.exercise || currentExercise;
+                    }
                     const expandedCard = document.querySelector('.lesson-manager-card.expanded');
                     if (expandedCard) {
                         const lessonId = parseInt(expandedCard.dataset.lessonId);

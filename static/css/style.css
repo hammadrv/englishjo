@@ -908,6 +908,63 @@ body.light-theme {
 .modal-preview-col { display: flex; justify-content: center; align-items: center; height: 100%; background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 24px; padding: 1.5rem; }
 .live-preview-sticky { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
+/* Keep the exercise builder dense enough to scan the full question list on laptop screens. */
+#exerciseEditModal .edit-modal-split-container {
+    max-width: 1500px;
+    height: 96vh;
+    max-height: 96vh;
+    padding: 1rem 1.3rem;
+}
+#exerciseEditModal .modal-header {
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+#exerciseEditModal .modal-title-group h3 { font-size: 1.2rem; }
+#exerciseEditModal .modal-title-group { gap: 0.7rem; }
+#exerciseEditModal .modal-split-body { gap: 1rem; }
+#exerciseEditModal .modal-form-col { padding-left: 0.35rem; }
+#exerciseEditModal .slide-edit-form { gap: 0.65rem; }
+#exerciseEditModal .top-form-actions-bar { padding: 0.5rem 0.75rem !important; margin-bottom: 0.65rem !important; }
+#exerciseEditModal .top-form-actions-bar span,
+#exerciseEditModal .top-form-actions-bar button { font-size: 0.82rem !important; }
+#exerciseEditModal .form-section-card { padding: 0.65rem 0.8rem; }
+#exerciseEditModal .section-title { margin-bottom: 0.45rem; font-size: 0.82rem; }
+#exerciseEditModal .block-builder-toolbar { padding: 0.35rem 0.6rem; }
+#exerciseEditModal .block-editor-card { padding: 0.65rem; border-radius: 14px; }
+#exerciseEditModal .block-header-bar { padding-bottom: 0.45rem; margin-bottom: 0.55rem; }
+#exerciseEditModal .block-title-tag { font-size: 0.82rem; }
+#exerciseEditModal .block-card-body { gap: 0.55rem; }
+#exerciseEditModal .form-group { gap: 0.25rem; }
+#exerciseEditModal .form-group label { font-size: 0.75rem; }
+#exerciseEditModal .form-group input,
+#exerciseEditModal .form-group select,
+#exerciseEditModal .form-group textarea { padding: 0.48rem 0.7rem; font-size: 0.84rem; }
+#exerciseEditModal .text-quiz-editor-intro { margin-bottom: 0.55rem; padding: 0.55rem 0.65rem; font-size: 0.72rem; }
+#exerciseEditModal .text-quiz-editor-intro strong { font-size: 0.78rem; }
+#exerciseEditModal .text-quiz-editor-list { gap: 0.45rem; }
+#exerciseEditModal .text-quiz-editor-item { padding: 0.55rem; border-radius: 10px; }
+#exerciseEditModal .text-quiz-editor-item-head { margin-bottom: 0.35rem; font-size: 0.78rem; }
+#exerciseEditModal .text-quiz-editor-item-head span:last-child { font-size: 0.65rem; }
+#exerciseEditModal .text-quiz-editor-item .mini-rich-toolbar { gap: 0.2rem; padding: 0.25rem; }
+#exerciseEditModal .text-quiz-editor-item .mini-rich-btn { width: 27px; height: 27px; font-size: 0.7rem; }
+#exerciseEditModal .text-quiz-editor-item .mini-rich-surface {
+    min-height: 66px;
+    max-height: 100px;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+#exerciseEditModal .text-quiz-correct-label { margin-top: 0.4rem; margin-bottom: 0.2rem; font-size: 0.72rem; }
+#exerciseEditModal .text-quiz-correct-select { padding: 0.42rem 0.6rem; font-size: 0.78rem; }
+#exerciseEditModal .form-actions { margin-top: 0.45rem; padding-top: 0.55rem; }
+
+@media (max-width: 992px) {
+    #exerciseEditModal .edit-modal-split-container { height: 96vh; max-height: 96vh; padding: 0.8rem; }
+    #exerciseEditModal .modal-header { align-items: flex-start; }
+    #exerciseEditModal .modal-title-group h3 { font-size: 1rem; }
+    #exerciseEditModal .modal-preview-col { min-height: 300px; margin-top: 0.8rem; }
+}
+
 .full-mini-phone-frame { width: 410px; max-width: 100%; background: #FFFFFF; border: 10px solid #0F172A; border-radius: 44px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18); overflow: hidden; display: flex; flex-direction: column; }
 .full-mini-phone-frame .mini-status-bar { height: 36px; background: #FFFFFF; display: flex; justify-content: space-between; align-items: center; padding: 0 1.2rem; font-size: 0.75rem; font-weight: 800; color: #0F172A; border-bottom: 1px solid #F1F5F9; }
 .full-mini-phone-frame .mini-island { width: 82px; height: 16px; background: #0F172A; border-radius: 50px; }

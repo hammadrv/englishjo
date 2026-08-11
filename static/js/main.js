@@ -62,7 +62,8 @@ function normalizeRichTextHtml(html) {
     return cleaned.replace(/(<br>\s*){3,}/gi, '<br><br>').trim();
 }
 
-function richTextEditorHtml(targetId, placeholder, direction = 'rtl') {
+function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtml = '') {
+    const safeInitialHtml = normalizeRichTextHtml(initialHtml);
     return `
         <div class="mini-rich-editor" data-rich-wrapper="${targetId}">
             <div class="mini-rich-toolbar" role="toolbar" aria-label="أدوات تنسيق الشرح">
@@ -74,8 +75,8 @@ function richTextEditorHtml(targetId, placeholder, direction = 'rtl') {
                 <button type="button" class="mini-rich-btn" data-rich-command="insertOrderedList" title="ترقيم"><i class="fa-solid fa-list-ol"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-action="clear" title="إزالة التنسيق"><i class="fa-solid fa-eraser"></i></button>
             </div>
-            <div class="mini-rich-surface ${direction === 'ltr' ? 'ltr' : ''}" contenteditable="true" data-rich-editor="${targetId}" data-placeholder="${placeholder}"></div>
-            <textarea id="${targetId}" class="rich-hidden-field" tabindex="-1"></textarea>
+            <div class="mini-rich-surface ${direction === 'ltr' ? 'ltr' : ''}" contenteditable="true" data-rich-editor="${targetId}" data-placeholder="${placeholder}">${safeInitialHtml}</div>
+            <textarea id="${targetId}" class="rich-hidden-field" tabindex="-1">${escapeHtml(safeInitialHtml)}</textarea>
         </div>
     `;
 }
@@ -127,6 +128,61 @@ function initRichTextEditors(scope = document) {
         });
 
         editor.dataset.richReady = 'true';
+    });
+}
+
+function defaultTextQuizQuestions() {
+    return Array.from({ length: 5 }, (_, index) => ({
+        prompt: `اكتب السؤال ${index + 1} هنا`,
+        options: ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'],
+        correct_index: 0
+    }));
+}
+
+function normalizeTextQuizQuestions(questions) {
+    const source = Array.isArray(questions) ? questions : [];
+    return Array.from({ length: 5 }, (_, index) => {
+        const item = source[index] || {};
+        const options = Array.isArray(item.options) ? item.options.slice(0, 3) : [];
+        while (options.length < 3) options.push(`الخيار ${options.length + 1}`);
+        return {
+            prompt: String(item.prompt || item.question || `اكتب السؤال ${index + 1} هنا`),
+            options,
+            correct_index: Math.max(0, Math.min(2, Number(item.correct_index) || 0))
+        };
+    });
+}
+
+function richTextPlainLines(html) {
+    const withLineBreaks = String(html || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|li|h[1-6])>/gi, '\n');
+    const holder = document.createElement('div');
+    holder.innerHTML = withLineBreaks;
+    return (holder.textContent || '')
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+}
+
+function textQuizQuestionToEditorHtml(question) {
+    const normalized = normalizeTextQuizQuestions([question])[0];
+    return [normalized.prompt, ...normalized.options]
+        .map(line => `<div>${escapeHtml(line)}</div>`)
+        .join('');
+}
+
+function collectTextQuizQuestionsFromEditor() {
+    return Array.from({ length: 5 }, (_, index) => {
+        const editor = document.getElementById(`formTextQuizQ${index}`);
+        const lines = richTextPlainLines(editor ? editor.value : '');
+        const options = lines.slice(1, 4);
+        while (options.length < 3) options.push('');
+        return {
+            prompt: lines[0] || '',
+            options,
+            correct_index: Math.max(0, Math.min(2, Number(document.getElementById(`formTextQuizCorrect${index}`)?.value) || 0))
+        };
     });
 }
 
@@ -469,6 +525,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const textQuiz5BackBtn = document.getElementById('textQuiz5BackBtn');
+    if (textQuiz5BackBtn) {
+        textQuiz5BackBtn.addEventListener('click', () => {
+            showStudentDashboard();
+            showToast('🏠 العودة لقائمة دروس المنهاج');
+        });
+    }
+
     // Close Live Exercise Modal
     if (closeExerciseModalBtn) {
         closeExerciseModalBtn.addEventListener('click', () => {
@@ -615,7 +679,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     curriculumData = data.curriculum;
                     if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
                     renderUnitLessonsList();
-                    showToast('🎉 تم إضافة سؤال التمرين الجديد بنجاح!');
+                    if (templateType === 'text_quiz_5' && currentUnit) {
+                        currentLesson = currentUnit.lessons.find(lesson => lesson.id === lessonId) || currentLesson;
+                        currentExercise = currentLesson?.exercises?.find(exercise => exercise.id === data.new_exercise_id) || currentLesson?.exercise;
+                        openExerciseEditModal();
+                        showToast('🎉 تم إنشاء قالب 5 أسئلة. ألصق الأسئلة الآن وحدد الإجابات الصحيحة.');
+                    } else {
+                        showToast('🎉 تم إضافة سؤال التمرين الجديد بنجاح!');
+                    }
                 }
             } catch (err) {
                 showToast('تعذر إضافة سؤال التمرين');
@@ -791,7 +862,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 exImageVal = getVal('formExCustomImageUrl');
             }
 
-            const updatedData = {
+            const isTextQuiz5 = currentExercise && currentExercise.question_type === 'text_quiz_5';
+            const updatedData = isTextQuiz5 ? {
+                question_type: 'text_quiz_5',
+                instruction_badge: getVal('formExBadge') || 'اختبار نصي: اختر الإجابة الصحيحة لكل سؤال',
+                sentence_ar: '',
+                question_en: '',
+                quiz_questions: collectTextQuizQuestionsFromEditor(),
+                options: [],
+                correct_index: 0,
+                explanation: '',
+                image: '',
+                theme: activeExTheme,
+                blocks_order: ['ex_quiz5_questions'],
+                hidden_blocks: []
+            } : {
                 instruction_badge: getVal('formExBadge'),
                 sentence_ar: getVal('formExSentenceAr'),
                 question_en: getVal('formExQuestionEn'),
@@ -807,6 +892,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 blocks_order: activeExBlocksOrder,
                 hidden_blocks: activeExHiddenBlocks
             };
+
+            if (isTextQuiz5 && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option))) {
+                showToast('أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
+                return;
+            }
 
             try {
                 const res = await fetch(`/api/exercises/${exId}`, {
@@ -1275,6 +1365,14 @@ function renderAccordionLessonContent(card, lessonId) {
                 exCard.style.cursor = 'pointer';
                 
                 const numStr = String(eIdx + 1).padStart(2, '0');
+                const isTextQuiz5 = exItem.question_type === 'text_quiz_5';
+                const textQuizSummary = isTextQuiz5
+                    ? `<span style="background: #ECFDF5; border: 1px solid #99F6E4; color: #0F766E; padding: 0.25rem 0.65rem; border-radius: 8px; font-weight: 800; font-size: 0.8rem;">📝 5 أسئلة نصية بدون صور</span>`
+                    : (exItem.options || []).map((opt, i) => `
+                        <span style="background: ${i === exItem.correct_index ? '#D1FAE5' : '#F8FAFC'}; border: 1px solid ${i === exItem.correct_index ? '#10B981' : '#CBD5E1'}; color: ${i === exItem.correct_index ? '#065F46' : 'var(--text-navy)'}; padding: 0.2rem 0.6rem; border-radius: 8px; font-weight: 800; font-size: 0.8rem; font-family: 'Outfit', sans-serif;">
+                            ${opt} ${i === exItem.correct_index ? '✓' : ''}
+                        </span>
+                    `).join('');
 
                 exCard.innerHTML = `
                     <div class="seq-right-section">
@@ -1282,18 +1380,14 @@ function renderAccordionLessonContent(card, lessonId) {
                             <span class="seq-num">${numStr}</span>
                             <span class="seq-drag-hint">تمرين تفاعلي ✏️</span>
                         </div>
-                        <img src="${exItem.image || '/static/images/girl_reading_library.jpg'}" alt="صورة التمرين" class="seq-thumb-img">
+                        ${isTextQuiz5 ? '<div class="seq-thumb-img text-quiz-summary-icon">📝</div>' : `<img src="${exItem.image || '/static/images/girl_reading_library.jpg'}" alt="صورة التمرين" class="seq-thumb-img">`}
                     </div>
 
                     <div class="seq-info-box">
-                        <div class="seq-category">${exItem.instruction_badge || 'تمرين تفاعلي'}</div>
-                        <h3 class="seq-title" style="direction: ltr; text-align: left; font-family: 'Outfit', sans-serif;">${exItem.question_en}</h3>
+                        <div class="seq-category">${exItem.instruction_badge || (isTextQuiz5 ? 'اختبار نصي من 5 أسئلة' : 'تمرين تفاعلي')}</div>
+                        <h3 class="seq-title" style="direction: ${isTextQuiz5 ? 'rtl' : 'ltr'}; text-align: ${isTextQuiz5 ? 'right' : 'left'}; font-family: 'Outfit', sans-serif;">${isTextQuiz5 ? 'اختبار نصي من 5 أسئلة' : exItem.question_en}</h3>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
-                            ${exItem.options.map((opt, i) => `
-                                <span style="background: ${i === exItem.correct_index ? '#D1FAE5' : '#F8FAFC'}; border: 1px solid ${i === exItem.correct_index ? '#10B981' : '#CBD5E1'}; color: ${i === exItem.correct_index ? '#065F46' : 'var(--text-navy)'}; padding: 0.2rem 0.6rem; border-radius: 8px; font-weight: 800; font-size: 0.8rem; font-family: 'Outfit', sans-serif;">
-                                    ${opt} ${i === exItem.correct_index ? '✓' : ''}
-                                </span>
-                            `).join('')}
+                            ${textQuizSummary}
                         </div>
                     </div>
 
@@ -1314,7 +1408,8 @@ function renderAccordionLessonContent(card, lessonId) {
 
                 exCard.querySelector('.btn-preview-ex-item').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    runExerciseSimulator(lesson, eIdx);
+                    // Preview exactly the exercise card that was selected, regardless of lesson ordering.
+                    runExerciseSimulator({ ...lesson, exercises: [exItem], exercise: exItem }, 0);
                 });
 
                 exCard.querySelector('.btn-edit-ex-item').addEventListener('click', (e) => {
@@ -1869,6 +1964,7 @@ function showStudentDashboard() {
     document.getElementById('studentDashboardScreen').classList.remove('hidden');
     document.getElementById('explanationStageContent').classList.add('hidden');
     document.getElementById('exerciseStageContent').classList.add('hidden');
+    document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
 }
 
 // Open Specific Lesson from Student Dashboard
@@ -1883,6 +1979,7 @@ function openLesson(lessonId) {
 
         document.getElementById('studentDashboardScreen').classList.add('hidden');
         document.getElementById('exerciseStageContent').classList.add('hidden');
+        document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
         document.getElementById('explanationStageContent').classList.remove('hidden');
         renderCurrentSlide();
     }
@@ -2966,6 +3063,7 @@ async function uploadSlideImageFromPC(inputEl) {
 
 // Exercise Simulator Global State
 let currentExerciseIndex = 0;
+let textQuizAnswers = {};
 
 // Run Exercise Simulator (Test as Student)
 function runExerciseSimulator(lessonObj, startIdx = 0) {
@@ -2976,6 +3074,8 @@ function runExerciseSimulator(lessonObj, startIdx = 0) {
     const exercisesList = (lessonObj.exercises && lessonObj.exercises.length > 0) 
         ? lessonObj.exercises 
         : (lessonObj.exercise ? [lessonObj.exercise] : []);
+    const selectedExercise = exercisesList[currentExerciseIndex] || exercisesList[0];
+    const isTextQuiz5 = selectedExercise?.question_type === 'text_quiz_5';
 
     if (exercisesList.length === 0) {
         showToast('لا توجد تمارين مضافة في هذا الدرس بعد!');
@@ -2998,14 +3098,104 @@ function runExerciseSimulator(lessonObj, startIdx = 0) {
     const studentDash = document.getElementById('studentDashboardScreen');
     const explanationStage = document.getElementById('explanationStageContent');
     const exerciseStage = document.getElementById('exerciseStageContent');
+    const textQuizStage = document.getElementById('textQuiz5StageContent');
 
     if (studentDash) studentDash.classList.add('hidden');
     if (explanationStage) explanationStage.classList.add('hidden');
-    if (exerciseStage) exerciseStage.classList.remove('hidden');
+    if (exerciseStage) exerciseStage.classList.toggle('hidden', isTextQuiz5);
+    if (textQuizStage) textQuizStage.classList.toggle('hidden', !isTextQuiz5);
 
     studentWrongExerciseIds = [];
-    renderCurrentExercise();
+    textQuizAnswers = {};
+    if (isTextQuiz5) renderTextQuiz5Stage();
+    else renderCurrentExercise();
     showToast(`🧪 بدء اختبار التمارين التفاعلية (سؤال ${currentExerciseIndex + 1} من ${exercisesList.length})`);
+}
+
+function renderTextQuiz5Stage() {
+    if (!currentLesson) return;
+    const exercisesList = (currentLesson.exercises && currentLesson.exercises.length > 0)
+        ? currentLesson.exercises
+        : (currentLesson.exercise ? [currentLesson.exercise] : []);
+    const quizExercise = exercisesList.find(exercise => exercise.question_type === 'text_quiz_5')
+        || exercisesList[currentExerciseIndex]
+        || exercisesList[0];
+    if (!quizExercise || quizExercise.question_type !== 'text_quiz_5') return;
+
+    currentExercise = quizExercise;
+    const questions = normalizeTextQuizQuestions(quizExercise.quiz_questions);
+    const title = document.getElementById('textQuiz5Title');
+    const heading = document.getElementById('textQuiz5Heading');
+    const instruction = document.getElementById('textQuiz5Instruction');
+    const list = document.getElementById('textQuiz5Questions');
+    const score = document.getElementById('textQuiz5Score');
+    const completion = document.getElementById('textQuiz5Completion');
+    if (!list) return;
+
+    if (title) title.textContent = currentLesson.title_ar || 'اختبار التمرين';
+    if (heading) heading.textContent = quizExercise.instruction_badge || 'اختبر فهمك';
+    if (instruction) instruction.textContent = 'اقرأ كل سؤال واختر إجابة واحدة. ستظهر النتيجة فورًا.';
+    if (score) score.textContent = `${Object.values(textQuizAnswers).filter(Boolean).length} / ${questions.length}`;
+    if (completion) completion.classList.toggle('hidden', Object.keys(textQuizAnswers).length < questions.length);
+    list.innerHTML = '';
+
+    questions.forEach((question, questionIndex) => {
+        const card = document.createElement('article');
+        card.className = 'text-quiz-question-card';
+        card.innerHTML = `
+            <div class="text-quiz-question-meta">
+                <span>السؤال ${questionIndex + 1}</span>
+                <span class="text-quiz-question-required">اختر إجابة واحدة <b>*</b></span>
+            </div>
+            <div class="text-quiz-question-prompt" dir="auto"></div>
+            <div class="text-quiz-options" role="radiogroup" aria-label="خيارات السؤال ${questionIndex + 1}"></div>
+            <div class="text-quiz-answer-feedback" aria-live="polite"></div>
+        `;
+
+        const promptEl = card.querySelector('.text-quiz-question-prompt');
+        promptEl.textContent = question.prompt;
+        const optionsEl = card.querySelector('.text-quiz-options');
+        const feedbackEl = card.querySelector('.text-quiz-answer-feedback');
+        const answered = Object.prototype.hasOwnProperty.call(textQuizAnswers, questionIndex);
+
+        question.options.forEach((option, optionIndex) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'text-quiz-option';
+            button.setAttribute('role', 'radio');
+            button.textContent = option;
+            if (answered) {
+                button.disabled = true;
+                if (optionIndex === question.correct_index) button.classList.add('correct');
+                if (textQuizAnswers[questionIndex] === false && optionIndex !== question.correct_index) button.classList.add('wrong');
+            }
+
+            button.addEventListener('click', () => {
+                if (Object.prototype.hasOwnProperty.call(textQuizAnswers, questionIndex)) return;
+                const isCorrect = optionIndex === question.correct_index;
+                textQuizAnswers[questionIndex] = isCorrect;
+                optionsEl.querySelectorAll('.text-quiz-option').forEach(optionButton => optionButton.disabled = true);
+                button.classList.add(isCorrect ? 'correct' : 'wrong');
+                if (!isCorrect) {
+                    const correctButton = optionsEl.querySelectorAll('.text-quiz-option')[question.correct_index];
+                    if (correctButton) correctButton.classList.add('correct');
+                    if (quizExercise.id && !studentWrongExerciseIds.includes(quizExercise.id)) studentWrongExerciseIds.push(quizExercise.id);
+                }
+                feedbackEl.textContent = isCorrect ? '✓ إجابة صحيحة' : `✕ إجابة خطأ. الإجابة الصحيحة: ${question.options[question.correct_index]}`;
+                feedbackEl.className = `text-quiz-answer-feedback ${isCorrect ? 'is-correct' : 'is-wrong'}`;
+                if (score) score.textContent = `${Object.values(textQuizAnswers).filter(Boolean).length} / ${questions.length}`;
+                if (completion && Object.keys(textQuizAnswers).length === questions.length) completion.classList.remove('hidden');
+            });
+            optionsEl.appendChild(button);
+        });
+
+        if (answered) {
+            const selectedCorrect = textQuizAnswers[questionIndex];
+            feedbackEl.textContent = selectedCorrect ? '✓ إجابة صحيحة' : `✕ إجابة خطأ. الإجابة الصحيحة: ${question.options[question.correct_index]}`;
+            feedbackEl.className = `text-quiz-answer-feedback ${selectedCorrect ? 'is-correct' : 'is-wrong'}`;
+        }
+        list.appendChild(card);
+    });
 }
 
 let studentWrongExerciseIds = [];
@@ -3040,6 +3230,7 @@ function triggerStudentReinforcementStage() {
         document.getElementById('studioView').classList.remove('active');
         document.getElementById('studentDashboardScreen').classList.add('hidden');
         document.getElementById('exerciseStageContent').classList.add('hidden');
+        document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
         document.getElementById('explanationStageContent').classList.remove('hidden');
         renderCurrentSlide();
         showToast('⚡ مرحلة التقوية: شرح تصحيح القاعدة النحوية أولاً 📚');
@@ -3054,8 +3245,17 @@ function triggerStudentReinforcementStage() {
 
 // Transition to Practice Exercise Stage
 function showExerciseStage() {
+    const exercisesList = (currentLesson && currentLesson.exercises && currentLesson.exercises.length > 0)
+        ? currentLesson.exercises
+        : (currentLesson && currentLesson.exercise ? [currentLesson.exercise] : []);
+    const textQuizIndex = exercisesList.findIndex(exercise => exercise.question_type === 'text_quiz_5');
+    if (textQuizIndex >= 0) {
+        runExerciseSimulator(currentLesson, textQuizIndex);
+        return;
+    }
     document.getElementById('explanationStageContent').classList.add('hidden');
     document.getElementById('exerciseStageContent').classList.remove('hidden');
+    document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
     currentExerciseIndex = 0;
     renderCurrentExercise();
 }
@@ -3234,7 +3434,9 @@ function openExerciseEditModal() {
     if (!currentExercise) return;
 
     activeExTheme = currentExercise.theme || 'coral';
-    activeExBlocksOrder = currentExercise.blocks_order || ['ex_badge', 'ex_sentence_ar', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation'];
+    activeExBlocksOrder = currentExercise.question_type === 'text_quiz_5'
+        ? ['ex_quiz5_questions']
+        : (currentExercise.blocks_order || ['ex_badge', 'ex_sentence_ar', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation']);
     activeExHiddenBlocks = currentExercise.hidden_blocks || [];
     activeExPreviewStage = 1;
 
@@ -3271,6 +3473,8 @@ function renderExDynamicBlocks() {
     if (!container || !currentExercise) return;
 
     const ex = currentExercise;
+    const isTextQuiz5 = ex.question_type === 'text_quiz_5';
+    if (isTextQuiz5) activeExBlocksOrder = ['ex_quiz5_questions'];
     const badgeVal = ex.instruction_badge || 'اختر الكلمة المناسبة لإكمال الجملة';
     const sentenceArVal = ex.sentence_ar || 'البنت تقرأ قصة في المكتبة.';
     const questionEnVal = ex.question_en || 'She ___ a story in the library.';
@@ -3284,6 +3488,7 @@ function renderExDynamicBlocks() {
     const revealExplanationVal = ex.reveal_explanation || 'ممتاز! لاحظت أن He يحتاج الفعل مع s.';
     const explanationVal = ex.explanation || '';
     const imageVal = ex.image || '/static/images/girl_reading_library.jpg';
+    const quizQuestions = normalizeTextQuizQuestions(ex.quiz_questions);
 
     container.innerHTML = '';
 
@@ -3296,7 +3501,37 @@ function renderExDynamicBlocks() {
         let blockIcon = '';
         let blockFieldsHtml = '';
 
-        if (blockId === 'ex_badge') {
+        if (blockId === 'ex_quiz5_questions') {
+            blockTitle = 'اختبار نصي من 5 أسئلة (Text Quiz)';
+            blockIcon = 'fa-solid fa-file-lines';
+            blockFieldsHtml = `
+                <div class="text-quiz-editor-intro">
+                    <strong>طريقة الإدخال</strong>
+                    <span>لكل سؤال: اكتب السطر الأول للسؤال، ثم تحته 3 أسطر للاختيارات. بعدها حدد رقم الإجابة الصحيحة.</span>
+                </div>
+                <div class="form-group text-quiz-title-field">
+                    <label>عنوان وتعليمات الاختبار</label>
+                    <input type="text" id="formExBadge" value="${badgeVal}" placeholder="اختر الإجابة الصحيحة لكل سؤال">
+                </div>
+                <div class="text-quiz-editor-list">
+                    ${quizQuestions.map((question, quizIndex) => `
+                        <div class="text-quiz-editor-item">
+                            <div class="text-quiz-editor-item-head">
+                                <span>السؤال ${quizIndex + 1}</span>
+                                <span>4 أسطر: السؤال + 3 اختيارات</span>
+                            </div>
+                            ${richTextEditorHtml(`formTextQuizQ${quizIndex}`, 'السؤال\nالخيار الأول\nالخيار الثاني\nالخيار الثالث', 'ltr', textQuizQuestionToEditorHtml(question))}
+                            <label class="text-quiz-correct-label" for="formTextQuizCorrect${quizIndex}">الإجابة الصحيحة</label>
+                            <select id="formTextQuizCorrect${quizIndex}" class="text-quiz-correct-select">
+                                <option value="0" ${question.correct_index === 0 ? 'selected' : ''}>الخيار الأول</option>
+                                <option value="1" ${question.correct_index === 1 ? 'selected' : ''}>الخيار الثاني</option>
+                                <option value="2" ${question.correct_index === 2 ? 'selected' : ''}>الخيار الثالث</option>
+                            </select>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else if (blockId === 'ex_badge') {
             blockTitle = 'وسام التوجيه والتنبيه (Instruction Badge)';
             blockIcon = 'fa-solid fa-flag';
             blockFieldsHtml = `
@@ -3440,6 +3675,8 @@ function renderExDynamicBlocks() {
         container.appendChild(card);
     });
 
+    initRichTextEditors(container);
+
     // Attach Live Input Listeners
     const inputs = container.querySelectorAll('input, select, textarea');
     inputs.forEach(inp => {
@@ -3533,6 +3770,45 @@ function updateExerciseLivePreview() {
         const el = document.getElementById(id);
         return el ? el.value.trim() : '';
     };
+
+    const isTextQuiz5 = currentExercise?.question_type === 'text_quiz_5'
+        || activeExBlocksOrder.includes('ex_quiz5_questions');
+    if (isTextQuiz5) {
+        const badgeVal = getVal('formExBadge') || 'اختبار نصي من 5 أسئلة';
+        const questions = document.getElementById('formTextQuizQ0')
+            ? collectTextQuizQuestionsFromEditor()
+            : normalizeTextQuizQuestions(currentExercise?.quiz_questions);
+
+        container.innerHTML = '';
+        const intro = document.createElement('div');
+        intro.className = 'text-quiz-live-preview-intro';
+        intro.textContent = badgeVal;
+        container.appendChild(intro);
+
+        questions.forEach((question, questionIndex) => {
+            const card = document.createElement('div');
+            card.className = 'text-quiz-live-preview-card';
+
+            const number = document.createElement('strong');
+            number.textContent = `السؤال ${questionIndex + 1}`;
+            card.appendChild(number);
+
+            const prompt = document.createElement('div');
+            prompt.className = 'text-quiz-live-preview-prompt';
+            prompt.textContent = question.prompt || 'اكتب نص السؤال هنا';
+            card.appendChild(prompt);
+
+            question.options.forEach((option, optionIndex) => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'text-quiz-live-preview-option';
+                optionEl.textContent = `${String.fromCharCode(65 + optionIndex)}. ${option || `الخيار ${optionIndex + 1}`}`;
+                card.appendChild(optionEl);
+            });
+
+            container.appendChild(card);
+        });
+        return;
+    }
 
     let imgVal = getVal('formExImage');
     if (imgVal === 'custom' || imgVal === 'upload') imgVal = getVal('formExCustomImageUrl');
@@ -3852,7 +4128,7 @@ async function loadAndRenderCustomTemplates() {
                             🎯
                         </div>
                         <h4 style="font-weight: 800; color: #92400E; margin-bottom: 0.4rem;">${tpl.name}</h4>
-                        <p style="font-size: 0.85rem; color: #B45309;">${tpl.data.question_en || 'تمرين مخصص مجهز مسبقاً'}</p>
+                        <p style="font-size: 0.85rem; color: #B45309;">${tpl.data.question_type === 'text_quiz_5' ? 'اختبار نصي مكوّن من 5 أسئلة' : (tpl.data.question_en || 'تمرين مخصص مجهز مسبقاً')}</p>
                         <button type="button" class="btn-select-custom-ex-tpl" style="margin-top: 1rem; width: 100%; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: inherit;">➕ أضف هذا القالب المخصص</button>
                     `;
 
@@ -3974,7 +4250,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const tplName = prompt('ادخل اسماً مميزاً للقالب المخصص للتمرين:', currentExercise.instruction_badge || 'قالب تمرين مخصص');
             if (!tplName || !tplName.trim()) return;
 
-            const exDataToSave = {
+            const isTextQuiz5 = currentExercise.question_type === 'text_quiz_5';
+            const exDataToSave = isTextQuiz5 ? {
+                question_type: 'text_quiz_5',
+                instruction_badge: document.getElementById('formExBadge')?.value || currentExercise.instruction_badge || '',
+                sentence_ar: '',
+                question_en: '',
+                quiz_questions: collectTextQuizQuestionsFromEditor(),
+                options: [],
+                correct_index: 0,
+                explanation: '',
+                image: ''
+            } : {
                 question_type: currentExercise.question_type || 'multiple_choice',
                 instruction_badge: document.getElementById('exFormInstructionBadge')?.value || currentExercise.instruction_badge || '',
                 sentence_ar: document.getElementById('exFormSentenceAr')?.value || currentExercise.sentence_ar || '',

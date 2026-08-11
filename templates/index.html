@@ -207,6 +207,32 @@
 
                 </div>
 
+                <!-- SCREEN 4: TEXT QUIZ WITH FIVE QUESTIONS -->
+                <div id="textQuiz5StageContent" class="text-quiz5-stage hidden">
+                    <div class="text-quiz5-topbar">
+                        <button id="textQuiz5BackBtn" class="btn-exercise-back" type="button">
+                            <i class="fa-solid fa-arrow-right"></i> رجوع
+                        </button>
+                        <div class="text-quiz5-topbar-copy">
+                            <span class="text-quiz5-kicker"><i class="fa-solid fa-file-lines"></i> اختبار نصي</span>
+                            <strong id="textQuiz5Title">اختبار التمرين</strong>
+                        </div>
+                        <div id="textQuiz5Score" class="text-quiz5-score">0 / 5</div>
+                    </div>
+
+                    <div class="text-quiz5-intro">
+                        <span class="text-quiz5-badge"><i class="fa-solid fa-list-ol"></i> 5 أسئلة</span>
+                        <h1 id="textQuiz5Heading">اختبر فهمك</h1>
+                        <p id="textQuiz5Instruction">اقرأ كل سؤال واختر إجابة واحدة. ستظهر النتيجة فورًا.</p>
+                    </div>
+
+                    <div id="textQuiz5Questions" class="text-quiz5-questions"></div>
+                    <div id="textQuiz5Completion" class="text-quiz5-completion hidden">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>أكملت أسئلة الاختبار. أحسنت!</span>
+                    </div>
+                </div>
+
             </div>
         </div>
     </main>
@@ -640,6 +666,16 @@
                     <h4 style="font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">سؤال مطابقة الصورة والحدث</h4>
                     <p style="font-size: 0.85rem; color: #64748B;">عرض صورة المشهد واختيار الجملة التي تصف الصورة بدقة.</p>
                     <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #EA580C; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف هذا القالب</button>
+                </div>
+
+                <!-- EXERCISE OPTION 4: FIVE QUESTION TEXT QUIZ -->
+                <div class="picker-exercise-option text-quiz-template-card" data-type="text_quiz_5" style="background: #FFFFFF; border: 2px solid #99F6E4; border-radius: 16px; padding: 1.2rem; cursor: pointer; transition: all 0.2s ease;">
+                    <div class="picker-icon-box" style="width: 48px; height: 48px; border-radius: 12px; background: #CCFBF1; color: #0F766E; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </div>
+                    <h4 style="font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">اختبار نصي من 5 أسئلة</h4>
+                    <p style="font-size: 0.85rem; color: #64748B;">ألصق نص كل سؤال وتحته 3 اختيارات، وحدد الإجابة الصحيحة فقط.</p>
+                    <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #0F766E; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف قالب 5 أسئلة</button>
                 </div>
 
             </div>

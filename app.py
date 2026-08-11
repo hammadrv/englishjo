@@ -416,13 +416,16 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
             c.execute('SELECT * FROM exercises WHERE lesson_id = ? ORDER BY is_exam ASC, is_reinforcement ASC, sort_order ASC, id ASC', (l_row["id"],))
             ex_rows = c.fetchall()
             for ex in ex_rows:
+                stored_options = json.loads(ex["options_json"] or "[]")
+                is_text_quiz = ex["question_type"] == "text_quiz_5"
                 ex_dict = {
                     "id": ex["id"],
                     "question_type": ex["question_type"],
                     "instruction_badge": ex["instruction_badge"],
                     "sentence_ar": ex["sentence_ar"],
                     "question_en": ex["question_en"],
-                    "options": json.loads(ex["options_json"] or "[]"),
+                    "options": [] if is_text_quiz else stored_options,
+                    "quiz_questions": stored_options if is_text_quiz else [],
                     "correct_index": ex["correct_index"],
                     "explanation": ex["explanation"],
                     "wrong_note": ex["wrong_note"],
@@ -1184,8 +1187,22 @@ def add_exercise():
             'options': [],
             'explanation': 'ركّز على نطق كلمات الجملة بوضوح.',
         },
+        'text_quiz_5': {
+            'instruction_badge': 'اختبار نصي: اختر الإجابة الصحيحة لكل سؤال',
+            'sentence_ar': '',
+            'question_en': '',
+            'quiz_questions': [
+                {'prompt': 'اكتب السؤال الأول هنا', 'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'], 'correct_index': 0},
+                {'prompt': 'اكتب السؤال الثاني هنا', 'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'], 'correct_index': 0},
+                {'prompt': 'اكتب السؤال الثالث هنا', 'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'], 'correct_index': 0},
+                {'prompt': 'اكتب السؤال الرابع هنا', 'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'], 'correct_index': 0},
+                {'prompt': 'اكتب السؤال الخامس هنا', 'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'], 'correct_index': 0},
+            ],
+            'explanation': '',
+        },
     }
     default = defaults.get(question_type, defaults['multiple_choice'])
+    stored_options = default.get('quiz_questions', default.get('options', [])) if question_type == 'text_quiz_5' else payload.get('options', default['options'])
 
     conn = get_db_connection()
     c = conn.cursor()
@@ -1199,10 +1216,10 @@ def add_exercise():
         payload.get("instruction_badge", default['instruction_badge']),
         payload.get("sentence_ar", default['sentence_ar']),
         payload.get("question_en", default['question_en']),
-        json.dumps(payload.get("options", default['options']), ensure_ascii=False),
+        json.dumps(payload.get("quiz_questions", stored_options) if question_type == 'text_quiz_5' else stored_options, ensure_ascii=False),
         payload.get("correct_index", 0),
         payload.get("explanation", default['explanation']),
-        payload.get("image", "/static/images/kids_football.jpg"),
+        payload.get("image", "" if question_type == 'text_quiz_5' else "/static/images/kids_football.jpg"),
         str(payload.get("linked_exercise_id", "all"))
     ))
     new_id = c.lastrowid
@@ -1232,7 +1249,10 @@ def update_exercise(exercise_id):
             fields.append(f"{f} = ?")
             params.append(payload[f])
 
-    if "options" in payload:
+    if "quiz_questions" in payload:
+        fields.append("options_json = ?")
+        params.append(json.dumps(payload["quiz_questions"], ensure_ascii=False))
+    elif "options" in payload:
         fields.append("options_json = ?")
         params.append(json.dumps(payload["options"], ensure_ascii=False))
 

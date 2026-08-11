@@ -958,7 +958,27 @@ body.light-theme {
 #exerciseEditModal .modal-preview-col {
     min-height: 0;
     height: 100%;
-    overflow: hidden;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-color: #94A3B8 #E2E8F0;
+}
+#exerciseEditModal .modal-preview-col::-webkit-scrollbar {
+    width: 12px;
+}
+#exerciseEditModal .modal-preview-col::-webkit-scrollbar-track {
+    background: #E2E8F0;
+    border-radius: 10px;
+}
+#exerciseEditModal .modal-preview-col::-webkit-scrollbar-thumb {
+    background: #94A3B8;
+    border: 3px solid #E2E8F0;
+    border-radius: 10px;
+}
+#exerciseEditModal .live-preview-sticky {
+    min-height: max-content;
+    justify-content: flex-start;
 }
 #exerciseEditModal {
     overflow: hidden !important;

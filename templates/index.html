@@ -136,15 +136,13 @@
 
                 <!-- SCREEN 3: PRACTICE EXERCISE STAGE (MATCHING USER SCREENSHOT 100%) -->
                 <div id="exerciseStageContent" class="exercise-screen-wrapper hidden">
-                    
-                    <!-- Exercise Top Bar -->
                     <div class="exercise-top-bar">
-                        <button id="exerciseBackBtn" class="btn-exercise-back">
+                        <button id="exerciseBackBtn" class="btn-exercise-back" type="button">
                             <i class="fa-solid fa-arrow-right"></i> رجوع
                         </button>
 
                         <div class="exercise-progress-container">
-                            <div class="exercise-progress-bar">
+                            <div class="exercise-progress-bar" aria-label="التقدم في التمرين">
                                 <div id="exerciseProgressFill" class="exercise-progress-fill">
                                     <div class="exercise-progress-dot"></div>
                                 </div>
@@ -157,54 +155,66 @@
                         </div>
                     </div>
 
-                    <!-- Instruction Badge -->
-                    <div id="exerciseInstructionBadge" class="exercise-instruction-badge">
-                        اختر الكلمة المناسبة لإكمال الجملة
-                    </div>
+                    <div class="exercise-form-shell">
+                        <header class="exercise-form-cover">
+                            <span class="exercise-form-kicker"><i class="fa-solid fa-list-check"></i> تمرين تفاعلي</span>
+                            <h1 id="exerciseFormTitle">اختبار الدرس</h1>
+                            <p id="exerciseFormDescription">أجب عن الأسئلة بالتسلسل، ثم انتقل للسؤال التالي.</p>
+                        </header>
 
-                    <!-- Sentence Translation Card -->
-                    <div id="exerciseSentenceAr" class="exercise-sentence-translation-box">
-                        البنت تقرأ قصة في المكتبة.
-                    </div>
+                        <section class="exercise-form-question-card" aria-labelledby="exerciseFormQuestionLabel">
+                            <div class="exercise-form-question-head">
+                                <span id="exerciseFormQuestionLabel">السؤال 1</span>
+                                <span class="exercise-required-label">مطلوب <b>*</b></span>
+                            </div>
 
-                    <!-- Pixar 3D Illustration Frame -->
-                    <div class="exercise-image-frame">
-                        <img id="exerciseImg" src="/static/images/girl_reading_library.jpg" alt="صورة التمرين 3D" class="exercise-img">
-                    </div>
+                            <div id="exerciseInstructionBadge" class="exercise-instruction-badge">
+                                اختر الكلمة المناسبة لإكمال الجملة
+                            </div>
 
-                    <!-- Question Sentence (Fill-in-the-blank) -->
-                    <div id="exerciseQuestionEn" class="exercise-question-sentence">
-                        She <span class="blank-space-line">___</span> a story in the library.
-                    </div>
+                            <div id="exerciseSentenceAr" class="exercise-sentence-translation-box">
+                                البنت تقرأ قصة في المكتبة.
+                            </div>
 
-                    <!-- 3 Options Grid (Matching Screenshot) -->
-                    <div id="exerciseOptionsGrid" class="exercise-options-grid-3">
-                        <button class="btn-exercise-opt">writes</button>
-                        <button class="btn-exercise-opt">reads</button>
-                        <button class="btn-exercise-opt">eats</button>
-                    </div>
+                            <div class="exercise-image-frame">
+                                <img id="exerciseImg" src="/static/images/girl_reading_library.jpg" alt="صورة التمرين 3D" class="exercise-img">
+                            </div>
 
-                    <!-- Student Explanation Box on Solution -->
-                    <div id="exerciseStudentExplanation" class="exercise-explanation-box hidden" style="background: #ECFDF5; border: 1.5px solid #6EE7B7; color: #065F46; padding: 0.9rem 1.1rem; border-radius: 14px; font-size: 0.9rem; font-weight: 700; margin-top: 1rem;">
-                        <i class="fa-solid fa-lightbulb" style="color: #10B981;"></i> <span id="exerciseStudentExplanationText">...</span>
-                    </div>
+                            <div id="exerciseQuestionEn" class="exercise-question-sentence">
+                                She <span class="blank-space-line">___</span> a story in the library.
+                            </div>
 
-                    <!-- Exercise Wrong Answer Feedback Alert (Appears on Wrong Answer) -->
-                    <div id="exerciseWrongFeedbackCard" class="two-stage-wrong-alert hidden" style="background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; padding: 0.8rem 1rem; border-radius: 14px; margin-top: 1rem; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">
-                        <i class="fa-solid fa-triangle-exclamation" style="color: #DC2626; font-size: 1.1rem;"></i>
-                        <span id="exerciseWrongFeedbackText">تذكر أن الفاعل المفرد He يحتاج الفعل مضافاً إليه s.</span>
-                    </div>
+                            <div id="exerciseOptionsGrid" class="exercise-options-grid-3" role="radiogroup" aria-label="خيارات الإجابة">
+                                <button class="btn-exercise-opt" type="button" role="radio">writes</button>
+                                <button class="btn-exercise-opt" type="button" role="radio">reads</button>
+                                <button class="btn-exercise-opt" type="button" role="radio">eats</button>
+                            </div>
 
-                    <!-- Exercise Stage 2 Result Reveal Card (Appears on Correct Answer 🎁) -->
-                    <div id="exerciseStage2ResultCard" class="discovery-result-card hidden" style="margin-top: 1rem; text-align: center; background: linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%); border: 2px solid #5EEAD4; padding: 1.2rem; border-radius: 20px;">
-                        <div id="exerciseStage2ResultTitle" class="discovery-result-header" style="font-size: 1rem; font-weight: 900; color: #0F766E;">أحسنت! ظهرت القاعدة 🎁</div>
-                        <div id="exerciseStage2RevealBadge" class="discovery-reveal-pronoun" style="font-size: 2.2rem; color: #0D9488; font-weight: 900; margin: 0.4rem 0;">He + plays</div>
-                        <div id="exerciseStage2RevealExplanation" class="discovery-reveal-explanation" style="font-size: 0.9rem; color: #115E59; font-weight: 700;">ممتاز! لاحظت أن He يحتاج الفعل مع s.</div>
-                        <button type="button" id="btnExerciseNextQuestion" class="btn-discovery-next-scene" style="margin-top: 0.9rem; width: 100%; justify-content: center; background: linear-gradient(135deg, #0D9488 0%, #059669 100%); color: white; border: none; padding: 0.8rem; border-radius: 12px; font-weight: 800; cursor: pointer;">
-                            السؤال التالي <i class="fa-solid fa-arrow-left"></i>
-                        </button>
-                    </div>
+                            <div id="exerciseStudentExplanation" class="exercise-explanation-box hidden" style="background: #ECFDF5; border: 1.5px solid #6EE7B7; color: #065F46; padding: 0.9rem 1.1rem; border-radius: 14px; font-size: 0.9rem; font-weight: 700; margin-top: 1rem;">
+                                <i class="fa-solid fa-lightbulb" style="color: #10B981;"></i> <span id="exerciseStudentExplanationText">...</span>
+                            </div>
 
+                            <div id="exerciseWrongFeedbackCard" class="two-stage-wrong-alert hidden" style="background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; padding: 0.8rem 1rem; border-radius: 14px; margin-top: 1rem; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">
+                                <i class="fa-solid fa-triangle-exclamation" style="color: #DC2626; font-size: 1.1rem;"></i>
+                                <span id="exerciseWrongFeedbackText">تذكر أن الفاعل المفرد He يحتاج الفعل مضافاً إليه s.</span>
+                            </div>
+
+                            <div id="exerciseStage2ResultCard" class="discovery-result-card hidden" style="margin-top: 1rem; text-align: center; background: linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%); border: 2px solid #5EEAD4; padding: 1.2rem; border-radius: 20px;">
+                                <div id="exerciseStage2ResultTitle" class="discovery-result-header" style="font-size: 1rem; font-weight: 900; color: #0F766E;">أحسنت! ظهرت القاعدة 🎁</div>
+                                <div id="exerciseStage2RevealBadge" class="discovery-reveal-pronoun" style="font-size: 2.2rem; color: #0D9488; font-weight: 900; margin: 0.4rem 0;">He + plays</div>
+                                <div id="exerciseStage2RevealExplanation" class="discovery-reveal-explanation" style="font-size: 0.9rem; color: #115E59; font-weight: 700;">ممتاز! لاحظت أن He يحتاج الفعل مع s.</div>
+                            </div>
+
+                            <div class="exercise-form-navigation">
+                                <button type="button" id="btnExercisePreviousQuestion" class="exercise-form-prev" disabled>
+                                    <i class="fa-solid fa-arrow-right"></i> السابق
+                                </button>
+                                <button type="button" id="btnExerciseContinue" class="exercise-form-next" disabled>
+                                    التالي <i class="fa-solid fa-arrow-left"></i>
+                                </button>
+                            </div>
+                        </section>
+                    </div>
                 </div>
 
             </div>

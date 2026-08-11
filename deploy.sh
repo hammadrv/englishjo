@@ -32,6 +32,7 @@ rsync -az --delete \
   --exclude '__pycache__/' \
   --exclude 'backups/' \
   --exclude 'database.db' \
+  --exclude 'static/uploads/' \
   --exclude '.DS_Store' \
   ./ "$SERVER:$APP_DIR/"
 

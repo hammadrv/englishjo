@@ -883,6 +883,9 @@
             <div class="modal-header">
                 <div class="modal-title-group" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                     <h3 style="margin: 0;"><i class="fa-solid fa-cubes"></i> استوديو بناء وترتيب المكونات (Visual Block Builder)</h3>
+                    <button type="submit" form="slideEditForm" class="btn-next btn-top-header-save" style="background: linear-gradient(135deg, #FF6B57 0%, #FF523B 100%); color: #FFF; border: none; padding: 0.55rem 1.4rem; border-radius: 50px; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(255, 107, 87, 0.4); font-family: inherit;">
+                        <i class="fa-solid fa-floppy-disk"></i> 💾 حفظ التغييرات والترتيب
+                    </button>
                     <button type="button" id="btnSaveCustomSlideTemplate" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #FFF; border: none; padding: 0.45rem 1.1rem; border-radius: 50px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); font-family: inherit;">
                         <i class="fa-solid fa-star"></i> ⭐ حفظ الشريحة كقالب مخصص
                     </button>
@@ -908,6 +911,16 @@
                         <input type="hidden" id="formSlideId">
                         <input type="hidden" id="formTemplateTypeVal" value="rule">
 
+                        <!-- PROMINENT TOP SAVE BAR -->
+                        <div class="top-form-actions-bar" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #FFF5F3 0%, #FFEBE7 100%); border: 1.5px solid #FFC4BB; padding: 0.75rem 1.1rem; border-radius: 16px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(255,107,87,0.1);">
+                            <span style="font-weight: 900; color: #C83725; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.1rem;"></i> حفظ مباشر في أعلى الاستوديو:
+                            </span>
+                            <button type="submit" class="btn-next" style="background: linear-gradient(135deg, #FF6B57 0%, #FF523B 100%); color: #FFF; border: none; padding: 0.6rem 1.5rem; border-radius: 50px; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(255, 107, 87, 0.4); font-family: inherit;">
+                                <i class="fa-solid fa-floppy-disk"></i> 💾 حفظ التغييرات والترتيب
+                            </button>
+                        </div>
+
                         <div class="form-section-card highlight-teal">
                             <div class="section-title"><i class="fa-solid fa-palette"></i> المخطط اللوني للشريحة (Color Theme)</div>
                             <div class="palette-picker-row">
@@ -931,7 +944,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn-next"><i class="fa-solid fa-floppy-disk"></i> حفظ التغييرات والترتيب</button>
+                            <button type="submit" class="btn-next"><i class="fa-solid fa-floppy-disk"></i> 💾 حفظ التغييرات والترتيب</button>
                             <button type="button" id="deleteSlideBtn" class="btn-delete"><i class="fa-solid fa-trash"></i> حذف الشريحة</button>
                         </div>
                     </form>
@@ -983,6 +996,9 @@
             <div class="modal-header">
                 <div class="modal-title-group" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                     <h3 style="margin: 0;"><i class="fa-solid fa-cubes"></i> استوديو بناء وتعديل التمرين التفاعلي (Visual Block Builder)</h3>
+                    <button type="submit" form="exerciseEditForm" class="btn-next btn-top-header-save" style="background: linear-gradient(135deg, #FF6B57 0%, #FF523B 100%); color: #FFF; border: none; padding: 0.55rem 1.4rem; border-radius: 50px; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(255, 107, 87, 0.4); font-family: inherit;">
+                        <i class="fa-solid fa-floppy-disk"></i> 💾 حفظ التمرين والترتيب
+                    </button>
                     <button type="button" id="btnSaveCustomExerciseTemplate" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #FFF; border: none; padding: 0.45rem 1.1rem; border-radius: 50px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); font-family: inherit;">
                         <i class="fa-solid fa-star"></i> ⭐ حفظ التمرين كقالب مخصص
                     </button>
@@ -995,6 +1011,16 @@
                 <div class="modal-form-col">
                     <form id="exerciseEditForm" class="slide-edit-form">
                         <input type="hidden" id="formExerciseId">
+
+                        <!-- PROMINENT TOP SAVE BAR -->
+                        <div class="top-form-actions-bar" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #FFF5F3 0%, #FFEBE7 100%); border: 1.5px solid #FFC4BB; padding: 0.75rem 1.1rem; border-radius: 16px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(255,107,87,0.1);">
+                            <span style="font-weight: 900; color: #C83725; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.1rem;"></i> حفظ مباشر في أعلى الاستوديو:
+                            </span>
+                            <button type="submit" class="btn-next" style="background: linear-gradient(135deg, #FF6B57 0%, #FF523B 100%); color: #FFF; border: none; padding: 0.6rem 1.5rem; border-radius: 50px; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(255, 107, 87, 0.4); font-family: inherit;">
+                                <i class="fa-solid fa-floppy-disk"></i> 💾 حفظ التمرين والترتيب
+                            </button>
+                        </div>
 
                         <div class="form-section-card highlight-teal">
                             <div class="section-title"><i class="fa-solid fa-palette"></i> المخطط اللوني للتمرين (Color Theme)</div>
@@ -1015,7 +1041,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn-next"><i class="fa-solid fa-floppy-disk"></i> حفظ التمرين والترتيب</button>
+                            <button type="submit" class="btn-next"><i class="fa-solid fa-floppy-disk"></i> 💾 حفظ التمرين والترتيب</button>
                         </div>
                     </form>
                 </div>

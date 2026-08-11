@@ -921,9 +921,28 @@ body.light-theme {
 }
 #exerciseEditModal .modal-title-group h3 { font-size: 1.2rem; }
 #exerciseEditModal .modal-title-group { gap: 0.7rem; }
-#exerciseEditModal .modal-split-body { gap: 1rem; }
-#exerciseEditModal .modal-form-col { padding-left: 0.35rem; }
-#exerciseEditModal .slide-edit-form { gap: 0.65rem; }
+#exerciseEditModal .modal-split-body {
+    gap: 1rem;
+    min-height: 0;
+}
+#exerciseEditModal .modal-form-col {
+    min-height: 0;
+    height: auto;
+    box-sizing: border-box;
+    padding-left: 0.35rem;
+    padding-bottom: 0.8rem;
+    overflow-y: auto;
+    scroll-padding-bottom: 4rem;
+}
+#exerciseEditModal .slide-edit-form {
+    gap: 0.65rem;
+    min-height: max-content;
+    padding-bottom: 4rem;
+}
+#exerciseEditModal .dynamic-blocks-container {
+    flex: 0 0 auto;
+    min-height: max-content;
+}
 #exerciseEditModal .top-form-actions-bar { padding: 0.5rem 0.75rem !important; margin-bottom: 0.65rem !important; }
 #exerciseEditModal .top-form-actions-bar span,
 #exerciseEditModal .top-form-actions-bar button { font-size: 0.82rem !important; }
@@ -956,7 +975,11 @@ body.light-theme {
 }
 #exerciseEditModal .text-quiz-correct-label { margin-top: 0.4rem; margin-bottom: 0.2rem; font-size: 0.72rem; }
 #exerciseEditModal .text-quiz-correct-select { padding: 0.42rem 0.6rem; font-size: 0.78rem; }
-#exerciseEditModal .form-actions { margin-top: 0.45rem; padding-top: 0.55rem; }
+#exerciseEditModal .form-actions {
+    margin-top: 0.45rem;
+    padding-top: 0.55rem;
+    padding-bottom: 1rem;
+}
 
 @media (max-width: 992px) {
     #exerciseEditModal .edit-modal-split-container { height: 96vh; max-height: 96vh; padding: 0.8rem; }

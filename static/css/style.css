@@ -924,6 +924,7 @@ body.light-theme {
 #exerciseEditModal .modal-split-body {
     gap: 1rem;
     min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
 }
 #exerciseEditModal .modal-form-col {
     min-height: 0;
@@ -953,6 +954,11 @@ body.light-theme {
 }
 #exerciseEditModal .modal-form-col {
     scrollbar-color: #94A3B8 #E2E8F0;
+}
+#exerciseEditModal .modal-preview-col {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
 }
 #exerciseEditModal {
     overflow: hidden !important;

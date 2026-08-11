@@ -45,8 +45,28 @@ find '$APP_DIR' \
 '$APP_DIR/venv/bin/pip' install -r '$APP_DIR/requirements.txt'
 systemctl restart '$SERVICE'
 systemctl is-active --quiet '$SERVICE'
-curl -fsS 'http://127.0.0.1:5050/' >/dev/null
+for attempt in \$(seq 1 20); do
+  if curl -fsS 'http://127.0.0.1:5050/' >/dev/null; then
+    break
+  fi
+
+  if [ \"\$attempt\" -eq 20 ]; then
+    exit 1
+  fi
+
+  sleep 1
+done
 "
 
-curl -fsSL "$HEALTH_URL" >/dev/null
+for attempt in $(seq 1 20); do
+  if curl -fsSL "$HEALTH_URL" >/dev/null; then
+    break
+  fi
+
+  if [ "$attempt" -eq 20 ]; then
+    exit 1
+  fi
+
+  sleep 1
+done
 echo "Deployed to $SERVER:$APP_DIR and restarted $SERVICE."

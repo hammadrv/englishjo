@@ -2966,8 +2966,6 @@ async function uploadSlideImageFromPC(inputEl) {
 
 // Exercise Simulator Global State
 let currentExerciseIndex = 0;
-let exerciseAnswerState = {};
-let exerciseReviewState = {};
 
 // Run Exercise Simulator (Test as Student)
 function runExerciseSimulator(lessonObj, startIdx = 0) {
@@ -3006,8 +3004,6 @@ function runExerciseSimulator(lessonObj, startIdx = 0) {
     if (exerciseStage) exerciseStage.classList.remove('hidden');
 
     studentWrongExerciseIds = [];
-    exerciseAnswerState = {};
-    exerciseReviewState = {};
     renderCurrentExercise();
     showToast(`🧪 بدء اختبار التمارين التفاعلية (سؤال ${currentExerciseIndex + 1} من ${exercisesList.length})`);
 }
@@ -3061,13 +3057,10 @@ function showExerciseStage() {
     document.getElementById('explanationStageContent').classList.add('hidden');
     document.getElementById('exerciseStageContent').classList.remove('hidden');
     currentExerciseIndex = 0;
-    studentWrongExerciseIds = [];
-    exerciseAnswerState = {};
-    exerciseReviewState = {};
     renderCurrentExercise();
 }
 
-// Render one question at a time in a Google Forms-style flow.
+// Render Current Practice Exercise (Two-Stage Student View)
 function renderCurrentExercise() {
     if (!currentLesson) return;
 
@@ -3087,19 +3080,9 @@ function renderCurrentExercise() {
 
     const ex = exercisesList[currentExerciseIndex];
     currentExercise = ex;
-    const exerciseKey = String(ex.id || `index-${currentExerciseIndex}`);
-    const savedAnswer = exerciseAnswerState[exerciseKey];
-    const isReviewed = exerciseReviewState[exerciseKey] === true;
 
     document.getElementById('exerciseLessonTitle').textContent = currentLesson.title_ar || "تمرين الدرس التفاعلي";
-    document.getElementById('exerciseQuestionCounter').textContent = `سؤال ${currentExerciseIndex + 1} من ${exercisesList.length}`;
-
-    const formTitle = document.getElementById('exerciseFormTitle');
-    const formDescription = document.getElementById('exerciseFormDescription');
-    const formQuestionLabel = document.getElementById('exerciseFormQuestionLabel');
-    if (formTitle) formTitle.textContent = currentLesson.title_ar || 'اختبار الدرس';
-    if (formDescription) formDescription.textContent = `أجب عن الأسئلة بالتسلسل (${exercisesList.length} أسئلة)، ثم انتقل للسؤال التالي.`;
-    if (formQuestionLabel) formQuestionLabel.textContent = `السؤال ${currentExerciseIndex + 1}`;
+    document.getElementById('exerciseQuestionCounter').textContent = `تمرين ${currentExerciseIndex + 1} من ${exercisesList.length}`;
 
     // Fill progress bar percentage
     const fillPercent = ((currentExerciseIndex + 1) / exercisesList.length) * 100;
@@ -3114,16 +3097,11 @@ function renderCurrentExercise() {
 
     const questionEnEl = document.getElementById('exerciseQuestionEn');
     const parts = (ex.question_en || '').split('___');
-    questionEnEl.innerHTML = '';
-    parts.forEach((part, partIndex) => {
-        questionEnEl.appendChild(document.createTextNode(part));
-        if (partIndex < parts.length - 1) {
-            const blank = document.createElement('span');
-            blank.className = 'blank-space-line';
-            blank.textContent = '___';
-            questionEnEl.appendChild(blank);
-        }
-    });
+    if (parts.length === 2) {
+        questionEnEl.innerHTML = `${parts[0]}<span class="blank-space-line">___</span>${parts[1]}`;
+    } else {
+        questionEnEl.textContent = ex.question_en || '';
+    }
 
     // Hide feedback cards initially
     const explanationBox = document.getElementById('exerciseStudentExplanation');
@@ -3143,106 +3121,84 @@ function renderCurrentExercise() {
     opts.forEach((optText, idx) => {
         const btn = document.createElement('button');
         btn.className = 'btn-exercise-opt';
-        btn.type = 'button';
-        btn.setAttribute('role', 'radio');
-        btn.setAttribute('aria-checked', String(savedAnswer === idx));
         btn.textContent = optText;
-        if (savedAnswer === idx) btn.classList.add('selected');
-        if (isReviewed) {
-            btn.disabled = true;
-            if (idx === correctIdx) btn.classList.add('correct');
-            if (idx === savedAnswer && idx !== correctIdx) btn.classList.add('wrong');
-        }
 
         btn.addEventListener('click', () => {
-            if (exerciseReviewState[exerciseKey]) return;
             const buttons = optionsGrid.querySelectorAll('.btn-exercise-opt');
-            buttons.forEach(b => {
-                b.classList.remove('selected');
-                b.setAttribute('aria-checked', 'false');
-            });
-            btn.classList.add('selected');
-            btn.setAttribute('aria-checked', 'true');
-            exerciseAnswerState[exerciseKey] = idx;
+            buttons.forEach(b => b.disabled = true);
 
-            const continueBtn = document.getElementById('btnExerciseContinue');
-            if (continueBtn) continueBtn.disabled = false;
+            if (idx === correctIdx) {
+                btn.classList.add('correct');
+                showToast('🎉 إجابة صحيحة مذهلة!');
+
+                // Reveal Stage 2 Result Rule Card
+                if (stage2ResultCard) {
+                    const rTitle = document.getElementById('exerciseStage2ResultTitle');
+                    const rBadge = document.getElementById('exerciseStage2RevealBadge');
+                    const rExp = document.getElementById('exerciseStage2RevealExplanation');
+
+                    if (rTitle) rTitle.textContent = ex.result_title || 'أحسنت! ظهرت القاعدة 🎁';
+                    if (rBadge) rBadge.textContent = ex.reveal_badge || 'He + plays';
+                    if (rExp) rExp.textContent = ex.reveal_explanation || 'ممتاز! لاحظت أن He يحتاج الفعل مع s.';
+
+                    stage2ResultCard.classList.remove('hidden');
+
+                    const btnNextQ = document.getElementById('btnExerciseNextQuestion');
+                    if (btnNextQ) {
+                        btnNextQ.onclick = () => {
+                            if (currentExerciseIndex < exercisesList.length - 1) {
+                                currentExerciseIndex++;
+                                renderCurrentExercise();
+                            } else {
+                                triggerStudentReinforcementStage();
+                            }
+                        };
+                    }
+                }
+            } else {
+                btn.classList.add('wrong');
+                if (buttons[correctIdx]) buttons[correctIdx].classList.add('correct');
+
+                if (ex.id && !studentWrongExerciseIds.includes(ex.id)) {
+                    studentWrongExerciseIds.push(ex.id);
+                }
+
+                // Show Wrong Answer Alert Note
+                if (wrongFeedbackCard) {
+                    const wrongText = document.getElementById('exerciseWrongFeedbackText');
+                    if (wrongText) wrongText.textContent = ex.wrong_note || ex.explanation || 'تذكر أن الفاعل المفرد He يحتاج الفعل مضافاً إليه s.';
+                    wrongFeedbackCard.classList.remove('hidden');
+                }
+
+                // Also reveal Stage 2 Card so student learns rule
+                if (stage2ResultCard) {
+                    const rTitle = document.getElementById('exerciseStage2ResultTitle');
+                    const rBadge = document.getElementById('exerciseStage2RevealBadge');
+                    const rExp = document.getElementById('exerciseStage2RevealExplanation');
+
+                    if (rTitle) rTitle.textContent = ex.result_title || 'توضيح القاعدة النحوية 🎁';
+                    if (rBadge) rBadge.textContent = ex.reveal_badge || 'He + plays';
+                    if (rExp) rExp.textContent = ex.reveal_explanation || 'ممتاز! لاحظت أن He يحتاج الفعل مع s.';
+
+                    stage2ResultCard.classList.remove('hidden');
+
+                    const btnNextQ = document.getElementById('btnExerciseNextQuestion');
+                    if (btnNextQ) {
+                        btnNextQ.onclick = () => {
+                            if (currentExerciseIndex < exercisesList.length - 1) {
+                                currentExerciseIndex++;
+                                renderCurrentExercise();
+                            } else {
+                                triggerStudentReinforcementStage();
+                            }
+                        };
+                    }
+                }
+            }
         });
 
         optionsGrid.appendChild(btn);
     });
-
-    const previousBtn = document.getElementById('btnExercisePreviousQuestion');
-    const continueBtn = document.getElementById('btnExerciseContinue');
-    if (previousBtn) {
-        previousBtn.disabled = currentExerciseIndex === 0;
-        previousBtn.onclick = () => {
-            if (currentExerciseIndex > 0) {
-                currentExerciseIndex--;
-                renderCurrentExercise();
-            }
-        };
-    }
-    if (continueBtn) {
-        continueBtn.disabled = savedAnswer === undefined;
-        continueBtn.innerHTML = isReviewed
-            ? (currentExerciseIndex < exercisesList.length - 1 ? 'السؤال التالي <i class="fa-solid fa-arrow-left"></i>' : 'إنهاء التمرين <i class="fa-solid fa-check"></i>')
-            : 'التالي <i class="fa-solid fa-arrow-left"></i>';
-        continueBtn.onclick = () => {
-            const selectedIdx = exerciseAnswerState[exerciseKey];
-            if (selectedIdx === undefined) {
-                showToast('اختر إجابة أولًا للانتقال للسؤال التالي.');
-                return;
-            }
-
-            if (!exerciseReviewState[exerciseKey]) {
-                exerciseReviewState[exerciseKey] = true;
-                if (selectedIdx !== correctIdx && ex.id && !studentWrongExerciseIds.includes(ex.id)) {
-                    studentWrongExerciseIds.push(ex.id);
-                }
-                showToast(selectedIdx === correctIdx ? '🎉 إجابة صحيحة مذهلة!' : 'راجع التوضيح ثم تابع للخطوة التالية.');
-                renderCurrentExercise();
-                return;
-            }
-
-            if (currentExerciseIndex < exercisesList.length - 1) {
-                currentExerciseIndex++;
-                renderCurrentExercise();
-            } else {
-                triggerStudentReinforcementStage();
-            }
-        };
-    }
-
-    if (isReviewed) {
-        const selectedIdx = savedAnswer;
-        const isCorrect = selectedIdx === correctIdx;
-        const buttons = optionsGrid.querySelectorAll('.btn-exercise-opt');
-        if (buttons[correctIdx]) buttons[correctIdx].classList.add('correct');
-        if (!isCorrect && buttons[selectedIdx]) buttons[selectedIdx].classList.add('wrong');
-
-        if (!isCorrect && wrongFeedbackCard) {
-            const wrongText = document.getElementById('exerciseWrongFeedbackText');
-            if (wrongText) wrongText.textContent = ex.wrong_note || ex.explanation || 'تذكر أن الفاعل المفرد He يحتاج الفعل مضافاً إليه s.';
-            wrongFeedbackCard.classList.remove('hidden');
-        }
-
-        if (explanationBox && ex.explanation) {
-            const explanationText = document.getElementById('exerciseStudentExplanationText');
-            if (explanationText) explanationText.textContent = ex.explanation;
-            explanationBox.classList.remove('hidden');
-        }
-
-        if (stage2ResultCard) {
-            const rTitle = document.getElementById('exerciseStage2ResultTitle');
-            const rBadge = document.getElementById('exerciseStage2RevealBadge');
-            const rExp = document.getElementById('exerciseStage2RevealExplanation');
-            if (rTitle) rTitle.textContent = ex.result_title || (isCorrect ? 'أحسنت! ظهرت القاعدة 🎁' : 'توضيح القاعدة النحوية 🎁');
-            if (rBadge) rBadge.textContent = ex.reveal_badge || 'He + plays';
-            if (rExp) rExp.textContent = ex.reveal_explanation || 'ممتاز! لاحظت أن He يحتاج الفعل مع s.';
-            stage2ResultCard.classList.remove('hidden');
-        }
-    }
 }
 
 // Exercise Visual Block Builder Global Variables & State

@@ -390,47 +390,11 @@ body.light-theme {
 .exercise-question-sentence { font-family: 'Outfit', sans-serif; font-size: 1.65rem; font-weight: 900; color: var(--text-navy); direction: ltr; text-align: center; margin-bottom: 1.8rem; letter-spacing: -0.3px; }
 .blank-space-line { color: #0D9488; text-decoration: underline; font-weight: 900; padding: 0 0.4rem; }
 
-.exercise-form-shell { width: min(100%, 820px); margin: 0 auto; }
-.exercise-form-cover { background: #FFFFFF; border: 1px solid #E2E8F0; border-top: 7px solid #0D9488; border-radius: 14px; padding: 1.4rem 1.6rem 1.25rem; margin-bottom: 1rem; box-shadow: 0 5px 18px rgba(15, 23, 42, 0.06); }
-.exercise-form-kicker { display: inline-flex; align-items: center; gap: 0.4rem; color: #0D9488; font-size: 0.82rem; font-weight: 900; }
-.exercise-form-cover h1 { margin: 0.55rem 0 0.35rem; color: var(--text-navy); font-size: clamp(1.35rem, 2.4vw, 1.85rem); font-weight: 900; }
-.exercise-form-cover p { margin: 0; color: #64748B; font-size: 0.94rem; font-weight: 700; }
-.exercise-form-question-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1.35rem 1.6rem 1.1rem; box-shadow: 0 5px 18px rgba(15, 23, 42, 0.05); }
-.exercise-form-question-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.9rem; margin-bottom: 1.15rem; color: var(--text-navy); font-size: 1.05rem; font-weight: 900; }
-.exercise-required-label { color: #64748B; font-size: 0.78rem; font-weight: 800; }
-.exercise-required-label b { color: #DC2626; font-size: 1rem; }
-.exercise-options-grid-3 { width: 100%; display: flex; flex-direction: column; gap: 0.65rem; }
-.btn-exercise-opt { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 0.75rem; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0.85rem 1rem; font-family: 'Outfit', sans-serif; font-size: 1.08rem; font-weight: 900; color: var(--text-navy); cursor: pointer; text-align: start; direction: ltr; transition: var(--transition); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02); }
-.btn-exercise-opt::before { content: ''; flex: 0 0 19px; width: 19px; height: 19px; border: 2px solid #94A3B8; border-radius: 50%; background: #FFFFFF; box-sizing: border-box; }
-.btn-exercise-opt:hover { border-color: var(--teal-primary); transform: translateY(-1px); box-shadow: 0 6px 15px rgba(13, 148, 136, 0.12); }
-.btn-exercise-opt.selected { border-color: #0D9488; background: #F0FDFA; box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.12); }
-.btn-exercise-opt.selected::before { border: 6px solid #0D9488; }
+.exercise-options-grid-3 { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.btn-exercise-opt { background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 18px; padding: 0.85rem 0.5rem; font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 900; color: var(--text-navy); cursor: pointer; text-align: center; transition: var(--transition); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02); }
+.btn-exercise-opt:hover { border-color: var(--teal-primary); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(13, 148, 136, 0.12); }
 .btn-exercise-opt.correct { background: #D1FAE5 !important; border-color: #10B981 !important; color: #065F46 !important; }
 .btn-exercise-opt.wrong { background: #FEE2E2 !important; border-color: #EF4444 !important; color: #991B1B !important; }
-.btn-exercise-opt.correct::before { border-color: #10B981; background: #10B981; box-shadow: inset 0 0 0 4px #D1FAE5; }
-.btn-exercise-opt.wrong::before { border-color: #EF4444; background: #EF4444; box-shadow: inset 0 0 0 4px #FEE2E2; }
-.exercise-form-navigation { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; border-top: 1px solid #E2E8F0; margin-top: 1.35rem; padding-top: 1.1rem; }
-.exercise-form-prev, .exercise-form-next { min-height: 44px; border-radius: 10px; padding: 0.7rem 1.25rem; font-family: inherit; font-size: 0.95rem; font-weight: 900; cursor: pointer; transition: var(--transition); }
-.exercise-form-prev { background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #475569; }
-.exercise-form-next { min-width: 145px; background: #0D9488; border: 1.5px solid #0D9488; color: #FFFFFF; box-shadow: 0 5px 14px rgba(13, 148, 136, 0.2); }
-.exercise-form-prev:hover:not(:disabled) { border-color: #0D9488; color: #0D9488; }
-.exercise-form-next:hover:not(:disabled) { background: #0F766E; transform: translateY(-1px); }
-.exercise-form-prev:disabled, .exercise-form-next:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-.full-mini-phone-frame .exercise-form-cover { padding: 0.8rem 0.7rem; border-top-width: 4px; border-radius: 10px; }
-.full-mini-phone-frame .exercise-form-cover h1 { font-size: 1rem; margin-top: 0.35rem; }
-.full-mini-phone-frame .exercise-form-cover p { font-size: 0.68rem; }
-.full-mini-phone-frame .exercise-form-question-card { padding: 0.8rem 0.7rem; border-radius: 10px; }
-.full-mini-phone-frame .exercise-form-question-head { font-size: 0.72rem; padding-bottom: 0.55rem; margin-bottom: 0.7rem; }
-.full-mini-phone-frame .exercise-required-label { font-size: 0.58rem; }
-.full-mini-phone-frame .exercise-instruction-badge { font-size: 0.68rem; padding: 0.35rem 0.6rem; margin-bottom: 0.65rem; }
-.full-mini-phone-frame .exercise-sentence-translation-box { font-size: 0.72rem; padding: 0.5rem; margin-bottom: 0.65rem; }
-.full-mini-phone-frame .exercise-question-sentence { font-size: 1rem; margin-bottom: 0.9rem; }
-.full-mini-phone-frame .exercise-image-frame { height: 120px; margin-bottom: 0.8rem; }
-.full-mini-phone-frame .btn-exercise-opt { min-height: 38px; padding: 0.45rem 0.55rem; font-size: 0.75rem; border-radius: 9px; }
-.full-mini-phone-frame .btn-exercise-opt::before { flex-basis: 13px; width: 13px; height: 13px; border-width: 1.5px; }
-.full-mini-phone-frame .btn-exercise-opt.selected::before { border-width: 4px; }
-.full-mini-phone-frame .exercise-form-navigation { margin-top: 0.8rem; padding-top: 0.7rem; }
-.full-mini-phone-frame .exercise-form-prev, .full-mini-phone-frame .exercise-form-next { min-height: 32px; min-width: 0; padding: 0.4rem 0.55rem; font-size: 0.66rem; }
 
 /* ==========================================================================
    MODE 2: TEACHER STUDIO - CONTENT MANAGEMENT DASHBOARD

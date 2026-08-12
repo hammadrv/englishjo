@@ -3906,7 +3906,7 @@ function renderExDynamicBlocks() {
 
                 <div id="exCustomUrlGroup" class="form-group ${(!imageVal.startsWith('/static/images/')) ? '' : 'hidden'}">
                     <label>رابط الصورة المباشر (URL)</label>
-                    <input type="url" id="formExCustomImageUrl" value="${imageVal}" placeholder="https://example.com/image.jpg">
+                    <input type="text" id="formExCustomImageUrl" value="${imageVal}" placeholder="https://example.com/image.jpg" inputmode="url">
                 </div>
             `;
         } else if (blockId === 'ex_question_en') {

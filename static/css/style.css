@@ -37,6 +37,13 @@
     box-sizing: border-box;
 }
 
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
 body.light-theme {
     font-family: 'Cairo', 'Tajawal', sans-serif;
     background-color: var(--bg-page);

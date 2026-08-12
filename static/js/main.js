@@ -221,8 +221,9 @@ function collectQuestionBankQuestionsFromEditor(prefix, count) {
         const answerType = document.getElementById(`${prefix}Type${index}`)?.value === 'checkboxes'
             ? 'checkboxes'
             : 'multiple_choice';
-        const correctSelect = document.getElementById(`${prefix.replace('Q', 'Correct')}${index}`);
-        const checkedCorrect = [...document.querySelectorAll(`[name="${prefix.replace('Q', 'Correct')}${index}"]:checked`)]
+        const correctPrefix = prefix.replace(/Q$/, 'Correct');
+        const correctSelect = document.getElementById(`${correctPrefix}${index}`);
+        const checkedCorrect = [...document.querySelectorAll(`[name="${correctPrefix}${index}"]:checked`)]
             .map(input => Number(input.value))
             .filter(value => Number.isInteger(value) && value >= 0 && value < options.length);
         const selectedCorrect = answerType === 'checkboxes'

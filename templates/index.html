@@ -11,7 +11,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260812-slide-cleanup') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260812-unit-modal') }}">
 </head>
 <body class="light-theme">
 
@@ -533,7 +533,7 @@
 
     <!-- MODAL: EDIT UNIT NAME -->
     <div id="editUnitModal" class="edit-modal-backdrop hidden">
-        <div class="modal-dialog-container" style="max-width: 500px; background: #FFFFFF; border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+        <div class="modal-dialog-container edit-unit-dialog" style="max-width: 500px; background: #FFFFFF; border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
             <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 0.8rem; margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="margin:0; font-weight:800; color:#0F172A;"><i class="fa-solid fa-pen icon-emerald"></i> تعديل اسم الوحدة</h3>
                 <button type="button" id="closeUnitModalBtn" class="btn-close-modal">&times;</button>
@@ -1167,6 +1167,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260812-slide-cleanup') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260812-unit-modal') }}"></script>
 </body>
 </html>

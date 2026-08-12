@@ -2631,12 +2631,12 @@ function restoreCurrentFormState() {
 }
 
 // Render Dynamic Block Editors in Slide Edit Modal
-function renderDynamicBlockEditors() {
+function renderDynamicBlockEditors(preserveCurrentFormState = true) {
     const container = document.getElementById('dynamicBlocksContainer');
     if (!container) return;
 
     // Harvest typed text before clearing DOM
-    harvestCurrentFormState();
+    if (preserveCurrentFormState) harvestCurrentFormState();
     container.innerHTML = '';
 
     activeBlocksOrder.forEach((blockType, idx) => {
@@ -2998,8 +2998,12 @@ function renderDynamicBlockEditors() {
 // Open Edit Slide Modal Dialog
 function openEditModal(slide, idx) {
     if (!slide) return;
-    currentSlide = slide;
+    // Keep the editor isolated from the curriculum object and from the previous slide.
+    currentSlide = JSON.parse(JSON.stringify(slide));
     document.getElementById('formSlideId').value = slide.id;
+
+    // Visibility is editor-local and must never leak when switching slides.
+    hiddenBlocksMap = {};
 
     if (slide.blocks_order && slide.blocks_order.length > 0) {
         activeBlocksOrder = [...slide.blocks_order];
@@ -3070,7 +3074,8 @@ function openEditModal(slide, idx) {
         }
     }
 
-    renderDynamicBlockEditors();
+    // The form store above belongs to this slide; do not harvest stale fields from the old one.
+    renderDynamicBlockEditors(false);
     updateLivePreview();
     if (isTwoStage) {
         switchModalStage(1);

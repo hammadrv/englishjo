@@ -54,6 +54,19 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def normalize_mastery_question_count(value, fallback=10):
+    try:
+        requested = int(value)
+    except (TypeError, ValueError):
+        requested = 0
+    if 1 <= requested <= 50:
+        return requested
+    try:
+        safe_fallback = int(fallback)
+    except (TypeError, ValueError):
+        safe_fallback = 10
+    return safe_fallback if 1 <= safe_fallback <= 50 else 10
+
 def init_db():
     conn = get_db_connection()
     c = conn.cursor()
@@ -417,15 +430,15 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
             ex_rows = c.fetchall()
             for ex in ex_rows:
                 stored_options = json.loads(ex["options_json"] or "[]")
-                is_text_quiz = ex["question_type"] == "text_quiz_5"
+                is_question_bank = ex["question_type"] in {"text_quiz_5", "mastery_quiz"}
                 ex_dict = {
                     "id": ex["id"],
                     "question_type": ex["question_type"],
                     "instruction_badge": ex["instruction_badge"],
                     "sentence_ar": ex["sentence_ar"],
                     "question_en": ex["question_en"],
-                    "options": [] if is_text_quiz else stored_options,
-                    "quiz_questions": stored_options if is_text_quiz else [],
+                    "options": [] if is_question_bank else stored_options,
+                    "quiz_questions": stored_options if is_question_bank else [],
                     "correct_index": ex["correct_index"],
                     "explanation": ex["explanation"],
                     "wrong_note": ex["wrong_note"],
@@ -1201,8 +1214,22 @@ def add_exercise():
             'explanation': '',
         },
     }
-    default = defaults.get(question_type, defaults['multiple_choice'])
-    stored_options = default.get('quiz_questions', default.get('options', [])) if question_type == 'text_quiz_5' else payload.get('options', default['options'])
+    if question_type == 'mastery_quiz':
+        question_count = normalize_mastery_question_count(payload.get('question_count', 10))
+        default = {
+            'instruction_badge': 'اختبار إتقان نهائي: أجب عن جميع الأسئلة ثم ثبّت إجاباتك',
+            'sentence_ar': '',
+            'question_en': '',
+            'quiz_questions': [
+                {'prompt': f'اكتب سؤال الإتقان رقم {index + 1} هنا', 'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'], 'answer_type': 'multiple_choice', 'correct_index': 0, 'correct_indices': [0]}
+                for index in range(question_count)
+            ],
+            'explanation': ''
+        }
+        stored_options = payload.get('quiz_questions') or default['quiz_questions']
+    else:
+        default = defaults.get(question_type, defaults['multiple_choice'])
+        stored_options = default.get('quiz_questions', default.get('options', [])) if question_type == 'text_quiz_5' else payload.get('options', default['options'])
 
     conn = get_db_connection()
     c = conn.cursor()
@@ -1219,7 +1246,7 @@ def add_exercise():
         json.dumps(payload.get("quiz_questions", stored_options) if question_type == 'text_quiz_5' else stored_options, ensure_ascii=False),
         payload.get("correct_index", 0),
         payload.get("explanation", default['explanation']),
-        payload.get("image", "" if question_type == 'text_quiz_5' else "/static/images/kids_football.jpg"),
+        payload.get("image", "" if question_type in {'text_quiz_5', 'mastery_quiz'} else "/static/images/kids_football.jpg"),
         str(payload.get("linked_exercise_id", "all"))
     ))
     new_id = c.lastrowid
@@ -1284,22 +1311,39 @@ def add_exam_question():
     conn = get_db_connection()
     c = conn.cursor()
 
+    question_type = payload.get("question_type", "multiple_choice")
+    if question_type == "mastery_quiz":
+        question_count = normalize_mastery_question_count(payload.get('question_count', 10))
+        quiz_questions = payload.get("quiz_questions") or [
+            {"prompt": f"اكتب سؤال الإتقان رقم {index + 1} هنا", "options": ["الخيار الأول", "الخيار الثاني", "الخيار الثالث"], "answer_type": "multiple_choice", "correct_index": 0, "correct_indices": [0]}
+            for index in range(question_count)
+        ]
+        options_json = json.dumps(quiz_questions, ensure_ascii=False)
+        sentence_ar = ""
+        question_en = ""
+        image = ""
+    else:
+        options_json = json.dumps(payload.get("options", ["speaks", "speak", "speaking"]), ensure_ascii=False)
+        sentence_ar = payload.get("sentence_ar", "جملة اختبار جديدة")
+        question_en = payload.get("question_en", "She _____ English fluently.")
+        image = payload.get("image", "/static/images/girl_reading_library.jpg")
+
     c.execute('''
         INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, result_title, reveal_badge, reveal_explanation, image, is_reinforcement, is_exam)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
     ''', (
         lesson_id,
-        payload.get("question_type", "multiple_choice"),
+        question_type,
         payload.get("instruction_badge", "📝 الاختبار النهائي لتقييم الإتقان 🎯"),
-        payload.get("sentence_ar", "جملة اختبار جديدة"),
-        payload.get("question_en", "She _____ English fluently."),
-        json.dumps(payload.get("options", ["speaks", "speak", "speaking"]), ensure_ascii=False),
+        sentence_ar,
+        question_en,
+        options_json,
         payload.get("correct_index", 0),
         payload.get("explanation", "نضيف s للفعل مع الضمير المفرد She."),
         payload.get("result_title", "إجابة صحيحة مذهلة! 🎉"),
         payload.get("reveal_badge", "She + speaks"),
         payload.get("reveal_explanation", "ممتاز! أتقنت استخدام الضمير المفرد مع الفعل."),
-        payload.get("image", "/static/images/girl_reading_library.jpg")
+        image
     ))
     new_id = c.lastrowid
     conn.commit()

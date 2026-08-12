@@ -1988,3 +1988,530 @@ body.exercise-modal-open {
     .modal-split-body { grid-template-columns: 1fr; overflow-y: auto; }
     .modal-preview-col { display: flex; min-height: 400px; margin-top: 1.5rem; }
 }
+
+/* RESPONSIVE LAYOUT SYSTEM */
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+    max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+    .top-nav-bar {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.7rem 1rem;
+    }
+    .top-center-nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+    .top-nav-tab {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+    .teacher-studio-container {
+        width: calc(100% - 2rem);
+        margin: 1rem auto;
+        padding: 1.5rem;
+    }
+    .studio-top-header {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .units-overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    body.light-theme {
+        min-width: 0;
+    }
+    .top-nav-bar {
+        align-items: stretch;
+        padding: 0.6rem 0.75rem;
+    }
+    .brand-title {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.95rem;
+    }
+    .top-center-nav {
+        gap: 2px;
+        padding: 3px;
+    }
+    .top-nav-tab {
+        min-width: 0;
+        padding: 0.5rem 0.4rem;
+        font-size: 0.72rem;
+        gap: 0.25rem;
+        white-space: normal;
+        line-height: 1.35;
+    }
+    .top-nav-bar > div:last-child {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mobile-device-wrapper {
+        min-height: calc(100svh - 8rem);
+        padding: 0.75rem 0.5rem;
+    }
+    .mobile-phone-frame {
+        width: min(440px, 100%);
+        max-width: 100%;
+        min-height: calc(100svh - 8rem);
+        border-width: 8px;
+        border-radius: 34px;
+    }
+    .mobile-status-bar {
+        height: 32px;
+        padding: 0 0.8rem;
+        font-size: 0.68rem;
+    }
+    .phone-dynamic-island {
+        width: 72px;
+        height: 15px;
+    }
+    .student-dashboard-screen,
+    .mobile-screen-content {
+        max-height: none;
+        min-height: 0;
+    }
+    .student-dashboard-screen {
+        padding: 0.9rem;
+        gap: 0.9rem;
+    }
+    .dashboard-hero-banner {
+        padding: 1rem;
+        border-radius: 18px;
+    }
+    .dash-main-title {
+        font-size: 1.15rem;
+    }
+    .unit-header-title {
+        font-size: 1rem;
+        line-height: 1.45;
+    }
+    .lesson-nav-card {
+        gap: 0.65rem;
+        padding: 0.85rem;
+    }
+    .lesson-card-title {
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+    .lesson-card-sub {
+        font-size: 0.72rem;
+    }
+    .mobile-slide-header {
+        gap: 0.5rem;
+        padding-inline: 0.8rem;
+    }
+    .header-step-counter {
+        font-size: 0.78rem;
+    }
+    .mobile-screen-content {
+        padding: 0.8rem 1rem 1.4rem;
+    }
+    .hero-title-en {
+        font-size: clamp(2rem, 11vw, 2.8rem);
+        overflow-wrap: anywhere;
+    }
+    .desc-ar-text {
+        font-size: 1rem;
+    }
+    .exercise-screen-wrapper {
+        padding: 0.8rem 0.75rem 1.25rem;
+    }
+    .exercise-top-bar {
+        gap: 0.55rem;
+    }
+    .exercise-lesson-name {
+        font-size: 0.72rem;
+    }
+    .btn-exercise-back {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+    .exercise-options-grid-3 {
+        grid-template-columns: 1fr;
+    }
+    .exercise-question-sentence {
+        font-size: 1.2rem;
+        line-height: 1.4;
+    }
+
+    .teacher-studio-container {
+        width: calc(100% - 1rem);
+        margin: 0.5rem auto;
+        padding: 1rem 0.75rem;
+        border-radius: 18px;
+    }
+    .studio-level-container {
+        gap: 1rem;
+    }
+    .studio-top-header,
+    .unit-workspace-header,
+    .tab-explanation-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .main-studio-title {
+        font-size: 1.7rem;
+    }
+    .sub-instruction,
+    .unit-workspace-sub,
+    .tab-explanation-sub {
+        font-size: 0.82rem;
+        line-height: 1.6;
+    }
+    .btn-preview-mobile,
+    .btn-edit-unit-name,
+    .btn-add-slide {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+    }
+    .stats-summary-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        padding: 0.8rem;
+    }
+    .stat-card-box {
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.55rem;
+    }
+    .stat-card-box:nth-last-child(-n + 2) {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .stat-num {
+        font-size: 1.55rem;
+    }
+    .stat-label {
+        font-size: 0.72rem;
+    }
+    .units-overview-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+    .unit-manager-card,
+    .lesson-manager-card {
+        padding: 1rem;
+        border-radius: 18px;
+    }
+    .unit-title-ar,
+    .lesson-name-ar {
+        font-size: 1.05rem;
+        line-height: 1.5;
+    }
+    .unit-title-en,
+    .lesson-name-en {
+        font-size: 0.74rem;
+        overflow-wrap: anywhere;
+    }
+    .unit-workspace-header {
+        gap: 0.9rem;
+        padding: 1rem;
+    }
+    .unit-workspace-title {
+        font-size: 1.45rem;
+        line-height: 1.45;
+    }
+    .lesson-card-header,
+    .lesson-card-right,
+    .lesson-card-left {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+    .lesson-card-header {
+        align-items: flex-start;
+    }
+    .lesson-card-right {
+        align-items: flex-start;
+    }
+    .lesson-card-left {
+        justify-content: space-between;
+    }
+    .lesson-meta-badges {
+        flex-wrap: wrap;
+    }
+    .meta-badge {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.55rem;
+    }
+    .studio-tabs-bar {
+        flex-direction: column !important;
+        gap: 0.35rem;
+        padding: 0.35rem;
+    }
+    .studio-tab-btn {
+        width: 100%;
+        min-width: 0;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+    .tab-action-btns {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+    .sequence-slide-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.9rem;
+        padding: 1rem;
+    }
+    .seq-right-section,
+    .seq-actions-box {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    .seq-right-section {
+        gap: 0.7rem;
+    }
+    .seq-info-box {
+        padding: 0;
+    }
+    .seq-title {
+        font-size: 1.05rem;
+        line-height: 1.45;
+    }
+    .seq-desc {
+        font-size: 0.82rem;
+    }
+    .seq-thumb-img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+    .seq-actions-box .btn-seq-preview,
+    .seq-actions-box .btn-seq-edit,
+    .seq-actions-box .btn-seq-delete {
+        flex: 1 1 120px;
+        text-align: center;
+        white-space: normal;
+    }
+    .reinforcement-type-selector {
+        width: 100%;
+        flex-wrap: wrap;
+        border-radius: 16px !important;
+    }
+    .reinforcement-type-selector .btn-reinf-type {
+        flex: 1 1 180px;
+    }
+
+    .edit-modal-backdrop {
+        align-items: center;
+        padding: 0.5rem;
+    }
+    .edit-modal-split-container,
+    #slideEditModal .edit-modal-split-container,
+    #exerciseEditModal .edit-modal-split-container {
+        width: 100%;
+        height: calc(100svh - 1rem);
+        max-height: calc(100svh - 1rem);
+        padding: 0.75rem;
+        border-radius: 18px;
+    }
+    .modal-header {
+        gap: 0.55rem;
+        margin-bottom: 0.65rem;
+        padding-bottom: 0.65rem;
+    }
+    .modal-title-group {
+        min-width: 0;
+        width: calc(100% - 46px);
+        gap: 0.55rem;
+        align-items: flex-start;
+    }
+    .modal-title-group h3,
+    #slideEditModal .modal-title-group h3,
+    #exerciseEditModal .modal-title-group h3 {
+        min-width: 0;
+        font-size: 0.95rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+    .modal-split-body,
+    #slideEditModal .modal-split-body,
+    #exerciseEditModal .modal-split-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+        min-height: 0;
+        overflow: hidden;
+    }
+    #slideEditModal .modal-form-col,
+    #exerciseEditModal .modal-form-col {
+        flex: 1 1 58%;
+        min-height: 0;
+        max-height: 62%;
+        height: auto;
+        padding: 0 0.25rem 0.5rem 0;
+    }
+    #slideEditModal .modal-preview-col,
+    #exerciseEditModal .modal-preview-col {
+        flex: 0 1 40%;
+        min-height: 220px;
+        max-height: 42%;
+        height: auto;
+        margin-top: 0;
+        padding: 0.7rem;
+        border-radius: 16px;
+        overflow-y: auto;
+    }
+    .full-mini-phone-frame {
+        width: min(100%, 340px);
+        border-width: 7px;
+        border-radius: 32px;
+    }
+    .full-mini-screen-content {
+        max-height: 420px;
+    }
+    .top-form-actions-bar {
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+    .top-form-actions-bar > * {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+    .form-actions {
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+    .form-actions > button {
+        flex: 1 1 180px;
+        justify-content: center;
+    }
+    .modal-stage-switcher-wrapper {
+        width: 100%;
+        flex-wrap: wrap;
+        border-radius: 16px;
+        padding: 0.4rem 0.55rem;
+    }
+    .modal-stage-switcher-wrapper label {
+        width: 100%;
+        white-space: normal;
+        font-size: 0.72rem;
+    }
+    .stage-toggle-btn-group {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .stage-toggle-btn-group .btn-header-stage {
+        flex: 1 1 160px;
+        min-width: 0;
+    }
+    .template-picker-modal-container,
+    .add-block-menu-container {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100svh - 1rem);
+        padding: 1rem;
+        border-radius: 18px;
+    }
+    .template-picker-modal-container .modal-header,
+    .add-block-menu-container .modal-header {
+        align-items: flex-start;
+    }
+    .template-picker-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    .picker-card-option {
+        padding: 0.9rem;
+        border-radius: 16px;
+    }
+    .edit-unit-dialog,
+    .edit-lesson-dialog {
+        width: 100%;
+        max-width: none !important;
+        padding: 1.1rem !important;
+    }
+    .edit-unit-dialog .modal-header,
+    .edit-lesson-dialog .modal-header {
+        margin-bottom: 0.9rem !important;
+    }
+    .edit-unit-dialog .modal-header h3,
+    .edit-lesson-dialog .modal-header h3 {
+        font-size: 1.15rem;
+    }
+    .edit-unit-dialog form > div:last-child,
+    .edit-lesson-dialog form > div:last-child {
+        flex-wrap: wrap;
+    }
+    .edit-unit-dialog form > div:last-child button,
+    .edit-lesson-dialog form > div:last-child button {
+        flex: 1 1 140px;
+    }
+    .form-row {
+        flex-direction: column !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-nav-tab {
+        font-size: 0.66rem;
+    }
+    .mobile-phone-frame {
+        border-radius: 28px;
+    }
+    .hero-title-en {
+        font-size: 2rem;
+    }
+    .exercise-top-bar {
+        flex-wrap: wrap;
+    }
+    .exercise-progress-container {
+        order: 3;
+        flex-basis: 100%;
+    }
+    .stats-summary-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+    .unit-card-footer,
+    .lesson-card-left {
+        align-items: flex-start;
+    }
+    .seq-actions-box .btn-seq-preview,
+    .seq-actions-box .btn-seq-edit,
+    .seq-actions-box .btn-seq-delete {
+        flex-basis: 100%;
+    }
+    .modal-title-group {
+        width: calc(100% - 40px);
+    }
+    .btn-close-modal {
+        width: 36px;
+        height: 36px;
+        font-size: 1.15rem;
+    }
+    #slideEditModal .modal-form-col,
+    #exerciseEditModal .modal-form-col {
+        max-height: 60%;
+    }
+    #slideEditModal .modal-preview-col,
+    #exerciseEditModal .modal-preview-col {
+        min-height: 190px;
+        max-height: 38%;
+    }
+}

@@ -481,7 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const slideEditModal = document.getElementById('slideEditModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const slideEditForm = document.getElementById('slideEditForm');
-    const deleteSlideBtn = document.getElementById('deleteSlideBtn');
     const addNewBlockBtn = document.getElementById('addNewBlockBtn');
 
     const exerciseEditModal = document.getElementById('exerciseEditModal');

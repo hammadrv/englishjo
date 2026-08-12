@@ -239,6 +239,39 @@ function collectQuestionBankQuestionsFromEditor(prefix, count) {
     });
 }
 
+function syncMasteryQuizAnswersToState(count) {
+    if (!currentExercise || currentExercise.question_type !== 'mastery_quiz') return [];
+    const collected = collectQuestionBankQuestionsFromEditor('formMasteryQuizQ', count);
+    currentExercise.quiz_questions = normalizeMasteryQuizQuestions(collected, count);
+    return currentExercise.quiz_questions;
+}
+
+function collectMasteryQuizQuestionsForSave(count) {
+    const collected = collectQuestionBankQuestionsFromEditor('formMasteryQuizQ', count);
+    const savedState = Array.isArray(currentExercise?.quiz_questions)
+        ? normalizeMasteryQuizQuestions(currentExercise.quiz_questions, count)
+        : [];
+
+    return collected.map((question, index) => {
+        const savedQuestion = savedState[index] || {};
+        const answerType = question.answer_type === 'checkboxes' ? 'checkboxes' : 'multiple_choice';
+        const savedCorrectIndices = answerType === 'checkboxes'
+            ? (Array.isArray(savedQuestion.correct_indices) ? savedQuestion.correct_indices : question.correct_indices)
+            : [Number.isInteger(savedQuestion.correct_index) ? savedQuestion.correct_index : question.correct_index];
+        const correctIndices = [...new Set(savedCorrectIndices
+            .map(value => Number(value))
+            .filter(value => Number.isInteger(value) && value >= 0 && value < question.options.length))];
+        if (correctIndices.length === 0) correctIndices.push(0);
+
+        return {
+            ...question,
+            answer_type: answerType,
+            correct_index: correctIndices[0],
+            correct_indices: correctIndices
+        };
+    });
+}
+
 function masteryQuestionToEditorHtml(question) {
     const options = Array.isArray(question?.options) && question.options.length >= 2
         ? question.options
@@ -996,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 instruction_badge: getVal('formExBadge') || 'اختبار إتقان نهائي: أجب عن جميع الأسئلة ثم ثبّت إجاباتك',
                 sentence_ar: '',
                 question_en: '',
-                quiz_questions: collectQuestionBankQuestionsFromEditor('formMasteryQuizQ', masteryCount),
+                quiz_questions: collectMasteryQuizQuestionsForSave(masteryCount),
                 options: [],
                 correct_index: 0,
                 explanation: '',
@@ -4006,6 +4039,13 @@ function renderExDynamicBlocks() {
                 }
                 currentExercise.quiz_questions = normalizeMasteryQuizQuestions(existingQuestions, quizQuestions.length);
                 renderExDynamicBlocks();
+                updateExerciseLivePreview();
+            });
+        });
+
+        container.querySelectorAll('.text-quiz-correct-select, .mastery-correct-checkboxes input').forEach(answerControl => {
+            answerControl.addEventListener('change', () => {
+                syncMasteryQuizAnswersToState(quizQuestions.length);
                 updateExerciseLivePreview();
             });
         });

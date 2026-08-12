@@ -1556,7 +1556,7 @@ function renderAccordionLessonContent(card, lessonId) {
 
                     <div class="seq-info-box">
                         <div class="seq-category">${exItem.instruction_badge || (isMasteryQuiz ? 'اختبار إتقان نهائي' : isQuestionBank ? 'اختبار نصي من 5 أسئلة' : 'تمرين تفاعلي')}</div>
-                        <h3 class="seq-title" style="direction: ${isQuestionBank ? 'rtl' : 'ltr'}; text-align: ${isQuestionBank ? 'right' : 'left'}; font-family: 'Outfit', sans-serif;">${isMasteryQuiz ? `اختبار إتقان بنمط Google Forms (${questionBankCount} سؤال)` : isQuestionBank ? 'اختبار نصي من 5 أسئلة' : exItem.question_en}</h3>
+                        <h3 class="seq-title" style="direction: ${isQuestionBank ? 'rtl' : 'ltr'}; text-align: ${isQuestionBank ? 'right' : 'left'}; font-family: 'Outfit', sans-serif;">${isMasteryQuiz ? `اختبار إتقان نهائي (${questionBankCount} سؤال)` : isQuestionBank ? 'اختبار نصي من 5 أسئلة' : exItem.question_en}</h3>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
                             ${textQuizSummary}
                         </div>
@@ -1990,7 +1990,7 @@ function renderAccordionLessonContent(card, lessonId) {
 
                 <div class="seq-info-box">
                     <div class="seq-category" style="background: #ECFDF5; color: #047857;">${eqItem.instruction_badge || 'سؤال اختبار نهائي'}</div>
-                    <h3 class="seq-title" style="direction: ${isMasteryQuiz ? 'rtl' : 'ltr'}; text-align: ${isMasteryQuiz ? 'right' : 'left'}; font-family: 'Outfit', sans-serif;">${isMasteryQuiz ? `اختبار إتقان بنمط Google Forms (${masteryCount} سؤال)` : eqItem.question_en}</h3>
+                    <h3 class="seq-title" style="direction: ${isMasteryQuiz ? 'rtl' : 'ltr'}; text-align: ${isMasteryQuiz ? 'right' : 'left'}; font-family: 'Outfit', sans-serif;">${isMasteryQuiz ? `اختبار إتقان نهائي (${masteryCount} سؤال)` : eqItem.question_en}</h3>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
                         ${isMasteryQuiz
                             ? `<span style="background: #D1FAE5; border: 1px solid #34D399; color: #065F46; padding: 0.25rem 0.65rem; border-radius: 8px; font-weight: 800; font-size: 0.8rem;">🏆 ${masteryCount} أسئلة محفوظة مع الإجابات</span>`
@@ -3474,7 +3474,7 @@ function triggerStudentExamStage() {
         exercise: masteryQuiz || examQuestions[0]
     };
     runExerciseSimulator(studentLesson, 0);
-    showToast(masteryQuiz ? '🏆 بدأ اختبار الإتقان النهائي بنمط Google Forms.' : '📝 بدأ الاختبار النهائي.');
+    showToast(masteryQuiz ? '🏆 بدأ اختبار الإتقان النهائي.' : '📝 بدأ الاختبار النهائي.');
 }
 
 // Trigger Sequential Reinforcement Stage (Explanation Slide -> Practice Exercise)

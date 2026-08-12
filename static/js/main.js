@@ -1624,7 +1624,7 @@ function renderAccordionLessonContent(card, lessonId) {
         if (btnTestAll) {
             btnTestAll.addEventListener('click', (e) => {
                 e.stopPropagation();
-                runExerciseSimulator(lesson, 0);
+            runExerciseSimulator(lesson, 0, { isTrial: true });
             });
         }
 
@@ -1696,7 +1696,7 @@ function renderAccordionLessonContent(card, lessonId) {
                 exCard.querySelector('.btn-preview-ex-item').addEventListener('click', (e) => {
                     e.stopPropagation();
                     // Preview exactly the exercise card that was selected, regardless of lesson ordering.
-                    runExerciseSimulator({ ...lesson, exercises: [exItem], exercise: exItem }, 0);
+                    runExerciseSimulator({ ...lesson, exercises: [exItem], exercise: exItem }, 0, { isTrial: true });
                 });
 
                 exCard.querySelector('.btn-edit-ex-item').addEventListener('click', (e) => {
@@ -2142,7 +2142,7 @@ function renderAccordionLessonContent(card, lessonId) {
 
             eqCard.querySelector('.btn-preview-eq-item').onclick = (e) => {
                 e.stopPropagation();
-                runExerciseSimulator({ exercises: [eqItem], title_ar: "📝 تجربة سؤال الاختبار النهائي" }, 0);
+                runExerciseSimulator({ exercises: [eqItem], title_ar: "📝 تجربة سؤال الاختبار النهائي" }, 0, { isTrial: true });
             };
 
             eqCard.querySelector('.btn-edit-eq-item').onclick = (e) => {
@@ -3372,12 +3372,16 @@ async function uploadSlideImageFromPC(inputEl) {
 let currentExerciseIndex = 0;
 let textQuizAnswers = {};
 let textQuizSelections = {};
+let exerciseTrialMode = false;
+let exerciseTrialResults = { correct: 0, wrong: 0 };
 
 // Run Exercise Simulator (Test as Student)
-function runExerciseSimulator(lessonObj, startIdx = 0) {
+function runExerciseSimulator(lessonObj, startIdx = 0, options = {}) {
     if (!lessonObj) return;
     currentLesson = lessonObj;
     currentExerciseIndex = startIdx || 0;
+    exerciseTrialMode = Boolean(options.isTrial);
+    exerciseTrialResults = { correct: 0, wrong: 0 };
 
     const exercisesList = (lessonObj.exercises && lessonObj.exercises.length > 0) 
         ? lessonObj.exercises 
@@ -3416,6 +3420,7 @@ function runExerciseSimulator(lessonObj, startIdx = 0) {
     studentWrongExerciseIds = [];
     textQuizAnswers = {};
     textQuizSelections = {};
+    document.getElementById('exerciseTrialResultCard')?.classList.add('hidden');
     if (isTextQuiz5) renderTextQuiz5Stage();
     else renderCurrentExercise();
     showToast(`🧪 بدء اختبار التمارين التفاعلية (سؤال ${currentExerciseIndex + 1} من ${exercisesList.length})`);
@@ -3575,12 +3580,13 @@ function completeTextQuizQuestion(question, questionIndex, isCorrect, score, com
     if (score) score.textContent = `${Object.values(textQuizAnswers).filter(Boolean).length} / ${questions.length}`;
     if (completion && Object.keys(textQuizAnswers).length === questions.length) {
         const correctCount = Object.values(textQuizAnswers).filter(Boolean).length;
+        const wrongCount = questions.length - correctCount;
         completion.classList.remove('hidden');
         completion.innerHTML = isMasteryQuiz && correctCount === questions.length
-            ? '<i class="fa-solid fa-award"></i><span>🏆 وسام الإتقان: أجبت عن جميع الأسئلة بشكل صحيح 100%!</span>'
+            ? `<i class="fa-solid fa-award"></i><span>🏆 وسام الإتقان: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال.</span>`
             : isMasteryQuiz
-                ? `<i class="fa-solid fa-rotate-right"></i><span>نتيجتك ${correctCount} / ${questions.length}. راجع الأخطاء ثم أعد الاختبار للوصول إلى 100%.</span>`
-                : '<i class="fa-solid fa-circle-check"></i><span>أكملت أسئلة الاختبار. أحسنت!</span>';
+                ? `<i class="fa-solid fa-rotate-right"></i><span>النتيجة: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال. راجع الأخطاء ثم أعد الاختبار.</span>`
+                : `<i class="fa-solid fa-circle-check"></i><span>النتيجة النهائية: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال.</span>`;
     }
 }
 
@@ -3713,10 +3719,12 @@ function renderCurrentExercise() {
     const explanationBox = document.getElementById('exerciseStudentExplanation');
     const wrongFeedbackCard = document.getElementById('exerciseWrongFeedbackCard');
     const stage2ResultCard = document.getElementById('exerciseStage2ResultCard');
+    const trialResultCard = document.getElementById('exerciseTrialResultCard');
 
     if (explanationBox) explanationBox.classList.add('hidden');
     if (wrongFeedbackCard) wrongFeedbackCard.classList.add('hidden');
     if (stage2ResultCard) stage2ResultCard.classList.add('hidden');
+    if (trialResultCard) trialResultCard.classList.add('hidden');
 
     const optionsGrid = document.getElementById('exerciseOptionsGrid');
     optionsGrid.innerHTML = '';
@@ -3735,6 +3743,7 @@ function renderCurrentExercise() {
 
             if (idx === correctIdx) {
                 btn.classList.add('correct');
+                if (exerciseTrialMode) exerciseTrialResults.correct += 1;
                 showToast('🎉 إجابة صحيحة مذهلة!');
 
                 // Reveal Stage 2 Result Rule Card
@@ -3763,6 +3772,7 @@ function renderCurrentExercise() {
                 }
             } else {
                 btn.classList.add('wrong');
+                if (exerciseTrialMode) exerciseTrialResults.wrong += 1;
                 if (buttons[correctIdx]) buttons[correctIdx].classList.add('correct');
 
                 if (ex.id && !studentWrongExerciseIds.includes(ex.id)) {
@@ -3801,10 +3811,28 @@ function renderCurrentExercise() {
                     }
                 }
             }
+
+            if (exerciseTrialMode && currentExerciseIndex >= exercisesList.length - 1) {
+                showExerciseTrialResult(exercisesList.length);
+            }
         });
 
         optionsGrid.appendChild(btn);
     });
+}
+
+function showExerciseTrialResult(totalQuestions) {
+    const resultCard = document.getElementById('exerciseTrialResultCard');
+    const correctCount = document.getElementById('exerciseTrialCorrectCount');
+    const wrongCount = document.getElementById('exerciseTrialWrongCount');
+    const summary = document.getElementById('exerciseTrialResultSummary');
+    if (!resultCard) return;
+
+    if (correctCount) correctCount.textContent = exerciseTrialResults.correct;
+    if (wrongCount) wrongCount.textContent = exerciseTrialResults.wrong;
+    if (summary) summary.textContent = `النتيجة النهائية: ${exerciseTrialResults.correct} صحيح و${exerciseTrialResults.wrong} خطأ من أصل ${totalQuestions} سؤال.`;
+    resultCard.classList.remove('hidden');
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Exercise Visual Block Builder Global Variables & State

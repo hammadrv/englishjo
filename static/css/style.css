@@ -573,6 +573,41 @@ body.light-theme {
 .text-quiz-live-preview-card strong { display: block; margin-bottom: 0.45rem; color: #0F766E; font-size: 0.75rem; }
 .text-quiz-live-preview-prompt { margin-bottom: 0.55rem; color: var(--text-navy); font-family: 'Outfit', sans-serif; font-size: 0.86rem; font-weight: 900; line-height: 1.4; direction: ltr; text-align: left; white-space: pre-wrap; }
 .text-quiz-live-preview-option { margin-top: 0.35rem; padding: 0.45rem 0.55rem; border: 1px solid #CBD5E1; border-radius: 8px; color: #334155; font-family: 'Outfit', sans-serif; font-size: 0.75rem; font-weight: 700; direction: ltr; text-align: left; }
+.ministry-exam-manager-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; padding: 1.2rem; border: 1.5px solid #93C5FD; border-radius: 16px; background: #EFF6FF; }
+.ministry-exam-manager-header h2 { margin: 0.3rem 0; color: var(--text-navy); font-size: 1.35rem; font-weight: 900; }
+.ministry-exam-manager-header p { margin: 0; color: #475569; font-size: 0.88rem; font-weight: 700; }
+.ministry-exam-badge { display: inline-flex; background: #DBEAFE; color: #1D4ED8; border: 1px solid #93C5FD; }
+.ministry-exam-manager-actions { display: flex; gap: 0.55rem; flex-wrap: wrap; }
+.btn-download-ministry-exam, .btn-add-ministry-exam, .btn-edit-ministry-exam, .btn-delete-ministry-exam { border: 0; border-radius: 10px; padding: 0.65rem 0.85rem; font-family: inherit; font-weight: 900; cursor: pointer; transition: var(--transition); }
+.btn-download-ministry-exam { background: #1D4ED8; color: #FFFFFF; }
+.btn-add-ministry-exam { background: #0D9488; color: #FFFFFF; }
+.btn-download-ministry-exam:hover, .btn-add-ministry-exam:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.btn-download-ministry-exam:disabled { cursor: not-allowed; opacity: 0.45; }
+.ministry-exam-empty-state { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 2rem 1rem; margin-top: 1rem; border: 1.5px dashed #93C5FD; border-radius: 16px; color: #64748B; text-align: center; }
+.ministry-exam-empty-state i { color: #2563EB; font-size: 2rem; }
+.ministry-exam-empty-state strong { color: var(--text-navy); }
+.ministry-exam-paper-preview { margin-top: 1rem; padding: 1.1rem; border: 1.5px solid #CBD5E1; border-radius: 16px; background: #FFFFFF; box-shadow: 0 5px 16px rgba(15, 23, 42, 0.05); }
+.ministry-paper-heading { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; padding-bottom: 0.7rem; border-bottom: 1px solid #E2E8F0; color: var(--text-navy); }
+.ministry-paper-heading span { color: #1D4ED8; font-weight: 900; }
+.ministry-paper-heading strong { flex: 1; font-size: 0.95rem; }
+.ministry-paper-heading small { color: #64748B; font-weight: 800; }
+.ministry-paper-meta { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0.8rem 0; color: #64748B; font-size: 0.8rem; font-weight: 800; }
+.ministry-paper-question { padding: 0.7rem 0; border-bottom: 1px solid #F1F5F9; direction: ltr; text-align: left; }
+.ministry-paper-question > strong { display: block; color: var(--text-navy); font-family: 'Outfit', sans-serif; }
+.ministry-paper-question > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem 1rem; margin-top: 0.4rem; color: #475569; font-family: 'Outfit', sans-serif; font-size: 0.82rem; }
+.ministry-more-questions { display: block; margin-top: 0.7rem; color: #1D4ED8; font-weight: 800; }
+.ministry-paper-card-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+.btn-edit-ministry-exam { background: #DBEAFE; color: #1D4ED8; }
+.btn-delete-ministry-exam { background: #FEF2F2; color: #B91C1C; }
+.ministry-question-editor-item { border-color: #93C5FD; }
+.ministry-exam-editor-intro { background: #EFF6FF; border-color: #93C5FD; color: #1E40AF; }
+
+@media (max-width: 640px) {
+    .ministry-exam-manager-actions { width: 100%; }
+    .btn-download-ministry-exam, .btn-add-ministry-exam { flex: 1; min-width: 0; }
+    .ministry-paper-question > div { grid-template-columns: 1fr; }
+    .ministry-paper-card-actions button { flex: 1; }
+}
 
 @media (max-width: 640px) {
     .text-quiz5-stage { padding: 0.8rem 0.7rem 1.4rem; }

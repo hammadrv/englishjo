@@ -1,6 +1,7 @@
-from flask import Flask, render_template, jsonify, request, session, redirect, url_for
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for, Response
 from functools import wraps
 import hmac
+from html import escape as html_escape
 import json
 import os
 import re
@@ -383,7 +384,8 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
                 "reinforcement_slides": [],
                 "exercises": [],
                 "reinforcement_exercises": [],
-                "exam_questions": []
+                "exam_questions": [],
+                "ministry_exam_questions": []
             }
 
             c.execute('SELECT classroom_id FROM lesson_classrooms WHERE lesson_id = ?', (l_row['id'],))
@@ -430,7 +432,7 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
             ex_rows = c.fetchall()
             for ex in ex_rows:
                 stored_options = json.loads(ex["options_json"] or "[]")
-                is_question_bank = ex["question_type"] in {"text_quiz_5", "mastery_quiz"}
+                is_question_bank = ex["question_type"] in {"text_quiz_5", "mastery_quiz", "ministry_exam"}
                 ex_dict = {
                     "id": ex["id"],
                     "question_type": ex["question_type"],
@@ -450,6 +452,8 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
                 }
                 if ex["is_exam"] == 1:
                     lesson["exam_questions"].append(ex_dict)
+                elif ex["is_exam"] == 2:
+                    lesson["ministry_exam_questions"].append(ex_dict)
                 elif ex["is_reinforcement"] == 1:
                     lesson["reinforcement_exercises"].append(ex_dict)
                 else:
@@ -1365,6 +1369,106 @@ def update_exam_question(question_id):
 @login_required
 def delete_exam_question(question_id):
     return delete_exercise(question_id)
+
+@app.route('/api/ministry_exams', methods=['POST'])
+@login_required
+def add_ministry_exam():
+    payload = request.get_json() or {}
+    lesson_id = payload.get('lesson_id', 101)
+    question_count = normalize_mastery_question_count(payload.get('question_count', 10))
+    quiz_questions = payload.get('quiz_questions') or [
+        {
+            'prompt': f'اكتب سؤال الامتحان الوزاري رقم {index + 1} هنا',
+            'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث']
+        }
+        for index in range(question_count)
+    ]
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en,
+        options_json, correct_index, explanation, image, is_reinforcement, is_exam, sort_order)
+        VALUES (?, 'ministry_exam', ?, '', '', ?, 0, '', '', 0, 2,
+            COALESCE((SELECT MAX(sort_order) + 1 FROM exercises WHERE lesson_id = ? AND is_exam = 2), 0))
+    ''', (
+        lesson_id,
+        payload.get('instruction_badge', 'الامتحان الوزاري - اختيار من متعدد'),
+        json.dumps(quiz_questions, ensure_ascii=False),
+        lesson_id
+    ))
+    new_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'new_ministry_exam_id': new_id, 'curriculum': get_curriculum_data_from_db()})
+
+@app.route('/api/ministry_exams/<int:question_id>', methods=['PUT'])
+@login_required
+def update_ministry_exam(question_id):
+    return update_exercise(question_id)
+
+@app.route('/api/ministry_exams/<int:question_id>', methods=['DELETE'])
+@login_required
+def delete_ministry_exam(question_id):
+    return delete_exercise(question_id)
+
+@app.route('/api/ministry_exams/<int:lesson_id>/download', methods=['GET'])
+def download_ministry_exam(lesson_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT title_ar, title_en FROM lessons WHERE id = ?', (lesson_id,))
+    lesson = c.fetchone()
+    c.execute('''
+        SELECT instruction_badge, options_json
+        FROM exercises
+        WHERE lesson_id = ? AND is_exam = 2
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+    ''', (lesson_id,))
+    exam = c.fetchone()
+    conn.close()
+
+    if not lesson or not exam:
+        return jsonify({'success': False, 'message': 'لا توجد ورقة امتحان وزاري محفوظة لهذا الدرس.'}), 404
+
+    questions = json.loads(exam['options_json'] or '[]')
+    title = html_escape(lesson['title_ar'] or lesson['title_en'] or 'ورقة الامتحان الوزاري')
+    instruction = html_escape(exam['instruction_badge'] or 'الامتحان الوزاري - اختيار من متعدد')
+    question_html = []
+    for index, question in enumerate(questions, start=1):
+        prompt = html_escape(str(question.get('prompt', '')))
+        options = question.get('options') if isinstance(question, dict) else []
+        option_html = ''.join(
+            f'<div class="option"><span class="box">☐</span><strong>{chr(65 + option_index)}.</strong> {html_escape(str(option))}</div>'
+            for option_index, option in enumerate(options or [])
+        )
+        question_html.append(f'''
+            <div class="question">
+                <div class="prompt"><strong>{index}.</strong> {prompt}</div>
+                <div class="options">{option_html}</div>
+            </div>
+        ''')
+
+    document = f'''<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><title>{title}</title>
+<style>
+body {{ font-family: Arial, Tahoma, sans-serif; color:#172033; margin:2cm; line-height:1.7; }}
+.header {{ text-align:center; border-bottom:2px solid #0d9488; padding-bottom:16px; margin-bottom:22px; }}
+h1 {{ margin:0 0 6px; font-size:24px; }} .subtitle {{ color:#475569; font-size:15px; }}
+.student {{ display:flex; gap:30px; border:1px solid #cbd5e1; padding:12px; margin-bottom:22px; }}
+.line {{ flex:1; border-bottom:1px dotted #64748b; min-height:24px; }}
+.question {{ page-break-inside: avoid; border-bottom:1px solid #e2e8f0; padding:12px 0 16px; }}
+.prompt {{ font-size:16px; font-weight:bold; margin-bottom:8px; }} .options {{ display:grid; grid-template-columns:repeat(2, 1fr); gap:5px 25px; padding-right:22px; }}
+.option {{ font-size:15px; }} .box {{ font-size:19px; margin-left:5px; }}
+</style></head><body>
+<div class="header"><h1>الامتحان الوزاري</h1><div class="subtitle">{title} | {instruction}</div></div>
+<div class="student"><span>اسم الطالب:</span><span class="line"></span><span>التاريخ:</span><span class="line"></span></div>
+{''.join(question_html)}
+</body></html>'''
+    response = Response(document, content_type='application/msword; charset=utf-8')
+    response.headers['Content-Disposition'] = f'attachment; filename="ministry-exam-lesson-{lesson_id}.doc"'
+    return response
 
 @app.route('/api/custom_templates', methods=['GET'])
 @login_required

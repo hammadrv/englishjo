@@ -223,7 +223,7 @@ function normalizeTextQuizQuestions(questions) {
 }
 
 function isQuestionBankQuiz(exercise) {
-    return exercise?.question_type === 'text_quiz_5' || exercise?.question_type === 'mastery_quiz';
+    return exercise?.question_type === 'text_quiz_5' || exercise?.question_type === 'mastery_quiz' || exercise?.question_type === 'ministry_exam';
 }
 
 function normalizeMasteryQuestionCount(count, fallback = 10) {
@@ -238,6 +238,34 @@ function normalizeMasteryOptionCount(count, fallback = 3) {
     if (Number.isInteger(requested) && requested >= 2 && requested <= 10) return requested;
     const safeFallback = Number(fallback);
     return Number.isInteger(safeFallback) && safeFallback >= 2 && safeFallback <= 10 ? safeFallback : 3;
+}
+
+function normalizeMinistryExamQuestions(questions, count) {
+    const source = Array.isArray(questions) ? questions : [];
+    const safeCount = normalizeMasteryQuestionCount(count, source.length || 10);
+    return Array.from({ length: safeCount }, (_, index) => {
+        const item = source[index] || {};
+        const options = Array.isArray(item.options) ? item.options.slice(0, 6) : [];
+        while (options.length < 2) options.push(`الخيار ${options.length + 1}`);
+        return {
+            prompt: String(item.prompt || item.question || `اكتب سؤال الامتحان الوزاري رقم ${index + 1} هنا`),
+            options
+        };
+    });
+}
+
+function ministryQuestionToEditorHtml(question) {
+    const normalized = normalizeMinistryExamQuestions([question], 1)[0];
+    return [normalized.prompt, ...normalized.options].map(line => `<div>${escapeHtml(line)}</div>`).join('');
+}
+
+function collectMinistryExamQuestionsFromEditor(prefix, count) {
+    return Array.from({ length: count }, (_, index) => {
+        const editor = document.getElementById(`${prefix}${index}`);
+        const surface = document.querySelector(`[data-rich-editor="${prefix}${index}"]`);
+        const lines = richTextPlainLines(surface ? surface.innerHTML : (editor ? editor.value : ''));
+        return { prompt: lines[0] || '', options: lines.slice(1, 7).filter(Boolean) };
+    });
 }
 
 function defaultMasteryQuizQuestions(count = 10) {
@@ -1134,7 +1162,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const isTextQuiz5 = currentExercise && currentExercise.question_type === 'text_quiz_5';
             const isMasteryQuiz = currentExercise && currentExercise.question_type === 'mastery_quiz';
+            const isMinistryExam = currentExercise && currentExercise.question_type === 'ministry_exam';
             const masteryCount = normalizeMasteryQuestionCount(document.getElementById('formMasteryQuizCount')?.value, currentExercise?.quiz_questions?.length || 10);
+            const ministryCount = normalizeMasteryQuestionCount(document.getElementById('formMinistryQuestionCount')?.value, currentExercise?.quiz_questions?.length || 10);
             const updatedData = isTextQuiz5 ? {
                 question_type: 'text_quiz_5',
                 instruction_badge: getVal('formExBadge') || 'اختبار نصي: اختر الإجابة الصحيحة لكل سؤال',
@@ -1161,6 +1191,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 theme: activeExTheme,
                 blocks_order: ['ex_mastery_quiz'],
                 hidden_blocks: []
+            } : isMinistryExam ? {
+                question_type: 'ministry_exam',
+                instruction_badge: getVal('formExBadge') || 'الامتحان الوزاري - اختيار من متعدد',
+                sentence_ar: '',
+                question_en: '',
+                quiz_questions: collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', ministryCount),
+                options: [],
+                correct_index: 0,
+                explanation: '',
+                image: '',
+                is_reinforcement: 0,
+                is_exam: 2,
+                blocks_order: ['ex_ministry_exam'],
+                hidden_blocks: []
             } : {
                 instruction_badge: getVal('formExBadge'),
                 sentence_ar: getVal('formExSentenceAr'),
@@ -1178,8 +1222,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden_blocks: activeExHiddenBlocks
             };
 
-            if ((isTextQuiz5 || isMasteryQuiz) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option))) {
-                showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
+            if ((isTextQuiz5 || isMasteryQuiz || isMinistryExam) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option))) {
+                showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : isMinistryExam ? 'أكمل نص كل سؤال وخياراته قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
                 return;
             }
 
@@ -1337,6 +1381,9 @@ function renderUnitLessonsList() {
                         <button class="studio-tab-btn" data-tab-target="exam" style="flex: 1; margin: 0;">
                             <i class="fa-solid fa-award"></i> 📝 الاختبار
                         </button>
+                        <button class="studio-tab-btn" data-tab-target="ministry" style="flex: 1; margin: 0;">
+                            <i class="fa-solid fa-file-word"></i> 📄 الامتحان الوزاري
+                        </button>
                     </div>
                 </div>
 
@@ -1397,6 +1444,17 @@ function renderUnitLessonsList() {
                     </div>
                     <div class="studio-exam-summary-card" style="margin-top: 1.5rem;"></div>
                 </div>
+
+                <div class="tab-panel-ministry hidden">
+                    <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <span class="sub-badge-teal" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #93C5FD;">📄 ورقة عمل وزارية</span>
+                            <h4 class="tab-explanation-title" style="margin: 0.2rem 0;">الامتحان الوزاري: اختيار من متعدد</h4>
+                            <p class="tab-explanation-sub" style="margin: 0;">أنشئ ورقة أسئلة قابلة للتحميل والطباعة، ليجيب الطالب عليها بالقلم وجاهياً.</p>
+                        </div>
+                    </div>
+                    <div class="studio-ministry-summary-card" style="margin-top: 1.5rem;"></div>
+                </div>
             </div>
         `;
 
@@ -1439,27 +1497,38 @@ function renderUnitLessonsList() {
                 const pracPanel = card.querySelector('.tab-panel-prac');
                 const reinfPanel = card.querySelector('.tab-panel-reinf');
                 const examPanel = card.querySelector('.tab-panel-exam');
+                const ministryPanel = card.querySelector('.tab-panel-ministry');
 
                 if (target === 'exp') {
                     if (expPanel) { expPanel.classList.remove('hidden'); expPanel.classList.add('active'); }
                     if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
                     if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
                     if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
+                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
                 } else if (target === 'prac') {
                     if (pracPanel) { pracPanel.classList.remove('hidden'); pracPanel.classList.add('active'); }
                     if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
                     if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
                     if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
+                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
                 } else if (target === 'reinf') {
                     if (reinfPanel) { reinfPanel.classList.remove('hidden'); reinfPanel.classList.add('active'); }
                     if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
                     if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
                     if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
+                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
                 } else if (target === 'exam') {
                     if (examPanel) { examPanel.classList.remove('hidden'); examPanel.classList.add('active'); }
                     if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
                     if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
                     if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
+                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
+                } else if (target === 'ministry') {
+                    if (ministryPanel) { ministryPanel.classList.remove('hidden'); ministryPanel.classList.add('active'); }
+                    if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
+                    if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
+                    if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
+                    if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
                 }
             });
         });
@@ -2180,6 +2249,104 @@ function renderAccordionLessonContent(card, lessonId) {
 
             examSummary.appendChild(eqCard);
         });
+    }
+
+    // Render the printable Ministry Exam section independently from the interactive exam.
+    const ministrySummary = card.querySelector('.studio-ministry-summary-card');
+    if (ministrySummary) {
+        ministrySummary.innerHTML = '';
+        const ministryQuestions = lesson.ministry_exam_questions || [];
+        const ministryHeader = document.createElement('div');
+        ministryHeader.className = 'ministry-exam-manager-header';
+        ministryHeader.innerHTML = `
+            <div>
+                <span class="sub-badge-teal ministry-exam-badge">📄 ${ministryQuestions.length ? 'ورقة محفوظة' : 'قسم جديد'}</span>
+                <h2>ورقة الامتحان الوزاري</h2>
+                <p>أسئلة اختيار من متعدد للطباعة والتنزيل والإجابة بالقلم داخل الصف.</p>
+            </div>
+            <div class="ministry-exam-manager-actions">
+                <button type="button" class="btn-download-ministry-exam" ${ministryQuestions.length ? '' : 'disabled'}><i class="fa-solid fa-file-arrow-down"></i> تحميل Word للطباعة</button>
+                <button type="button" class="btn-add-ministry-exam"><i class="fa-solid ${ministryQuestions.length ? 'fa-pen' : 'fa-plus'}"></i> ${ministryQuestions.length ? 'تعديل ورقة الأسئلة' : 'إنشاء ورقة الامتحان'}</button>
+            </div>
+        `;
+        ministrySummary.appendChild(ministryHeader);
+
+        ministryHeader.querySelector('.btn-download-ministry-exam').onclick = () => {
+            if (ministryQuestions.length) window.location.href = `/api/ministry_exams/${lesson.id}/download`;
+        };
+        ministryHeader.querySelector('.btn-add-ministry-exam').onclick = async () => {
+            currentLesson = lesson;
+            if (ministryQuestions.length) {
+                currentExercise = ministryQuestions[0];
+                openExerciseEditModal();
+                return;
+            }
+            try {
+                const res = await fetch('/api/ministry_exams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lesson_id: lesson.id, question_count: 10 })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'create failed');
+                syncCurriculumState(data.curriculum, lesson.id);
+                renderAccordionLessonContent(card, lesson.id);
+                const latest = (currentLesson.ministry_exam_questions || []).find(question => question.id === data.new_ministry_exam_id);
+                if (latest) {
+                    currentExercise = latest;
+                    openExerciseEditModal();
+                }
+                showToast('📄 تم إنشاء ورقة الامتحان الوزاري، ابدأ بإدخال الأسئلة.');
+            } catch (err) {
+                showToast('تعذر إنشاء ورقة الامتحان الوزاري');
+            }
+        };
+
+        if (!ministryQuestions.length) {
+            const empty = document.createElement('div');
+            empty.className = 'ministry-exam-empty-state';
+            empty.innerHTML = '<i class="fa-solid fa-file-word"></i><strong>لا توجد ورقة امتحان لهذا الدرس بعد</strong><span>أنشئ ورقة جديدة لتحديد عدد الأسئلة والخيارات ثم حمّلها كملف Word.</span>';
+            ministrySummary.appendChild(empty);
+        } else {
+            ministryQuestions.forEach((exam, examIndex) => {
+                const questions = normalizeMinistryExamQuestions(exam.quiz_questions, exam.quiz_questions?.length || 10);
+                const preview = document.createElement('div');
+                preview.className = 'ministry-exam-paper-preview';
+                preview.innerHTML = `
+                    <div class="ministry-paper-heading"><span>الامتحان الوزاري</span><strong>${escapeHtml(exam.instruction_badge || 'اختيار من متعدد')}</strong><small>${questions.length} أسئلة</small></div>
+                    <div class="ministry-paper-meta"><span>اسم الطالب: __________________</span><span>التاريخ: ______________</span></div>
+                    <div class="ministry-paper-questions">
+                        ${questions.slice(0, 5).map((question, index) => `
+                            <div class="ministry-paper-question"><strong>${index + 1}. ${escapeHtml(question.prompt)}</strong><div>${question.options.map((option, optionIndex) => `<span>☐ ${String.fromCharCode(65 + optionIndex)}. ${escapeHtml(option)}</span>`).join('')}</div></div>
+                        `).join('')}
+                        ${questions.length > 5 ? '<small class="ministry-more-questions">وباقي الأسئلة محفوظة داخل ورقة Word عند التحميل...</small>' : ''}
+                    </div>
+                    <div class="ministry-paper-card-actions">
+                        <button type="button" class="btn-edit-ministry-exam"><i class="fa-solid fa-pen"></i> تعديل الأسئلة</button>
+                        <button type="button" class="btn-delete-ministry-exam"><i class="fa-solid fa-trash"></i> حذف الورقة</button>
+                    </div>
+                `;
+                preview.querySelector('.btn-edit-ministry-exam').onclick = () => {
+                    currentLesson = lesson;
+                    currentExercise = exam;
+                    openExerciseEditModal();
+                };
+                preview.querySelector('.btn-delete-ministry-exam').onclick = async () => {
+                    if (!await requestDeleteConfirmation({ title: 'حذف ورقة الامتحان الوزاري', message: 'سيتم حذف ورقة الأسئلة نهائياً من هذا الدرس.' })) return;
+                    try {
+                        const res = await fetch(`/api/ministry_exams/${exam.id}`, { method: 'DELETE' });
+                        const data = await res.json();
+                        if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
+                        syncCurriculumState(data.curriculum, lesson.id);
+                        renderAccordionLessonContent(card, lesson.id);
+                        showToast('تم حذف ورقة الامتحان الوزاري');
+                    } catch (err) {
+                        showToast('تعذر حذف ورقة الامتحان الوزاري');
+                    }
+                };
+                ministrySummary.appendChild(preview);
+            });
+        }
     }
 }
 
@@ -3896,7 +4063,7 @@ function openExerciseEditModal() {
 
     activeExTheme = currentExercise.theme || 'coral';
     activeExBlocksOrder = isQuestionBankQuiz(currentExercise)
-        ? [currentExercise.question_type === 'mastery_quiz' ? 'ex_mastery_quiz' : 'ex_quiz5_questions']
+        ? [currentExercise.question_type === 'mastery_quiz' ? 'ex_mastery_quiz' : (currentExercise.question_type === 'ministry_exam' ? 'ex_ministry_exam' : 'ex_quiz5_questions')]
         : (currentExercise.blocks_order || ['ex_badge', 'ex_sentence_ar', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation']);
     activeExHiddenBlocks = currentExercise.hidden_blocks || [];
     activeExPreviewStage = 1;
@@ -3935,8 +4102,10 @@ function renderExDynamicBlocks() {
     const ex = currentExercise;
     const isTextQuiz5 = ex.question_type === 'text_quiz_5';
     const isMasteryQuiz = ex.question_type === 'mastery_quiz';
+    const isMinistryExam = ex.question_type === 'ministry_exam';
     if (isTextQuiz5) activeExBlocksOrder = ['ex_quiz5_questions'];
     if (isMasteryQuiz) activeExBlocksOrder = ['ex_mastery_quiz'];
+    if (isMinistryExam) activeExBlocksOrder = ['ex_ministry_exam'];
     const badgeVal = ex.instruction_badge || 'اختر الكلمة المناسبة لإكمال الجملة';
     const sentenceArVal = ex.sentence_ar || 'البنت تقرأ قصة في المكتبة.';
     const questionEnVal = ex.question_en || 'She ___ a story in the library.';
@@ -3952,7 +4121,9 @@ function renderExDynamicBlocks() {
     const imageVal = ex.image || '/static/images/girl_reading_library.jpg';
     const quizQuestions = isMasteryQuiz
         ? normalizeMasteryQuizQuestions(ex.quiz_questions)
-        : normalizeTextQuizQuestions(ex.quiz_questions);
+        : isMinistryExam
+            ? normalizeMinistryExamQuestions(ex.quiz_questions)
+            : normalizeTextQuizQuestions(ex.quiz_questions);
 
     container.innerHTML = '';
 
@@ -3965,7 +4136,47 @@ function renderExDynamicBlocks() {
         let blockIcon = '';
         let blockFieldsHtml = '';
 
-        if (blockId === 'ex_quiz5_questions' || blockId === 'ex_mastery_quiz') {
+        if (blockId === 'ex_ministry_exam') {
+            const ministryCount = quizQuestions.length;
+            blockTitle = 'ورقة الامتحان الوزاري (اختيار من متعدد)';
+            blockIcon = 'fa-solid fa-file-word';
+            blockFieldsHtml = `
+                <div class="text-quiz-editor-intro ministry-exam-editor-intro">
+                    <strong>ورقة امتحان قابلة للطباعة</strong>
+                    <span>اكتب السؤال في السطر الأول، ثم الخيارات تحته. لا يتم حفظ إجابة صحيحة لأن الطالب سيجيب بالقلم داخل ورقة الامتحان.</span>
+                </div>
+                <div class="form-group mastery-count-field">
+                    <label for="formMinistryQuestionCount">عدد أسئلة الورقة</label>
+                    <div class="mastery-count-controls">
+                        <input id="formMinistryQuestionCount" type="number" min="1" max="50" step="1" value="${ministryCount}" inputmode="numeric">
+                        <button type="button" id="applyMinistryQuestionCount" class="btn-apply-mastery-count">تطبيق العدد</button>
+                    </div>
+                    <small>يمكنك اختيار أي عدد من 1 إلى 50 سؤالاً.</small>
+                </div>
+                <div class="form-group text-quiz-title-field">
+                    <label>عنوان الورقة وتعليماتها</label>
+                    <input type="text" id="formExBadge" value="${badgeVal}" placeholder="الامتحان الوزاري - اختر الإجابة الصحيحة">
+                </div>
+                <div class="text-quiz-editor-list">
+                    ${quizQuestions.map((question, quizIndex) => `
+                        <div class="text-quiz-editor-item ministry-question-editor-item">
+                            <div class="text-quiz-editor-item-head">
+                                <span>السؤال ${quizIndex + 1}</span>
+                                <span>${question.options.length} خيارات</span>
+                            </div>
+                            ${richTextEditorHtml(`formMinistryQuizQ${quizIndex}`, 'السؤال\nالخيار الأول\nالخيار الثاني', 'ltr', ministryQuestionToEditorHtml(question))}
+                            <div class="mastery-option-controls" data-ministry-question-index="${quizIndex}">
+                                <span class="mastery-option-count">عدد الخيارات: <strong>${question.options.length}</strong></span>
+                                <div class="mastery-option-actions">
+                                    <button type="button" class="mastery-option-action" data-ministry-option-action="remove" ${question.options.length <= 2 ? 'disabled' : ''}><i class="fa-solid fa-minus"></i> حذف خيار</button>
+                                    <button type="button" class="mastery-option-action is-primary" data-ministry-option-action="add" ${question.options.length >= 6 ? 'disabled' : ''}><i class="fa-solid fa-plus"></i> إضافة خيار</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else if (blockId === 'ex_quiz5_questions' || blockId === 'ex_mastery_quiz') {
             const masteryCount = isMasteryQuiz ? quizQuestions.length : 5;
             const editorPrefix = isMasteryQuiz ? 'formMasteryQuizQ' : 'formTextQuizQ';
             const correctPrefix = isMasteryQuiz ? 'formMasteryQuizCorrect' : 'formTextQuizCorrect';
@@ -4254,6 +4465,39 @@ function renderExDynamicBlocks() {
             });
         });
     }
+
+    if (isMinistryExam) {
+        const countInput = document.getElementById('formMinistryQuestionCount');
+        const applyMinistryQuestionCount = () => {
+            const existingQuestions = collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', quizQuestions.length);
+            const requestedCount = normalizeMasteryQuestionCount(countInput?.value, quizQuestions.length);
+            if (countInput) countInput.value = requestedCount;
+            currentExercise.quiz_questions = normalizeMinistryExamQuestions(existingQuestions, requestedCount);
+            renderExDynamicBlocks();
+            updateExerciseLivePreview();
+        };
+        countInput?.addEventListener('change', applyMinistryQuestionCount);
+        countInput?.addEventListener('blur', applyMinistryQuestionCount);
+        document.getElementById('applyMinistryQuestionCount')?.addEventListener('click', applyMinistryQuestionCount);
+
+        container.querySelectorAll('[data-ministry-option-action]').forEach(actionButton => {
+            actionButton.addEventListener('click', () => {
+                const questionIndex = Number(actionButton.closest('[data-ministry-question-index]')?.dataset.ministryQuestionIndex);
+                if (!Number.isInteger(questionIndex)) return;
+                const existingQuestions = collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', quizQuestions.length);
+                const question = existingQuestions[questionIndex];
+                if (!question) return;
+                if (actionButton.dataset.ministryOptionAction === 'add' && question.options.length < 6) {
+                    question.options.push(`الخيار ${question.options.length + 1}`);
+                } else if (actionButton.dataset.ministryOptionAction === 'remove' && question.options.length > 2) {
+                    question.options.pop();
+                }
+                currentExercise.quiz_questions = normalizeMinistryExamQuestions(existingQuestions, quizQuestions.length);
+                renderExDynamicBlocks();
+                updateExerciseLivePreview();
+            });
+        });
+    }
 }
 
 // Move Block Up/Down
@@ -4346,13 +4590,20 @@ function updateExerciseLivePreview() {
         || activeExBlocksOrder.includes('ex_quiz5_questions');
     const isMasteryQuiz = currentExercise?.question_type === 'mastery_quiz'
         || activeExBlocksOrder.includes('ex_mastery_quiz');
-    if (isTextQuiz5 || isMasteryQuiz) {
-        const badgeVal = getVal('formExBadge') || (isMasteryQuiz ? 'اختبار إتقان نهائي' : 'اختبار نصي من 5 أسئلة');
+    const isMinistryExam = currentExercise?.question_type === 'ministry_exam'
+        || activeExBlocksOrder.includes('ex_ministry_exam');
+    if (isTextQuiz5 || isMasteryQuiz || isMinistryExam) {
+        const badgeVal = getVal('formExBadge') || (isMinistryExam ? 'الامتحان الوزاري - اختيار من متعدد' : (isMasteryQuiz ? 'اختبار إتقان نهائي' : 'اختبار نصي من 5 أسئلة'));
         const masteryCount = normalizeMasteryQuestionCount(document.getElementById('formMasteryQuizCount')?.value, currentExercise?.quiz_questions?.length || 10);
+        const ministryCount = normalizeMasteryQuestionCount(document.getElementById('formMinistryQuestionCount')?.value, currentExercise?.quiz_questions?.length || 10);
         const questions = isMasteryQuiz
             ? (document.getElementById('formMasteryQuizQ0')
                 ? collectQuestionBankQuestionsFromEditor('formMasteryQuizQ', masteryCount)
                 : normalizeMasteryQuizQuestions(currentExercise?.quiz_questions))
+            : isMinistryExam
+                ? (document.getElementById('formMinistryQuizQ0')
+                    ? collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', ministryCount)
+                    : normalizeMinistryExamQuestions(currentExercise?.quiz_questions))
             : (document.getElementById('formTextQuizQ0')
                 ? collectTextQuizQuestionsFromEditor()
                 : normalizeTextQuizQuestions(currentExercise?.quiz_questions));
@@ -4373,7 +4624,9 @@ function updateExerciseLivePreview() {
 
             const type = document.createElement('small');
             type.className = 'text-quiz-live-preview-type';
-            type.textContent = isMasteryQuiz && question.answer_type === 'checkboxes'
+            type.textContent = isMinistryExam
+                ? 'ورقة مطبوعة: يجيب الطالب بالقلم'
+                : isMasteryQuiz && question.answer_type === 'checkboxes'
                 ? '☑ خانات اختيار: أكثر من إجابة'
                 : '◉ اختيار من متعدد: إجابة واحدة';
             card.appendChild(type);

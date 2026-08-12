@@ -460,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exerciseStageContent = document.getElementById('exerciseStageContent');
     const returnDashboardBtn = document.getElementById('returnDashboardBtn');
     const exerciseBackBtn = document.getElementById('exerciseBackBtn');
+    const exerciseTrialResultBackBtn = document.getElementById('exerciseTrialResultBackBtn');
 
     // Navigation Controls
     const prevSlideBtn = document.getElementById('prevSlideBtn');
@@ -760,6 +761,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const textQuiz5BackBtn = document.getElementById('textQuiz5BackBtn');
     if (textQuiz5BackBtn) {
         textQuiz5BackBtn.addEventListener('click', () => {
+            showStudentDashboard();
+            showToast('🏠 العودة لقائمة دروس المنهاج');
+        });
+    }
+
+    if (exerciseTrialResultBackBtn) {
+        exerciseTrialResultBackBtn.addEventListener('click', () => {
             showStudentDashboard();
             showToast('🏠 العودة لقائمة دروس المنهاج');
         });
@@ -2272,6 +2280,7 @@ function showStudentDashboard() {
     document.getElementById('explanationStageContent').classList.add('hidden');
     document.getElementById('exerciseStageContent').classList.add('hidden');
     document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
+    document.getElementById('exerciseTrialResultScreen')?.classList.add('hidden');
 }
 
 // Open Specific Lesson from Student Dashboard
@@ -2287,6 +2296,7 @@ function openLesson(lessonId) {
         document.getElementById('studentDashboardScreen').classList.add('hidden');
         document.getElementById('exerciseStageContent').classList.add('hidden');
         document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
+        document.getElementById('exerciseTrialResultScreen')?.classList.add('hidden');
         document.getElementById('explanationStageContent').classList.remove('hidden');
         renderCurrentSlide();
     }
@@ -3411,16 +3421,17 @@ function runExerciseSimulator(lessonObj, startIdx = 0, options = {}) {
     const explanationStage = document.getElementById('explanationStageContent');
     const exerciseStage = document.getElementById('exerciseStageContent');
     const textQuizStage = document.getElementById('textQuiz5StageContent');
+    const trialResultScreen = document.getElementById('exerciseTrialResultScreen');
 
     if (studentDash) studentDash.classList.add('hidden');
     if (explanationStage) explanationStage.classList.add('hidden');
     if (exerciseStage) exerciseStage.classList.toggle('hidden', isTextQuiz5);
     if (textQuizStage) textQuizStage.classList.toggle('hidden', !isTextQuiz5);
+    if (trialResultScreen) trialResultScreen.classList.add('hidden');
 
     studentWrongExerciseIds = [];
     textQuizAnswers = {};
     textQuizSelections = {};
-    document.getElementById('exerciseTrialResultCard')?.classList.add('hidden');
     if (isTextQuiz5) renderTextQuiz5Stage();
     else renderCurrentExercise();
     showToast(`🧪 بدء اختبار التمارين التفاعلية (سؤال ${currentExerciseIndex + 1} من ${exercisesList.length})`);
@@ -3587,6 +3598,7 @@ function completeTextQuizQuestion(question, questionIndex, isCorrect, score, com
             : isMasteryQuiz
                 ? `<i class="fa-solid fa-rotate-right"></i><span>النتيجة: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال. راجع الأخطاء ثم أعد الاختبار.</span>`
                 : `<i class="fa-solid fa-circle-check"></i><span>النتيجة النهائية: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال.</span>`;
+        if (exerciseTrialMode) showExerciseTrialResultScreen(questions.length, correctCount);
     }
 }
 
@@ -3643,6 +3655,7 @@ function triggerStudentReinforcementStage() {
         document.getElementById('studentDashboardScreen').classList.add('hidden');
         document.getElementById('exerciseStageContent').classList.add('hidden');
         document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
+        document.getElementById('exerciseTrialResultScreen')?.classList.add('hidden');
         document.getElementById('explanationStageContent').classList.remove('hidden');
         renderCurrentSlide();
         showToast('⚡ مرحلة التقوية: شرح تصحيح القاعدة النحوية أولاً 📚');
@@ -3668,6 +3681,7 @@ function showExerciseStage() {
     document.getElementById('explanationStageContent').classList.add('hidden');
     document.getElementById('exerciseStageContent').classList.remove('hidden');
     document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
+    document.getElementById('exerciseTrialResultScreen')?.classList.add('hidden');
     currentExerciseIndex = 0;
     renderCurrentExercise();
 }
@@ -3719,12 +3733,10 @@ function renderCurrentExercise() {
     const explanationBox = document.getElementById('exerciseStudentExplanation');
     const wrongFeedbackCard = document.getElementById('exerciseWrongFeedbackCard');
     const stage2ResultCard = document.getElementById('exerciseStage2ResultCard');
-    const trialResultCard = document.getElementById('exerciseTrialResultCard');
 
     if (explanationBox) explanationBox.classList.add('hidden');
     if (wrongFeedbackCard) wrongFeedbackCard.classList.add('hidden');
     if (stage2ResultCard) stage2ResultCard.classList.add('hidden');
-    if (trialResultCard) trialResultCard.classList.add('hidden');
 
     const optionsGrid = document.getElementById('exerciseOptionsGrid');
     optionsGrid.innerHTML = '';
@@ -3813,7 +3825,7 @@ function renderCurrentExercise() {
             }
 
             if (exerciseTrialMode && currentExerciseIndex >= exercisesList.length - 1) {
-                showExerciseTrialResult(exercisesList.length);
+                showExerciseTrialResultScreen(exercisesList.length);
             }
         });
 
@@ -3821,18 +3833,22 @@ function renderCurrentExercise() {
     });
 }
 
-function showExerciseTrialResult(totalQuestions) {
-    const resultCard = document.getElementById('exerciseTrialResultCard');
-    const correctCount = document.getElementById('exerciseTrialCorrectCount');
-    const wrongCount = document.getElementById('exerciseTrialWrongCount');
-    const summary = document.getElementById('exerciseTrialResultSummary');
-    if (!resultCard) return;
+function showExerciseTrialResultScreen(totalQuestions, correctCount = exerciseTrialResults.correct) {
+    const resultScreen = document.getElementById('exerciseTrialResultScreen');
+    const correctCountEl = document.getElementById('exerciseTrialResultScreenCorrect');
+    const wrongCountEl = document.getElementById('exerciseTrialResultScreenWrong');
+    const summary = document.getElementById('exerciseTrialResultScreenSummary');
+    if (!resultScreen) return;
 
-    if (correctCount) correctCount.textContent = exerciseTrialResults.correct;
-    if (wrongCount) wrongCount.textContent = exerciseTrialResults.wrong;
-    if (summary) summary.textContent = `النتيجة النهائية: ${exerciseTrialResults.correct} صحيح و${exerciseTrialResults.wrong} خطأ من أصل ${totalQuestions} سؤال.`;
-    resultCard.classList.remove('hidden');
-    resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const wrongCount = totalQuestions - correctCount;
+    if (correctCountEl) correctCountEl.textContent = correctCount;
+    if (wrongCountEl) wrongCountEl.textContent = wrongCount;
+    if (summary) summary.textContent = `النتيجة النهائية: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${totalQuestions} سؤال.`;
+    document.getElementById('studentDashboardScreen')?.classList.add('hidden');
+    document.getElementById('explanationStageContent')?.classList.add('hidden');
+    document.getElementById('exerciseStageContent')?.classList.add('hidden');
+    document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
+    resultScreen.classList.remove('hidden');
 }
 
 // Exercise Visual Block Builder Global Variables & State

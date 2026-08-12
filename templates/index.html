@@ -11,7 +11,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260812-trial-results') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260812-trial-result-screen') }}">
 </head>
 <body class="light-theme">
 
@@ -185,16 +185,6 @@
                         </button>
                     </div>
 
-                    <div id="exerciseTrialResultCard" class="exercise-trial-result-card hidden" aria-live="polite">
-                        <div class="exercise-trial-result-icon"><i class="fa-solid fa-chart-pie"></i></div>
-                        <h3>نتيجة تجربة التمرين</h3>
-                        <div class="exercise-trial-result-stats">
-                            <span class="exercise-trial-correct"><i class="fa-solid fa-circle-check"></i> الصحيح: <strong id="exerciseTrialCorrectCount">0</strong></span>
-                            <span class="exercise-trial-wrong"><i class="fa-solid fa-circle-xmark"></i> الخطأ: <strong id="exerciseTrialWrongCount">0</strong></span>
-                        </div>
-                        <p id="exerciseTrialResultSummary">أكملت التجربة.</p>
-                    </div>
-
                 </div>
 
                 <!-- SCREEN 4: TEXT QUIZ WITH FIVE QUESTIONS -->
@@ -222,6 +212,23 @@
                         <span>أكملت أسئلة الاختبار. أحسنت!</span>
                     </div>
                 </div>
+
+                <!-- SCREEN 5: SEPARATE TRIAL RESULT SCREEN -->
+                <section id="exerciseTrialResultScreen" class="exercise-trial-result-screen hidden" aria-live="polite">
+                    <div class="exercise-trial-result-screen-inner">
+                        <div class="exercise-trial-result-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                        <span class="exercise-trial-result-kicker">اكتملت التجربة</span>
+                        <h2>نتيجة تجربة التمرين</h2>
+                        <div class="exercise-trial-result-stats">
+                            <span class="exercise-trial-correct"><i class="fa-solid fa-circle-check"></i> الصحيح: <strong id="exerciseTrialResultScreenCorrect">0</strong></span>
+                            <span class="exercise-trial-wrong"><i class="fa-solid fa-circle-xmark"></i> الخطأ: <strong id="exerciseTrialResultScreenWrong">0</strong></span>
+                        </div>
+                        <p id="exerciseTrialResultScreenSummary">أكملت التجربة.</p>
+                        <button id="exerciseTrialResultBackBtn" class="exercise-trial-result-back" type="button">
+                            <i class="fa-solid fa-arrow-right"></i> العودة إلى قائمة الدروس
+                        </button>
+                    </div>
+                </section>
 
             </div>
         </div>
@@ -1177,6 +1184,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260812-trial-results') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260812-trial-result-screen') }}"></script>
 </body>
 </html>

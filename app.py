@@ -1144,6 +1144,7 @@ def duplicate_lesson(lesson_id):
 def add_exercise():
     payload = request.get_json() or {}
     lesson_id = payload.get('lesson_id', 101)
+    is_reinforcement = 1 if payload.get('is_reinforcement') else 0
 
     question_type = payload.get('question_type', payload.get('template_type', 'multiple_choice'))
     defaults = {
@@ -1236,7 +1237,7 @@ def add_exercise():
 
     c.execute('''
         INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, image, linked_exercise_id, is_reinforcement, is_exam)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     ''', (
         lesson_id,
         question_type,
@@ -1247,7 +1248,8 @@ def add_exercise():
         payload.get("correct_index", 0),
         payload.get("explanation", default['explanation']),
         payload.get("image", "" if question_type in {'text_quiz_5', 'mastery_quiz'} else "/static/images/kids_football.jpg"),
-        str(payload.get("linked_exercise_id", "all"))
+        str(payload.get("linked_exercise_id", "all")),
+        is_reinforcement
     ))
     new_id = c.lastrowid
     conn.commit()

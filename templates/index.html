@@ -1180,6 +1180,23 @@
         </div>
     </div>
 
+    <!-- Confirm destructive actions without relying on the browser's plain confirm dialog. -->
+    <div id="deleteConfirmModal" class="edit-modal-backdrop hidden" aria-hidden="true">
+        <div class="delete-confirm-card" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+            <div class="delete-confirm-heading">
+                <div class="delete-confirm-icon"><i class="fa-solid fa-trash-can"></i></div>
+                <div>
+                    <h3 id="deleteConfirmTitle">تأكيد الحذف</h3>
+                    <p id="deleteConfirmMessage">هل تريد حذف هذا العنصر؟</p>
+                </div>
+            </div>
+            <div class="delete-confirm-actions">
+                <button type="button" id="cancelDeleteConfirmBtn" class="delete-confirm-cancel">إلغاء</button>
+                <button type="button" id="acceptDeleteConfirmBtn" class="delete-confirm-accept"><i class="fa-solid fa-trash-can"></i> حذف نهائياً</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden">
         <i class="fa-solid fa-circle-check"></i>
@@ -1187,6 +1204,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260812-form-validation') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260812-delete-confirm-reinf-quiz') }}"></script>
 </body>
 </html>

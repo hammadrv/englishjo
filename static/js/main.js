@@ -10,6 +10,7 @@ let currentIndex = 0;
 let teacherNotesVisible = false;
 let currentActiveTheme = 'coral';
 let pendingExerciseContext = 'practice';
+let pendingSlideContext = 'normal';
 
 // Active Slide Block Order State (Visual Block Builder)
 let activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
@@ -32,6 +33,47 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text || '';
     return div.innerHTML;
+}
+
+function requestDeleteConfirmation({ title = 'تأكيد الحذف', message = 'هل تريد حذف هذا العنصر؟', item = '' } = {}) {
+    const modal = document.getElementById('deleteConfirmModal');
+    const titleEl = document.getElementById('deleteConfirmTitle');
+    const messageEl = document.getElementById('deleteConfirmMessage');
+    const confirmBtn = document.getElementById('acceptDeleteConfirmBtn');
+    const cancelBtn = document.getElementById('cancelDeleteConfirmBtn');
+
+    if (!modal || !titleEl || !messageEl || !confirmBtn || !cancelBtn) {
+        return Promise.resolve(false);
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = item ? `${message} ${item}` : message;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+
+    return new Promise(resolve => {
+        let settled = false;
+        const finish = (confirmed) => {
+            if (settled) return;
+            settled = true;
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+            modal.onclick = null;
+            document.removeEventListener('keydown', onKeyDown);
+            resolve(confirmed);
+        };
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') finish(false);
+        };
+
+        confirmBtn.onclick = () => finish(true);
+        cancelBtn.onclick = () => finish(false);
+        modal.onclick = (event) => {
+            if (event.target === modal) finish(false);
+        };
+        document.addEventListener('keydown', onKeyDown);
+        requestAnimationFrame(() => cancelBtn.focus());
+    });
 }
 
 function normalizeRichTextHtml(html) {
@@ -570,6 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const templateType = pCard.dataset.type;
             if (addSlideTemplateModal) addSlideTemplateModal.classList.add('hidden');
             await createNewSlideWithTemplate(templateType);
+            pendingSlideContext = 'normal';
         });
     });
 
@@ -796,6 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pOpt.addEventListener('click', async () => {
             const templateType = pOpt.dataset.type;
             const isExamContext = pendingExerciseContext === 'exam';
+            const isReinforcementContext = pendingExerciseContext === 'reinforcement';
             const addExerciseTemplateModal = document.getElementById('addExerciseTemplateModal');
             if (addExerciseTemplateModal) addExerciseTemplateModal.classList.add('hidden');
 
@@ -808,30 +852,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         lesson_id: lessonId,
                         template_type: templateType,
                         question_type: templateType,
-                        question_count: templateType === 'mastery_quiz' ? 10 : undefined
+                        question_count: templateType === 'mastery_quiz' ? 10 : undefined,
+                        is_reinforcement: isReinforcementContext
                     })
                 });
                 const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'تعذر إنشاء التمرين');
                 if (data.success) {
-                    curriculumData = data.curriculum;
-                    if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
+                    const preferredLessonId = lessonId;
+                    syncCurriculumState(data.curriculum, preferredLessonId);
                     renderUnitLessonsList();
                     // Re-rendering the lesson list resets the default tab to Explanation.
                     // Return to the exercise tab because the action started there.
                     const lessonCard = [...document.querySelectorAll('.lesson-manager-card')]
                         .find(card => Number(card.dataset.lessonId) === Number(lessonId));
-                    lessonCard?.querySelector(`.studio-tab-btn[data-tab-target="${isExamContext ? 'exam' : 'prac'}"]`)?.click();
+                    lessonCard?.querySelector(`.studio-tab-btn[data-tab-target="${isExamContext ? 'exam' : (isReinforcementContext ? 'reinf' : 'prac')}"]`)?.click();
                     if ((templateType === 'text_quiz_5' || templateType === 'mastery_quiz') && currentUnit) {
                         currentLesson = currentUnit.lessons.find(lesson => lesson.id === lessonId) || currentLesson;
                         const questionId = isExamContext ? data.new_exam_question_id : data.new_exercise_id;
-                        const sourceQuestions = isExamContext ? currentLesson?.exam_questions : currentLesson?.exercises;
+                        const sourceQuestions = isExamContext
+                            ? currentLesson?.exam_questions
+                            : (isReinforcementContext ? currentLesson?.reinforcement_exercises : currentLesson?.exercises);
                         currentExercise = sourceQuestions?.find(exercise => exercise.id === questionId) || currentLesson?.exercise;
                         openExerciseEditModal();
                         showToast(templateType === 'mastery_quiz'
                             ? '🎉 تم إنشاء اختبار الإتقان. أدخل عدد الأسئلة الذي تريده وحدد أنواع الإجابة.'
                             : '🎉 تم إنشاء قالب 5 أسئلة. ألصق الأسئلة الآن وحدد الإجابات الصحيحة.');
                     } else {
-                        showToast(isExamContext ? '🎉 تم إضافة سؤال الاختبار النهائي بنجاح!' : '🎉 تم إضافة سؤال التمرين الجديد بنجاح!');
+                        showToast(isExamContext
+                            ? '🎉 تم إضافة سؤال الاختبار النهائي بنجاح!'
+                            : (isReinforcementContext ? '⚡ تم إضافة تمرين التقوية بنجاح!' : '🎉 تم إضافة سؤال التمرين الجديد بنجاح!'));
                     }
                 }
             } catch (err) {
@@ -1458,18 +1508,19 @@ function renderAccordionLessonContent(card, lessonId) {
                     showToast('يجب الاحتفاظ بشريحة واحدة على الأقل!');
                     return;
                 }
-                if (!confirm(`هل أنت تأكد من رغبتك في حذف الشريحة رقم (${numStr})؟`)) return;
+                if (!await requestDeleteConfirmation({
+                    title: 'حذف شريحة الشرح',
+                    message: 'سيتم حذف شريحة الشرح نهائياً من هذا الدرس.',
+                    item: `الشريحة رقم (${numStr})`
+                })) return;
 
                 try {
                     const res = await fetch(`/api/slides/${slide.id}`, { method: 'DELETE' });
                     const data = await res.json();
-                    if (data.success) {
-                        curriculumData = data.curriculum;
-                        if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
-                        if (currentLesson && currentUnit) currentLesson = currentUnit.lessons.find(l => l.id === lessonId) || currentUnit.lessons[0];
-                        renderAccordionLessonContent(card, lessonId);
-                        showToast('تم حذف الشريحة بنجاح');
-                    }
+                    if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
+                    syncCurriculumState(data.curriculum, lessonId);
+                    renderAccordionLessonContent(card, lessonId);
+                    showToast('تم حذف الشريحة بنجاح');
                 } catch (err) {
                     showToast('تعذر حذف الشريحة');
                 }
@@ -1592,16 +1643,17 @@ function renderAccordionLessonContent(card, lessonId) {
 
                 exCard.querySelector('.btn-delete-ex-item').addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    if (!confirm('هل أنت تأكد من رغبتك في حذف سؤال التمرين هذا؟')) return;
+                    if (!await requestDeleteConfirmation({
+                        title: 'حذف سؤال التمرين',
+                        message: 'سيتم حذف سؤال التمرين نهائياً من هذا الدرس.'
+                    })) return;
                     try {
                         const res = await fetch(`/api/exercises/${exItem.id}`, { method: 'DELETE' });
                         const data = await res.json();
-                        if (data.success) {
-                            curriculumData = data.curriculum;
-                            if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
-                            renderAccordionLessonContent(card, lessonId);
-                            showToast('تم حذف سؤال التمرين بنجاح');
-                        }
+                        if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
+                        syncCurriculumState(data.curriculum, lessonId);
+                        renderAccordionLessonContent(card, lessonId);
+                        showToast('تم حذف سؤال التمرين بنجاح');
                     } catch (err) {
                         showToast('تعذر حذف سؤال التمرين');
                     }
@@ -1648,17 +1700,7 @@ function renderAccordionLessonContent(card, lessonId) {
         });
 
         if (reinfType === 'slides') {
-            const reinfSlidesList = (lesson.reinforcement_slides && lesson.reinforcement_slides.length > 0)
-                ? lesson.reinforcement_slides
-                : [
-                    {
-                        id: 991,
-                        welcome_badge: "شريحة تقوية المفاهيم ⚡",
-                        title_ar: "ملخص وقاعدة الدرس للتثبيت",
-                        description_ar: "شريحة شرح تقوية تفاعلية مخصصة لتثبيت المفاهيم الهامة قبل الاختبار.",
-                        image: "/static/images/kids_football.jpg"
-                    }
-                ];
+            const reinfSlidesList = Array.isArray(lesson.reinforcement_slides) ? lesson.reinforcement_slides : [];
 
             const rHeader = document.createElement('div');
             rHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;';
@@ -1674,13 +1716,19 @@ function renderAccordionLessonContent(card, lessonId) {
             rHeader.querySelector('.btn-add-reinf-slide').onclick = (e) => {
                 e.stopPropagation();
                 currentLesson = lesson;
+                pendingSlideContext = 'reinforcement';
                 slides = reinfSlidesList;
                 const addSlideTemplateModal = document.getElementById('addSlideTemplateModal');
                 if (addSlideTemplateModal) addSlideTemplateModal.classList.remove('hidden');
             };
             reinfSummary.appendChild(rHeader);
 
-            reinfSlidesList.forEach((rSlide, rIdx) => {
+            if (reinfSlidesList.length === 0) {
+                const emptyNotice = document.createElement('div');
+                emptyNotice.style.cssText = 'padding: 1.5rem; text-align: center; color: #64748B; font-weight: 700; background: #FFFBEB; border-radius: 14px; border: 1.5px dashed #FCD34D;';
+                emptyNotice.textContent = 'لا توجد شرائح تقوية محفوظة في هذا الدرس بعد. أضف شريحة جديدة لتظهر هنا.';
+                reinfSummary.appendChild(emptyNotice);
+            } else reinfSlidesList.forEach((rSlide, rIdx) => {
                 const rCard = document.createElement('div');
                 rCard.className = 'sequence-slide-card';
                 rCard.style.cursor = 'pointer';
@@ -1770,43 +1818,39 @@ function renderAccordionLessonContent(card, lessonId) {
 
                 rCard.querySelector('.btn-delete-reinf-slide').onclick = async (e) => {
                     e.stopPropagation();
-                    if (!confirm('هل أنت تأكد من حذف شريحة التقوية هذه؟')) return;
-                    lesson.reinforcement_slides.splice(rIdx, 1);
+                    if (!await requestDeleteConfirmation({
+                        title: 'حذف شريحة التقوية',
+                        message: 'سيتم حذف شريحة التقوية نهائياً، ولن تظهر للطالب عند الخطأ.'
+                    })) return;
+                    const nextSlides = reinfSlidesList.filter((_, index) => index !== rIdx);
                     try {
-                        await fetch(`/api/lessons/${lesson.id}`, {
+                        const res = await fetch(`/api/lessons/${lesson.id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ reinforcement_slides: lesson.reinforcement_slides })
+                            body: JSON.stringify({ reinforcement_slides: nextSlides })
                         });
+                        const data = await res.json();
+                        if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
+                        syncCurriculumState(data.curriculum, lessonId, { preferReinforcement: true });
                         renderAccordionLessonContent(card, lessonId);
                         showToast('تم حذف شريحة التقوية بنجاح');
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('تعذر حذف شريحة التقوية');
+                    }
                 };
 
                 reinfSummary.appendChild(rCard);
             });
         } else {
             // Exercise Reinforcement Mode
-            const reinfExList = (lesson.reinforcement_exercises && lesson.reinforcement_exercises.length > 0)
-                ? lesson.reinforcement_exercises
-                : [
-                    {
-                        id: 992,
-                        instruction_badge: "تمرين تقوية إضافي ⚡",
-                        sentence_ar: "اختر الكلمة المناسبة لتثبيت القاعدة.",
-                        question_en: "They _____ football in the club.",
-                        options: ["plays", "play", "playing"],
-                        correct_index: 1,
-                        explanation: "نستخدم play مجرداً مع الضمير الجمع They."
-                    }
-                ];
+            const reinfExList = Array.isArray(lesson.reinforcement_exercises) ? lesson.reinforcement_exercises : [];
 
             const rHeader = document.createElement('div');
             rHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;';
             rHeader.innerHTML = `
                 <div>
                     <h3 style="margin:0; font-weight:900; color:var(--text-navy);">أسئلة تمرين التقوية (${reinfExList.length})</h3>
-                    <p style="margin:0; font-size:0.88rem; color:#64748B;">تظهر هذه الأسئلة كجرعة تطبيق إضافية لتثبيت الفهم.</p>
+                    <p style="margin:0; font-size:0.88rem; color:#64748B;">تظهر كجرعة تطبيق إضافية، ويمكنك أيضاً إضافة اختبار نصي من 5 أسئلة.</p>
                 </div>
                 <button type="button" class="btn-add-reinf-ex" style="background: linear-gradient(135deg, #D97706 0%, #B45309 100%); color: #FFF; border: none; padding: 0.7rem 1.3rem; border-radius: 50px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.92rem;">
                     <i class="fa-solid fa-plus-circle"></i> أضف سؤال تقوية جديد
@@ -1815,12 +1859,18 @@ function renderAccordionLessonContent(card, lessonId) {
             rHeader.querySelector('.btn-add-reinf-ex').onclick = (e) => {
                 e.stopPropagation();
                 currentLesson = lesson;
+                pendingExerciseContext = 'reinforcement';
                 const addExerciseTemplateModal = document.getElementById('addExerciseTemplateModal');
                 if (addExerciseTemplateModal) addExerciseTemplateModal.classList.remove('hidden');
             };
             reinfSummary.appendChild(rHeader);
 
-            reinfExList.forEach((rEx, rIdx) => {
+            if (reinfExList.length === 0) {
+                const emptyNotice = document.createElement('div');
+                emptyNotice.style.cssText = 'padding: 1.5rem; text-align: center; color: #64748B; font-weight: 700; background: #FFFBEB; border-radius: 14px; border: 1.5px dashed #FCD34D;';
+                emptyNotice.textContent = 'لا توجد أسئلة تقوية محفوظة في هذا الدرس بعد. افتح القوالب وأضف الاختبار النصي أو أي سؤال آخر.';
+                reinfSummary.appendChild(emptyNotice);
+            } else reinfExList.forEach((rEx, rIdx) => {
                 const rCard = document.createElement('div');
                 rCard.className = 'sequence-slide-card';
                 rCard.style.cursor = 'pointer';
@@ -1900,17 +1950,25 @@ function renderAccordionLessonContent(card, lessonId) {
 
                 rCard.querySelector('.btn-delete-reinf-ex').onclick = async (e) => {
                     e.stopPropagation();
-                    if (!confirm('هل أنت تأكد من حذف سؤال التقوية هذا؟')) return;
-                    lesson.reinforcement_exercises.splice(rIdx, 1);
+                    if (!await requestDeleteConfirmation({
+                        title: 'حذف تمرين التقوية',
+                        message: 'سيتم حذف تمرين التقوية نهائياً من هذا الدرس.'
+                    })) return;
+                    const nextExercises = reinfExList.filter((_, index) => index !== rIdx);
                     try {
-                        await fetch(`/api/lessons/${lesson.id}`, {
+                        const res = await fetch(`/api/lessons/${lesson.id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ reinforcement_exercises: lesson.reinforcement_exercises })
+                            body: JSON.stringify({ reinforcement_exercises: nextExercises })
                         });
+                        const data = await res.json();
+                        if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
+                        syncCurriculumState(data.curriculum, lessonId, { preferReinforcement: true });
                         renderAccordionLessonContent(card, lessonId);
                         showToast('تم حذف سؤال التقوية بنجاح');
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('تعذر حذف تمرين التقوية');
+                    }
                 };
 
                 reinfSummary.appendChild(rCard);
@@ -2031,16 +2089,20 @@ function renderAccordionLessonContent(card, lessonId) {
 
             eqCard.querySelector('.btn-delete-eq-item').onclick = async (e) => {
                 e.stopPropagation();
-                if (!confirm('هل أنت تأكد من حذف سؤال الاختبار النهائي هذا؟')) return;
+                if (!await requestDeleteConfirmation({
+                    title: 'حذف سؤال الاختبار النهائي',
+                    message: 'سيتم حذف سؤال الاختبار النهائي نهائياً من هذا الدرس.'
+                })) return;
                 try {
                     const res = await fetch(`/api/exam_questions/${eqItem.id}`, { method: 'DELETE' });
                     const data = await res.json();
-                    if (data.success) {
-                        curriculumData = data.curriculum;
-                        renderAccordionLessonContent(card, lessonId);
-                        showToast('تم حذف سؤال الاختبار بنجاح');
-                    }
-                } catch (err) {}
+                    if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
+                    syncCurriculumState(data.curriculum, lessonId);
+                    renderAccordionLessonContent(card, lessonId);
+                    showToast('تم حذف سؤال الاختبار بنجاح');
+                } catch (err) {
+                    showToast('تعذر حذف سؤال الاختبار');
+                }
             };
 
             examSummary.appendChild(eqCard);
@@ -2057,7 +2119,8 @@ async function createNewSlideWithTemplate(templateType) {
         description_en: "Add your english explanation subtitle here...",
         teacher_notes: "",
         blocks_order: ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'],
-        lesson_id: (currentLesson ? currentLesson.id : 101)
+        lesson_id: (currentLesson ? currentLesson.id : 101),
+        is_reinforcement: pendingSlideContext === 'reinforcement'
     };
 
     if (templateType === 'rule') {
@@ -4468,8 +4531,13 @@ async function loadAndRenderCustomTemplates() {
 
                     tCard.querySelector('.btn-delete-custom-tpl').onclick = async (e) => {
                         e.stopPropagation();
-                        if (!confirm(`هل أنت تأكد من رغبتك في حذف القالب المخصص (${tpl.name})؟`)) return;
-                        await fetch(`/api/custom_templates/${tpl.id}`, { method: 'DELETE' });
+                        if (!await requestDeleteConfirmation({
+                            title: 'حذف القالب المخصص',
+                            message: 'سيتم حذف هذا القالب نهائياً.',
+                            item: `(${tpl.name})`
+                        })) return;
+                        const deleteRes = await fetch(`/api/custom_templates/${tpl.id}`, { method: 'DELETE' });
+                        if (!deleteRes.ok) throw new Error('delete failed');
                         loadAndRenderCustomTemplates();
                         showToast('تم حذف القالب المخصص بنجاح');
                     };
@@ -4486,7 +4554,7 @@ async function loadAndRenderCustomTemplates() {
                             const addRes = await fetch('/api/slides', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(slideData)
+                                body: JSON.stringify({ ...slideData, is_reinforcement: pendingSlideContext === 'reinforcement' })
                             });
                             const addData = await addRes.json();
                             if (addData.success) {
@@ -4541,8 +4609,13 @@ async function loadAndRenderCustomTemplates() {
 
                     tCard.querySelector('.btn-delete-custom-tpl').onclick = async (e) => {
                         e.stopPropagation();
-                        if (!confirm(`هل أنت تأكد من حذف قالب التمرين المخصص (${tpl.name})؟`)) return;
-                        await fetch(`/api/custom_templates/${tpl.id}`, { method: 'DELETE' });
+                        if (!await requestDeleteConfirmation({
+                            title: 'حذف قالب التمرين المخصص',
+                            message: 'سيتم حذف هذا القالب نهائياً.',
+                            item: `(${tpl.name})`
+                        })) return;
+                        const deleteRes = await fetch(`/api/custom_templates/${tpl.id}`, { method: 'DELETE' });
+                        if (!deleteRes.ok) throw new Error('delete failed');
                         loadAndRenderCustomTemplates();
                         showToast('تم حذف قالب التمرين المخصص');
                     };
@@ -4559,7 +4632,7 @@ async function loadAndRenderCustomTemplates() {
                             const addRes = await fetch('/api/exercises', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(exData)
+                                body: JSON.stringify({ ...exData, is_reinforcement: pendingExerciseContext === 'reinforcement' })
                             });
                             const addData = await addRes.json();
                             if (addData.success) {

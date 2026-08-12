@@ -1667,6 +1667,14 @@ body.light-theme {
 }
 .delete-confirm-accept:hover { box-shadow: 0 10px 24px rgba(220, 38, 38, 0.32); }
 
+.save-button-loading {
+    cursor: wait !important;
+    opacity: 0.86;
+}
+.save-button-loading .fa-spinner {
+    font-size: 0.95em;
+}
+
 /* Give the lesson-name editor enough room for long Arabic and English titles. */
 .edit-lesson-dialog {
     width: min(92vw, 760px);

@@ -35,6 +35,32 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function setSaveButtonsLoading(formId, isLoading) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    const buttons = [
+        ...form.querySelectorAll('button[type="submit"]'),
+        ...document.querySelectorAll(`button[form="${formId}"][type="submit"]`)
+    ];
+
+    buttons.forEach(button => {
+        if (isLoading) {
+            if (!button.dataset.defaultContent) button.dataset.defaultContent = button.innerHTML;
+            button.disabled = true;
+            button.classList.add('save-button-loading');
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>جارٍ الحفظ...</span>';
+        } else {
+            button.disabled = false;
+            button.classList.remove('save-button-loading');
+            if (button.dataset.defaultContent) {
+                button.innerHTML = button.dataset.defaultContent;
+                delete button.dataset.defaultContent;
+            }
+        }
+    });
+}
+
 function requestDeleteConfirmation({ title = 'تأكيد الحذف', message = 'هل تريد حذف هذا العنصر؟', item = '' } = {}) {
     const modal = document.getElementById('deleteConfirmModal');
     const titleEl = document.getElementById('deleteConfirmTitle');
@@ -1002,6 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (slideEditForm) {
         slideEditForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            setSaveButtonsLoading('slideEditForm', true);
             const slideId = parseInt(document.getElementById('formSlideId').value);
             
             const formImageSelect = document.getElementById('formImageSelect');
@@ -1052,19 +1079,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(updatedData)
                 });
                 const data = await res.json();
-                if (data.success) {
-                    const expandedCard = document.querySelector('.lesson-manager-card.expanded');
-                    const lessonId = expandedCard ? parseInt(expandedCard.dataset.lessonId) : (currentLesson ? currentLesson.id : null);
-                    syncCurriculumState(data.curriculum, lessonId, { preferReinforcement: currentSlide && currentSlide.is_reinforcement });
+                if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حفظ الشريحة');
+                const expandedCard = document.querySelector('.lesson-manager-card.expanded');
+                const lessonId = expandedCard ? parseInt(expandedCard.dataset.lessonId) : (currentLesson ? currentLesson.id : null);
+                syncCurriculumState(data.curriculum, lessonId, { preferReinforcement: currentSlide && currentSlide.is_reinforcement });
 
-                    if (expandedCard) {
-                        renderAccordionLessonContent(expandedCard, lessonId);
-                    }
-                    if (slideEditModal) slideEditModal.classList.add('hidden');
-                    showToast('تم حفظ الشريحة بنجاح!');
+                if (expandedCard) {
+                    renderAccordionLessonContent(expandedCard, lessonId);
                 }
+                if (slideEditModal) slideEditModal.classList.add('hidden');
+                showToast('تم حفظ الشريحة بنجاح!');
             } catch (err) {
                 showToast('تعذر حفظ الشريحة');
+            } finally {
+                setSaveButtonsLoading('slideEditForm', false);
             }
         });
     }

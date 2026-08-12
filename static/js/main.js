@@ -3770,7 +3770,19 @@ function completeTextQuizQuestion(question, questionIndex, isCorrect, score, com
             : isMasteryQuiz
                 ? `<i class="fa-solid fa-rotate-right"></i><span>النتيجة: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال. راجع الأخطاء ثم أعد الاختبار.</span>`
                 : `<i class="fa-solid fa-circle-check"></i><span>النتيجة النهائية: ${correctCount} صحيح و${wrongCount} خطأ من أصل ${questions.length} سؤال.</span>`;
-        if (exerciseTrialMode) showExerciseTrialResultScreen(questions.length, correctCount);
+        if (exerciseTrialMode) {
+            showExerciseTrialResultScreen(questions.length, correctCount);
+        } else {
+            const nextStageButton = document.createElement('button');
+            nextStageButton.type = 'button';
+            nextStageButton.className = 'text-quiz-next-stage-btn';
+            nextStageButton.innerHTML = 'الانتقال إلى المرحلة التالية <i class="fa-solid fa-arrow-left"></i>';
+            nextStageButton.addEventListener('click', () => {
+                nextStageButton.disabled = true;
+                triggerStudentReinforcementStage();
+            });
+            completion.appendChild(nextStageButton);
+        }
     }
 }
 
@@ -3944,8 +3956,12 @@ function renderCurrentExercise() {
 
                     const btnNextQ = document.getElementById('btnExerciseNextQuestion');
                     if (btnNextQ) {
+                        const isLastQuestion = currentExerciseIndex >= exercisesList.length - 1;
+                        btnNextQ.innerHTML = isLastQuestion
+                            ? 'الانتقال إلى المرحلة التالية <i class="fa-solid fa-arrow-left"></i>'
+                            : 'السؤال التالي <i class="fa-solid fa-arrow-left"></i>';
                         btnNextQ.onclick = () => {
-                            if (currentExerciseIndex < exercisesList.length - 1) {
+                            if (!isLastQuestion) {
                                 currentExerciseIndex++;
                                 renderCurrentExercise();
                             } else {
@@ -3984,8 +4000,12 @@ function renderCurrentExercise() {
 
                     const btnNextQ = document.getElementById('btnExerciseNextQuestion');
                     if (btnNextQ) {
+                        const isLastQuestion = currentExerciseIndex >= exercisesList.length - 1;
+                        btnNextQ.innerHTML = isLastQuestion
+                            ? 'الانتقال إلى المرحلة التالية <i class="fa-solid fa-arrow-left"></i>'
+                            : 'السؤال التالي <i class="fa-solid fa-arrow-left"></i>';
                         btnNextQ.onclick = () => {
-                            if (currentExerciseIndex < exercisesList.length - 1) {
+                            if (!isLastQuestion) {
                                 currentExerciseIndex++;
                                 renderCurrentExercise();
                             } else {

@@ -777,6 +777,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const titleAr = document.getElementById('formLessonTitleAr').value.trim();
             const titleEn = document.getElementById('formLessonTitleEn').value.trim();
 
+            if (!titleAr || !titleEn) {
+                showToast('يرجى كتابة اسم الدرس بالعربية والإنجليزية');
+                return;
+            }
+
             try {
                 const res = await fetch(`/api/lessons/${lessonId}`, {
                     method: 'PUT',
@@ -784,13 +789,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ title_ar: titleAr, title_en: titleEn })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    curriculumData = data.curriculum;
-                    if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
-                    renderUnitLessonsList();
-                    if (editLessonModal) editLessonModal.classList.add('hidden');
-                    showToast('🎉 تم تحديث اسم الدرس وتخزينه على السيرفر بنجاح!');
-                }
+                if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تحديث اسم الدرس');
+                syncCurriculumState(data.curriculum, lessonId);
+                renderUnitLessonsList();
+                if (editLessonModal) editLessonModal.classList.add('hidden');
+                showToast('🎉 تم تحديث اسم الدرس وتخزينه على السيرفر بنجاح!');
             } catch (err) {
                 showToast('تعذر تحديث اسم الدرس');
             }
@@ -1230,7 +1233,7 @@ function renderUnitLessonsList() {
                     <div>
                         <div style="display:flex; align-items:center; gap:0.5rem;">
                             <span class="lesson-tag">${lesson.badge || 'الدرس ' + (lIdx + 1)}</span>
-                            <button type="button" class="btn-edit-lesson-trigger" style="background:transparent; border:none; color:#0D9488; font-size:1.1rem; cursor:pointer; padding:0 0.3rem;" title="تعديل اسم الدرس">
+                            <button type="button" class="btn-edit-lesson-trigger" style="background:transparent; border:none; color:#0D9488; font-size:1.1rem; cursor:pointer; padding:0 0.3rem;" title="تعديل اسم الدرس" aria-label="تعديل اسم الدرس">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
                         </div>

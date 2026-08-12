@@ -1001,6 +1001,9 @@ def update_unit(unit_id):
 @login_required
 def update_lesson(lesson_id):
     payload = request.get_json() or {}
+    for title_field in ("title_ar", "title_en"):
+        if title_field in payload and not str(payload[title_field] or "").strip():
+            return jsonify({"success": False, "message": "اسم الدرس لا يمكن أن يكون فارغاً."}), 400
     conn = get_db_connection()
     c = conn.cursor()
 

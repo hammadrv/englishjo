@@ -3820,10 +3820,8 @@ function renderExDynamicBlocks() {
                                 </div>
                             ` : `
                                 <select id="${correctPrefix}${quizIndex}" class="text-quiz-correct-select">
-                                    <option value="0" ${question.correct_index === 0 ? 'selected' : ''}>الخيار الأول</option>
-                                    <option value="1" ${question.correct_index === 1 ? 'selected' : ''}>الخيار الثاني</option>
-                                        ${question.options.slice(2).map((option, optionIndex) => `<option value="${optionIndex}" ${question.correct_index === optionIndex ? 'selected' : ''}>الخيار ${optionIndex + 1}</option>`).join('')}
-                                    </select>
+                                    ${question.options.map((option, optionIndex) => `<option value="${optionIndex}" ${question.correct_index === optionIndex ? 'selected' : ''}>الخيار ${optionIndex + 1}</option>`).join('')}
+                                </select>
                             `}
                         </div>
                     `).join('')}

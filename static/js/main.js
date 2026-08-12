@@ -394,6 +394,39 @@ function syncCurriculumState(nextCurriculum, preferredLessonId = null, options =
     return currentLesson;
 }
 
+function renderStudentDashboard() {
+    const unitTitle = document.getElementById('studentDashboardUnitTitle');
+    const lessonsList = document.getElementById('studentDashboardLessonsList');
+    if (!unitTitle || !lessonsList || !currentUnit) return;
+
+    unitTitle.innerHTML = `<i class="fa-solid fa-folder-open"></i> ${escapeHtml(currentUnit.title_ar || 'الوحدة الأولى')}`;
+    lessonsList.innerHTML = '';
+
+    (currentUnit.lessons || []).forEach((lesson, index) => {
+        const card = document.createElement('div');
+        const slideCount = Array.isArray(lesson.slides) ? lesson.slides.length : 0;
+        const exerciseCount = Array.isArray(lesson.exercises)
+            ? lesson.exercises.length
+            : (lesson.exercise ? 1 : 0);
+        card.className = 'lesson-nav-card';
+        card.dataset.lessonId = lesson.id;
+        card.innerHTML = `
+            <div class="lesson-card-info">
+                <div class="lesson-card-badge">الدرس ${index + 1}</div>
+                <h4 class="lesson-card-title">${escapeHtml(lesson.title_ar || `الدرس ${index + 1}`)}</h4>
+                <span class="lesson-card-sub">${slideCount} شرائح شرح + ${exerciseCount ? 'تمرين تفاعلي' : 'لا يوجد تمرين بعد'}</span>
+            </div>
+            <div class="lesson-card-arrow"><i class="fa-solid fa-chevron-left"></i></div>
+        `;
+        card.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openLesson(lesson.id);
+            showToast(`📱 تم فتح الدرس (${index + 1})`);
+        });
+        lessonsList.appendChild(card);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Stage Screens
     const studentDashboardScreen = document.getElementById('studentDashboardScreen');
@@ -752,6 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     curriculumData = data.curriculum;
                     currentUnit = curriculumData.units.find(u => u.id === unitId) || curriculumData.units[0];
                     document.getElementById('selectedUnitTitle').textContent = currentUnit.title_ar;
+                    renderStudentDashboard();
                     if (editUnitModal) editUnitModal.classList.add('hidden');
                     showToast('🎉 تم تحديث اسم الوحدة وحفظه على السيرفر بنجاح!');
                 }
@@ -792,6 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تحديث اسم الدرس');
                 syncCurriculumState(data.curriculum, lessonId);
                 renderUnitLessonsList();
+                renderStudentDashboard();
                 if (editLessonModal) editLessonModal.classList.add('hidden');
                 showToast('🎉 تم تحديث اسم الدرس وتخزينه على السيرفر بنجاح!');
             } catch (err) {
@@ -2197,6 +2232,7 @@ async function loadCurriculum() {
             currentLesson = currentUnit.lessons[0];
             slides = currentLesson.slides;
             currentExercise = currentLesson.exercise;
+            renderStudentDashboard();
         }
     } catch (err) {
         console.error('Error loading curriculum:', err);

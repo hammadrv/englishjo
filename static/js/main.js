@@ -513,7 +513,7 @@ function renderStudentDashboard() {
     const lessonsList = document.getElementById('studentDashboardLessonsList');
     if (!unitTitle || !lessonsList || !currentUnit) return;
 
-    applyStudentDashboardView(getSavedStudentDashboardView());
+    applyStudentExperienceView(getSavedStudentDashboardView());
 
     unitTitle.innerHTML = `<i class="fa-solid fa-folder-open"></i> ${escapeHtml(currentUnit.title_ar || 'الوحدة الأولى')}`;
     lessonsList.innerHTML = '';
@@ -554,12 +554,15 @@ function getSavedStudentDashboardView() {
     }
 }
 
-function applyStudentDashboardView(view = 'classic') {
+function applyStudentExperienceView(view = 'classic') {
+    const phoneFrame = document.getElementById('studentPhoneFrame');
     const dashboard = document.getElementById('studentDashboardScreen');
-    if (!dashboard) return;
-    dashboard.classList.remove('view-compact', 'view-grid');
-    if (view === 'compact') dashboard.classList.add('view-compact');
-    if (view === 'grid') dashboard.classList.add('view-grid');
+    [phoneFrame, dashboard].forEach(element => {
+        if (!element) return;
+        element.classList.remove('student-view-compact', 'student-view-grid', 'view-compact', 'view-grid');
+        if (view === 'compact') element.classList.add(element === dashboard ? 'view-compact' : 'student-view-compact');
+        if (view === 'grid') element.classList.add(element === dashboard ? 'view-grid' : 'student-view-grid');
+    });
 }
 
 function initStudentDashboardViewSettings() {
@@ -580,7 +583,7 @@ function initStudentDashboardViewSettings() {
             option.setAttribute('aria-checked', String(active));
         });
         if (status) status.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${labels[selectedView]} مفعّل حالياً`;
-        applyStudentDashboardView(selectedView);
+        applyStudentExperienceView(selectedView);
     };
 
     openButton.addEventListener('click', () => {

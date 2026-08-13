@@ -291,6 +291,41 @@ body.light-theme {
 .student-view-save-btn { border:0; border-radius:12px; background:var(--teal-primary); color:#FFFFFF; padding:0.65rem 0.85rem; font-weight:900; font-size:0.75rem; cursor:pointer; white-space:nowrap; }
 .student-view-save-btn:hover { background:#0F766E; }
 
+/* Internal student screens follow the same saved choice. Classic has no modifier. */
+.mobile-phone-frame.student-view-compact .mobile-screen-content,
+.mobile-phone-frame.student-view-compact .exercise-screen-wrapper,
+.mobile-phone-frame.student-view-compact .text-quiz5-stage,
+.mobile-phone-frame.student-view-compact .exercise-trial-result-screen { padding-inline: 0.85rem; }
+.mobile-phone-frame.student-view-compact .hero-title-en { font-size: 2.15rem; margin-bottom: 0.55rem; }
+.mobile-phone-frame.student-view-compact .desc-ar-text { font-size: 1rem; }
+.mobile-phone-frame.student-view-compact .mobile-image-frame { border-radius: 14px; margin-bottom: 0.75rem; box-shadow: none; }
+.mobile-phone-frame.student-view-compact .mobile-slide-img { height: 170px; }
+.mobile-phone-frame.student-view-compact .light-card,
+.mobile-phone-frame.student-view-compact .text-quiz-question-card,
+.mobile-phone-frame.student-view-compact .exercise-sentence-translation-box { border-radius: 13px; padding: 0.7rem 0.8rem; margin-bottom: 0.65rem; box-shadow: none; }
+.mobile-phone-frame.student-view-compact .exercise-image-frame { max-width: 240px; height: 155px; margin-bottom: 0.8rem; }
+.mobile-phone-frame.student-view-compact .exercise-question-sentence { font-size: 1.3rem; margin-bottom: 1rem; }
+.mobile-phone-frame.student-view-compact .btn-exercise-opt { border-radius: 12px; padding: 0.65rem 0.4rem; font-size: 1rem; }
+.mobile-phone-frame.student-view-compact .text-quiz-question-prompt { font-size: 1rem; }
+.mobile-phone-frame.student-view-compact .text-quiz-option { padding: 0.6rem 0.7rem; }
+
+.mobile-phone-frame.student-view-grid .mobile-screen-content,
+.mobile-phone-frame.student-view-grid .exercise-screen-wrapper,
+.mobile-phone-frame.student-view-grid .text-quiz5-stage,
+.mobile-phone-frame.student-view-grid .exercise-trial-result-screen { background: #F8FAFC; padding-inline: 0.75rem; }
+.mobile-phone-frame.student-view-grid .desc-block,
+.mobile-phone-frame.student-view-grid .light-card,
+.mobile-phone-frame.student-view-grid .mobile-image-frame { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; padding: 0.75rem; box-shadow: 0 4px 12px rgba(15,23,42,0.05); }
+.mobile-phone-frame.student-view-grid .desc-block { margin-bottom: 0.7rem; }
+.mobile-phone-frame.student-view-grid .hero-title-en { font-size: 2.2rem; padding: 0.2rem 0.3rem; }
+.mobile-phone-frame.student-view-grid .mobile-slide-img { height: 190px; }
+.mobile-phone-frame.student-view-grid .exercise-question-sentence { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; padding: 0.85rem 0.55rem; font-size: 1.35rem; margin-bottom: 0.9rem; }
+.mobile-phone-frame.student-view-grid .exercise-options-grid-3 { grid-template-columns: 1fr; gap: 0.5rem; }
+.mobile-phone-frame.student-view-grid .btn-exercise-opt { border-radius: 13px; padding: 0.7rem; }
+.mobile-phone-frame.student-view-grid .text-quiz5-intro { border-radius: 16px; padding: 1rem; margin-bottom: 0.3rem; }
+.mobile-phone-frame.student-view-grid .text-quiz-question-card { border-radius: 16px; box-shadow: 0 4px 12px rgba(15,23,42,0.05); }
+.mobile-phone-frame.student-view-grid .exercise-trial-result-screen-inner { border-radius: 18px; box-shadow: 0 5px 16px rgba(15,23,42,0.06); }
+
 .lesson-nav-card {
     background: #FFFFFF;
     border: 1.5px solid var(--border-color);

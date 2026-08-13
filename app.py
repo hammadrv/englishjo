@@ -1379,7 +1379,8 @@ def add_ministry_exam():
     quiz_questions = payload.get('quiz_questions') or [
         {
             'prompt': f'اكتب سؤال الامتحان الوزاري رقم {index + 1} هنا',
-            'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث']
+            'options': ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'],
+            'answer': 'الإجابة الصحيحة: الخيار الأول'
         }
         for index in range(question_count)
     ]
@@ -1435,9 +1436,14 @@ def download_ministry_exam(lesson_id):
     title = html_escape(lesson['title_ar'] or lesson['title_en'] or 'ورقة الامتحان الوزاري')
     instruction = html_escape(exam['instruction_badge'] or 'الامتحان الوزاري - اختيار من متعدد')
     question_html = []
+    answer_key_html = []
     for index, question in enumerate(questions, start=1):
         prompt = html_escape(str(question.get('prompt', '')))
         options = question.get('options') if isinstance(question, dict) else []
+        answer = question.get('answer', '') if isinstance(question, dict) else ''
+        if not answer and isinstance(question, dict) and question.get('correct_index') is not None:
+            answer = f'الخيار رقم {int(question.get("correct_index", 0)) + 1}'
+        answer = html_escape(str(answer or 'لم تُحدد الإجابة الصحيحة'))
         option_html = ''.join(
             f'<div class="option"><span class="box">☐</span><strong>{chr(65 + option_index)}.</strong> {html_escape(str(option))}</div>'
             for option_index, option in enumerate(options or [])
@@ -1446,6 +1452,12 @@ def download_ministry_exam(lesson_id):
             <div class="question">
                 <div class="prompt"><strong>{index}.</strong> {prompt}</div>
                 <div class="options">{option_html}</div>
+            </div>
+        ''')
+        answer_key_html.append(f'''
+            <div class="answer-key-item">
+                <strong>{index}.</strong>
+                <span>{answer}</span>
             </div>
         ''')
 
@@ -1461,10 +1473,13 @@ h1 {{ margin:0 0 6px; font-size:24px; }} .subtitle {{ color:#475569; font-size:1
 .question {{ page-break-inside: avoid; border-bottom:1px solid #e2e8f0; padding:12px 0 16px; }}
 .prompt {{ font-size:16px; font-weight:bold; margin-bottom:8px; }} .options {{ display:grid; grid-template-columns:repeat(2, 1fr); gap:5px 25px; padding-right:22px; }}
 .option {{ font-size:15px; }} .box {{ font-size:19px; margin-left:5px; }}
+.answer-key {{ page-break-before: always; }} .answer-key h2 {{ color:#0d9488; border-bottom:2px solid #0d9488; padding-bottom:10px; }}
+.answer-key-item {{ display:flex; gap:10px; border-bottom:1px solid #e2e8f0; padding:10px 0; font-size:15px; }}
 </style></head><body>
 <div class="header"><h1>الامتحان الوزاري</h1><div class="subtitle">{title} | {instruction}</div></div>
 <div class="student"><span>اسم الطالب:</span><span class="line"></span><span>التاريخ:</span><span class="line"></span></div>
 {''.join(question_html)}
+<section class="answer-key"><div class="header"><h1>مفتاح الإجابة</h1><div class="subtitle">للمعلم فقط - إجابات الامتحان الوزاري</div></div><h2>الإجابات الصحيحة</h2>{''.join(answer_key_html)}</section>
 </body></html>'''
     response = Response(document, content_type='application/msword; charset=utf-8')
     response.headers['Content-Disposition'] = f'attachment; filename="ministry-exam-lesson-{lesson_id}.doc"'

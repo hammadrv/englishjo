@@ -249,7 +249,8 @@ function normalizeMinistryExamQuestions(questions, count) {
         while (options.length < 2) options.push(`الخيار ${options.length + 1}`);
         return {
             prompt: String(item.prompt || item.question || `اكتب سؤال الامتحان الوزاري رقم ${index + 1} هنا`),
-            options
+            options,
+            answer: String(item.answer || (Number.isInteger(item.correct_index) ? `الإجابة الصحيحة: الخيار ${item.correct_index + 1}` : 'الإجابة الصحيحة: الخيار الأول'))
         };
     });
 }
@@ -259,12 +260,20 @@ function ministryQuestionToEditorHtml(question) {
     return [normalized.prompt, ...normalized.options].map(line => `<div>${escapeHtml(line)}</div>`).join('');
 }
 
-function collectMinistryExamQuestionsFromEditor(prefix, count) {
+function ministryAnswerToEditorHtml(question) {
+    const normalized = normalizeMinistryExamQuestions([question], 1)[0];
+    return `<div>${escapeHtml(normalized.answer)}</div>`;
+}
+
+function collectMinistryExamQuestionsFromEditor(questionPrefix, answerPrefix, count) {
     return Array.from({ length: count }, (_, index) => {
-        const editor = document.getElementById(`${prefix}${index}`);
-        const surface = document.querySelector(`[data-rich-editor="${prefix}${index}"]`);
-        const lines = richTextPlainLines(surface ? surface.innerHTML : (editor ? editor.value : ''));
-        return { prompt: lines[0] || '', options: lines.slice(1, 7).filter(Boolean) };
+        const questionEditor = document.getElementById(`${questionPrefix}${index}`);
+        const questionSurface = document.querySelector(`[data-rich-editor="${questionPrefix}${index}"]`);
+        const answerEditor = document.getElementById(`${answerPrefix}${index}`);
+        const answerSurface = document.querySelector(`[data-rich-editor="${answerPrefix}${index}"]`);
+        const questionLines = richTextPlainLines(questionSurface ? questionSurface.innerHTML : (questionEditor ? questionEditor.value : ''));
+        const answerLines = richTextPlainLines(answerSurface ? answerSurface.innerHTML : (answerEditor ? answerEditor.value : ''));
+        return { prompt: questionLines[0] || '', options: questionLines.slice(1, 7).filter(Boolean), answer: answerLines.join(' ') };
     });
 }
 
@@ -1196,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 instruction_badge: getVal('formExBadge') || 'الامتحان الوزاري - اختيار من متعدد',
                 sentence_ar: '',
                 question_en: '',
-                quiz_questions: collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', ministryCount),
+                quiz_questions: collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', 'formMinistryAnswerQ', ministryCount),
                 options: [],
                 correct_index: 0,
                 explanation: '',
@@ -1222,8 +1231,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden_blocks: activeExHiddenBlocks
             };
 
-            if ((isTextQuiz5 || isMasteryQuiz || isMinistryExam) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option))) {
-                showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : isMinistryExam ? 'أكمل نص كل سؤال وخياراته قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
+            if ((isTextQuiz5 || isMasteryQuiz || isMinistryExam) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option) || (isMinistryExam && !question.answer))) {
+                showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : isMinistryExam ? 'أكمل نص السؤال وخياراته والإجابة الصحيحة قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
                 return;
             }
 
@@ -2265,7 +2274,7 @@ function renderAccordionLessonContent(card, lessonId) {
                 <p>أسئلة اختيار من متعدد للطباعة والتنزيل والإجابة بالقلم داخل الصف.</p>
             </div>
             <div class="ministry-exam-manager-actions">
-                <button type="button" class="btn-download-ministry-exam" ${ministryQuestions.length ? '' : 'disabled'}><i class="fa-solid fa-file-arrow-down"></i> تحميل Word للطباعة</button>
+                <button type="button" class="btn-download-ministry-exam" ${ministryQuestions.length ? '' : 'disabled'}><i class="fa-solid fa-file-arrow-down"></i> تحميل Word: الأسئلة + الإجابات</button>
                 <button type="button" class="btn-add-ministry-exam"><i class="fa-solid ${ministryQuestions.length ? 'fa-pen' : 'fa-plus'}"></i> ${ministryQuestions.length ? 'تعديل ورقة الأسئلة' : 'إنشاء ورقة الامتحان'}</button>
             </div>
         `;
@@ -2314,7 +2323,7 @@ function renderAccordionLessonContent(card, lessonId) {
                 preview.className = 'ministry-exam-paper-preview';
                 preview.innerHTML = `
                     <div class="ministry-paper-heading"><span>الامتحان الوزاري</span><strong>${escapeHtml(exam.instruction_badge || 'اختيار من متعدد')}</strong><small>${questions.length} أسئلة</small></div>
-                    <div class="ministry-paper-meta"><span>اسم الطالب: __________________</span><span>التاريخ: ______________</span></div>
+                    <div class="ministry-paper-meta"><span>اسم الطالب: __________________</span><span>التاريخ: ______________</span><span>مفتاح الإجابة محفوظ في الصفحات الأخيرة</span></div>
                     <div class="ministry-paper-questions">
                         ${questions.slice(0, 5).map((question, index) => `
                             <div class="ministry-paper-question"><strong>${index + 1}. ${escapeHtml(question.prompt)}</strong><div>${question.options.map((option, optionIndex) => `<span>☐ ${String.fromCharCode(65 + optionIndex)}. ${escapeHtml(option)}</span>`).join('')}</div></div>
@@ -4162,8 +4171,8 @@ function renderExDynamicBlocks() {
             blockIcon = 'fa-solid fa-file-word';
             blockFieldsHtml = `
                 <div class="text-quiz-editor-intro ministry-exam-editor-intro">
-                    <strong>ورقة امتحان قابلة للطباعة</strong>
-                    <span>اكتب السؤال في السطر الأول، ثم الخيارات تحته. لا يتم حفظ إجابة صحيحة لأن الطالب سيجيب بالقلم داخل ورقة الامتحان.</span>
+                    <strong>محرران بنمط Word لكل سؤال</strong>
+                    <span>اكتب السؤال والخيارات في الصندوق الأول، ثم اكتب الإجابة الصحيحة في الصندوق الثاني. ملف Word يضع ورقة الأسئلة أولاً ومفتاح الإجابة في صفحات أخيرة منفصلة.</span>
                 </div>
                 <div class="form-group mastery-count-field">
                     <label for="formMinistryQuestionCount">عدد أسئلة الورقة</label>
@@ -4184,7 +4193,16 @@ function renderExDynamicBlocks() {
                                 <span>السؤال ${quizIndex + 1}</span>
                                 <span>${question.options.length} خيارات</span>
                             </div>
-                            ${richTextEditorHtml(`formMinistryQuizQ${quizIndex}`, 'السؤال\nالخيار الأول\nالخيار الثاني', 'ltr', ministryQuestionToEditorHtml(question))}
+                            <div class="ministry-editor-pair">
+                                <section class="ministry-editor-box ministry-question-box">
+                                    <div class="ministry-editor-box-title"><i class="fa-solid fa-file-lines"></i><strong>صندوق السؤال والخيارات</strong><small>يظهر للطالب في ورقة الأسئلة</small></div>
+                                    ${richTextEditorHtml(`formMinistryQuizQ${quizIndex}`, 'السؤال\nالخيار الأول\nالخيار الثاني', 'ltr', ministryQuestionToEditorHtml(question))}
+                                </section>
+                                <section class="ministry-editor-box ministry-answer-box">
+                                    <div class="ministry-editor-box-title"><i class="fa-solid fa-key"></i><strong>صندوق الإجابة الصحيحة</strong><small>يظهر في مفتاح الإجابة للمعلم</small></div>
+                                    ${richTextEditorHtml(`formMinistryAnswerQ${quizIndex}`, 'الإجابة الصحيحة: الخيار الأول', 'rtl', ministryAnswerToEditorHtml(question))}
+                                </section>
+                            </div>
                             <div class="mastery-option-controls" data-ministry-question-index="${quizIndex}">
                                 <span class="mastery-option-count">عدد الخيارات: <strong>${question.options.length}</strong></span>
                                 <div class="mastery-option-actions">
@@ -4489,7 +4507,7 @@ function renderExDynamicBlocks() {
     if (isMinistryExam) {
         const countInput = document.getElementById('formMinistryQuestionCount');
         const applyMinistryQuestionCount = () => {
-            const existingQuestions = collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', quizQuestions.length);
+            const existingQuestions = collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', 'formMinistryAnswerQ', quizQuestions.length);
             const requestedCount = normalizeMasteryQuestionCount(countInput?.value, quizQuestions.length);
             if (countInput) countInput.value = requestedCount;
             currentExercise.quiz_questions = normalizeMinistryExamQuestions(existingQuestions, requestedCount);
@@ -4504,7 +4522,7 @@ function renderExDynamicBlocks() {
             actionButton.addEventListener('click', () => {
                 const questionIndex = Number(actionButton.closest('[data-ministry-question-index]')?.dataset.ministryQuestionIndex);
                 if (!Number.isInteger(questionIndex)) return;
-                const existingQuestions = collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', quizQuestions.length);
+                const existingQuestions = collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', 'formMinistryAnswerQ', quizQuestions.length);
                 const question = existingQuestions[questionIndex];
                 if (!question) return;
                 if (actionButton.dataset.ministryOptionAction === 'add' && question.options.length < 6) {
@@ -4622,7 +4640,7 @@ function updateExerciseLivePreview() {
                 : normalizeMasteryQuizQuestions(currentExercise?.quiz_questions))
             : isMinistryExam
                 ? (document.getElementById('formMinistryQuizQ0')
-                    ? collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', ministryCount)
+                    ? collectMinistryExamQuestionsFromEditor('formMinistryQuizQ', 'formMinistryAnswerQ', ministryCount)
                     : normalizeMinistryExamQuestions(currentExercise?.quiz_questions))
             : (document.getElementById('formTextQuizQ0')
                 ? collectTextQuizQuestionsFromEditor()

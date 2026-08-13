@@ -604,12 +604,23 @@ body.light-theme {
 .btn-delete-ministry-exam { background: #FEF2F2; color: #B91C1C; }
 .ministry-question-editor-item { border-color: #93C5FD; }
 .ministry-exam-editor-intro { background: #EFF6FF; border-color: #93C5FD; color: #1E40AF; }
+.ministry-editor-pair { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr); gap: 0.8rem; margin-top: 0.8rem; }
+.ministry-editor-box { min-width: 0; padding: 0.7rem; border: 1px solid #CBD5E1; border-radius: 12px; background: #FFFFFF; }
+.ministry-question-box { border-color: #93C5FD; background: #F8FBFF; }
+.ministry-answer-box { border-color: #A7F3D0; background: #F0FDFA; }
+.ministry-editor-box-title { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.55rem; color: var(--text-navy); font-size: 0.82rem; }
+.ministry-question-box .ministry-editor-box-title i { color: #2563EB; }
+.ministry-answer-box .ministry-editor-box-title i { color: #0D9488; }
+.ministry-editor-box-title strong { font-weight: 900; }
+.ministry-editor-box-title small { width: 100%; color: #64748B; font-size: 0.7rem; font-weight: 700; }
+.ministry-answer-box .mini-rich-surface { min-height: 92px; direction: rtl; text-align: right; }
 
 @media (max-width: 640px) {
     .ministry-exam-manager-actions { width: 100%; }
     .btn-download-ministry-exam, .btn-add-ministry-exam { flex: 1; min-width: 0; }
     .ministry-paper-question > div { grid-template-columns: 1fr; }
     .ministry-paper-card-actions button { flex: 1; }
+    .ministry-editor-pair { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {

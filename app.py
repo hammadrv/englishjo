@@ -1468,11 +1468,11 @@ def download_ministry_exam(lesson_id):
 body {{ font-family: Arial, Tahoma, sans-serif; color:#172033; margin:2cm; line-height:1.7; }}
 .header {{ text-align:center; border-bottom:2px solid #0d9488; padding-bottom:16px; margin-bottom:22px; }}
 h1 {{ margin:0 0 6px; font-size:24px; }} .subtitle {{ color:#475569; font-size:15px; }}
-.student {{ display:flex; gap:30px; border:1px solid #cbd5e1; padding:12px; margin-bottom:22px; }}
+.student {{ display:flex; gap:30px; padding:8px 0 14px; margin-bottom:14px; border-bottom:1px solid #cbd5e1; }}
 .line {{ flex:1; border-bottom:1px dotted #64748b; min-height:24px; }}
-.question {{ page-break-inside: avoid; border-bottom:1px solid #e2e8f0; padding:12px 0 16px; }}
-.prompt {{ font-size:16px; font-weight:bold; margin-bottom:8px; }} .options {{ display:grid; grid-template-columns:repeat(2, 1fr); gap:5px 25px; padding-right:22px; }}
-.option {{ font-size:15px; }} .box {{ font-size:19px; margin-left:5px; }}
+.question {{ page-break-inside: avoid; padding:8px 0 10px; }}
+.prompt {{ font-size:16px; font-weight:bold; margin-bottom:5px; }} .options {{ display:block; padding-right:22px; }}
+.option {{ display:inline-block; min-width:30%; margin:2px 18px 2px 0; font-size:15px; }} .box {{ font-size:19px; margin-left:5px; }}
 .answer-key {{ page-break-before: always; }} .answer-key h2 {{ color:#0d9488; border-bottom:2px solid #0d9488; padding-bottom:10px; }}
 .answer-key-item {{ display:flex; gap:10px; border-bottom:1px solid #e2e8f0; padding:10px 0; font-size:15px; }}
 </style></head><body>

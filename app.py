@@ -1047,10 +1047,39 @@ def update_lesson(lesson_id):
         c.execute("DELETE FROM slides WHERE lesson_id = ? AND is_reinforcement = 1", (lesson_id,))
         for s_idx, s in enumerate(payload["reinforcement_slides"]):
             c.execute('''
-                INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en, description_ar, description_en, image, linked_exercise_id, is_reinforcement, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en,
+                    description_ar, description_en, rule_title, rule_desc, example_en, example_ar,
+                    image, teacher_notes, scene_badge, question_ar, hint_note, wrong_note,
+                    options_json, correct_index, result_title, reveal_badge, reveal_explanation,
+                    reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
             ''', (
-                lesson_id, s.get("template_type", "two_stage"), s.get("welcome_badge", ""), s.get("title_ar", ""), s.get("title_en", ""), s.get("description_ar", ""), s.get("description_en", ""), s.get("image", ""), str(s.get("linked_exercise_id", "all")), s_idx
+                lesson_id,
+                s.get("template_type", "two_stage"),
+                s.get("welcome_badge", ""),
+                s.get("title_ar", ""),
+                s.get("title_en", ""),
+                s.get("description_ar", ""),
+                s.get("description_en", ""),
+                s.get("rule_title", ""),
+                s.get("rule_desc", ""),
+                s.get("example_en", ""),
+                s.get("example_ar", ""),
+                s.get("image", ""),
+                s.get("teacher_notes", ""),
+                s.get("scene_badge", ""),
+                s.get("question_ar", ""),
+                s.get("hint_note", ""),
+                s.get("wrong_note", ""),
+                json.dumps(s.get("options", []), ensure_ascii=False),
+                s.get("correct_index", 0),
+                s.get("result_title", ""),
+                s.get("reveal_badge", ""),
+                s.get("reveal_explanation", ""),
+                s.get("reveal_note", ""),
+                json.dumps(s.get("blocks_order", []), ensure_ascii=False),
+                str(s.get("linked_exercise_id", "all")),
+                s_idx
             ))
         conn.commit()
 

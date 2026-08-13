@@ -11,6 +11,7 @@ let teacherNotesVisible = false;
 let currentActiveTheme = 'coral';
 let pendingExerciseContext = 'practice';
 let pendingSlideContext = 'normal';
+let reinforcementExplanationActive = false;
 
 // Active Slide Block Order State (Visual Block Builder)
 let activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
@@ -1062,8 +1063,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentIndex++;
                 renderCurrentSlide();
             } else {
-                showToast('🎯 أحسنت! انتقلت الآن لتمرين الدرس التفاعلي');
-                showExerciseStage();
+                if (reinforcementExplanationActive) {
+                    reinforcementExplanationActive = false;
+                    showToast('⚡ انتهى صندوق الشرح، ننتقل الآن لأسئلة التقوية');
+                    showReinforcementExerciseStage();
+                } else {
+                    showToast('🎯 أحسنت! انتقلت الآن لتمرين الدرس التفاعلي');
+                    showExerciseStage();
+                }
             }
         });
     }
@@ -1469,17 +1476,11 @@ function renderUnitLessonsList() {
                         <div>
                             <span class="sub-badge-teal" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">⚡ مرحلة التقوية بالدرس</span>
                             <h4 class="tab-explanation-title" style="margin: 0.2rem 0;">مرحلة تقوية المفاهيم بعد التمرين</h4>
-                            <p class="tab-explanation-sub" style="margin: 0;">تحديد نوع التقوية المناسبة للدرس (شرح إضافي أو تمارين إضافية) وتعديل محتواها.</p>
+                            <p class="tab-explanation-sub" style="margin: 0;">صندوق شرح واحد كامل، يليه بنك أسئلة اختيار من متعدد للتقوية.</p>
                         </div>
 
-                        <!-- Reinforcement Type Radio Selector -->
-                        <div class="reinforcement-type-selector" style="display: flex; background: #F1F5F9; padding: 0.3rem; border-radius: 50px; border: 1.5px solid #CBD5E1; gap: 0.3rem;">
-                            <button type="button" class="btn-reinf-type active" data-reinf-type="slides" style="border: none; padding: 0.5rem 1.1rem; border-radius: 50px; font-weight: 800; font-size: 0.88rem; cursor: pointer; background: #FFFFFF; color: #D97706; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
-                                📚 شرح تقوية (شرائح إضافية)
-                            </button>
-                            <button type="button" class="btn-reinf-type" data-reinf-type="exercise" style="border: none; padding: 0.5rem 1.1rem; border-radius: 50px; font-weight: 800; font-size: 0.88rem; cursor: pointer; background: transparent; color: #64748B;">
-                                ✏️ تمرين تقوية (أسئلة إضافية)
-                            </button>
+                        <div class="reinforcement-structure-note" style="background:#FFFBEB; border:1.5px solid #FCD34D; color:#92400E; border-radius:14px; padding:0.7rem 1rem; font-weight:800; font-size:0.88rem;">
+                            بندان ثابتان: صندوق شرح واحد كامل + أسئلة اختيار من متعدد
                         </div>
                     </div>
                     <div class="studio-reinforcement-summary-card" style="margin-top: 1.5rem;"></div>
@@ -1861,59 +1862,38 @@ function renderAccordionLessonContent(card, lessonId) {
     const reinfSummary = card.querySelector('.studio-reinforcement-summary-card');
     if (reinfSummary) {
         reinfSummary.innerHTML = '';
-        const reinfType = lesson.reinforcement_type || 'slides';
+        const allReinforcementSlides = Array.isArray(lesson.reinforcement_slides) ? lesson.reinforcement_slides : [];
+        // Reinforcement always has one explanation container. Keep the first legacy slide
+        // as the editable container so older lessons are not duplicated in the editor.
+        const reinfSlidesList = allReinforcementSlides.slice(0, 1);
+        const reinfExList = Array.isArray(lesson.reinforcement_exercises) ? lesson.reinforcement_exercises : [];
 
-        // Update active class on type buttons inside card
-        const typeBtns = card.querySelectorAll('.btn-reinf-type');
-        typeBtns.forEach(b => {
-            if (b.dataset.reinfType === reinfType) {
-                b.style.background = '#FFFFFF';
-                b.style.color = '#D97706';
-                b.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
-                b.classList.add('active');
-            } else {
-                b.style.background = 'transparent';
-                b.style.color = '#64748B';
-                b.style.boxShadow = 'none';
-                b.classList.remove('active');
-            }
-
-            b.onclick = async (e) => {
-                e.stopPropagation();
-                lesson.reinforcement_type = b.dataset.reinfType;
-                try {
-                    await fetch(`/api/lessons/${lesson.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reinforcement_type: lesson.reinforcement_type })
-                    });
-                } catch (err) {}
-                renderAccordionLessonContent(card, lessonId);
-            };
-        });
-
-        if (reinfType === 'slides') {
-            const reinfSlidesList = Array.isArray(lesson.reinforcement_slides) ? lesson.reinforcement_slides : [];
+        // Section 1: exactly one explanation container.
+        {
 
             const rHeader = document.createElement('div');
             rHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;';
             rHeader.innerHTML = `
                 <div>
-                    <h3 style="margin:0; font-weight:900; color:var(--text-navy);">شرائح الشرح للتقوية (${reinfSlidesList.length})</h3>
-                    <p style="margin:0; font-size:0.88rem; color:#64748B;">تظهر هذه الشرائح كجرعة تقوية مركزة للطالب بعد التمرين.</p>
+                    <h3 style="margin:0; font-weight:900; color:var(--text-navy);">بند 1: صندوق شرح التقوية الكامل</h3>
+                    <p style="margin:0; font-size:0.88rem; color:#64748B;">ضع كل الشرح الذي يحتاجه الطالب داخل صندوق واحد فقط ليظهر بعد الخطأ.</p>
                 </div>
-                <button type="button" class="btn-add-reinf-slide" style="background: linear-gradient(135deg, #D97706 0%, #B45309 100%); color: #FFF; border: none; padding: 0.7rem 1.3rem; border-radius: 50px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.92rem;">
-                    <i class="fa-solid fa-plus-circle"></i> أضف شريحة تقوية جديدة
-                </button>
+                ${reinfSlidesList.length === 0 ? `
+                    <button type="button" class="btn-add-reinf-slide" style="background: linear-gradient(135deg, #D97706 0%, #B45309 100%); color: #FFF; border: none; padding: 0.7rem 1.3rem; border-radius: 50px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.92rem;">
+                        <i class="fa-solid fa-plus-circle"></i> أضف صندوق الشرح
+                    </button>
+                ` : `
+                    <span style="background:#ECFDF5; color:#047857; border:1.5px solid #A7F3D0; padding:0.65rem 1rem; border-radius:12px; font-weight:800;">✓ صندوق شرح واحد محفوظ</span>
+                `}
             `;
-            rHeader.querySelector('.btn-add-reinf-slide').onclick = (e) => {
+            rHeader.querySelector('.btn-add-reinf-slide')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 currentLesson = lesson;
                 pendingSlideContext = 'reinforcement';
                 slides = reinfSlidesList;
                 const addSlideTemplateModal = document.getElementById('addSlideTemplateModal');
                 if (addSlideTemplateModal) addSlideTemplateModal.classList.remove('hidden');
-            };
+            });
             reinfSummary.appendChild(rHeader);
 
             if (reinfSlidesList.length === 0) {
@@ -2034,19 +2014,20 @@ function renderAccordionLessonContent(card, lessonId) {
 
                 reinfSummary.appendChild(rCard);
             });
-        } else {
-            // Exercise Reinforcement Mode
-            const reinfExList = Array.isArray(lesson.reinforcement_exercises) ? lesson.reinforcement_exercises : [];
+        }
+
+        // Section 2: multiple-choice reinforcement questions.
+        {
 
             const rHeader = document.createElement('div');
             rHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;';
             rHeader.innerHTML = `
                 <div>
-                    <h3 style="margin:0; font-weight:900; color:var(--text-navy);">أسئلة تمرين التقوية (${reinfExList.length})</h3>
-                    <p style="margin:0; font-size:0.88rem; color:#64748B;">تظهر كجرعة تطبيق إضافية، ويمكنك أيضاً إضافة اختبار نصي من 5 أسئلة.</p>
+                    <h3 style="margin:0; font-weight:900; color:var(--text-navy);">بند 2: أسئلة التقوية الاختيارية (${reinfExList.length})</h3>
+                    <p style="margin:0; font-size:0.88rem; color:#64748B;">أضف أسئلة اختيار من متعدد مستقلة، وتظهر للطالب بعد صندوق الشرح.</p>
                 </div>
                 <button type="button" class="btn-add-reinf-ex" style="background: linear-gradient(135deg, #D97706 0%, #B45309 100%); color: #FFF; border: none; padding: 0.7rem 1.3rem; border-radius: 50px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.92rem;">
-                    <i class="fa-solid fa-plus-circle"></i> أضف سؤال تقوية جديد
+                    <i class="fa-solid fa-plus-circle"></i> أضف سؤال اختيار من متعدد
                 </button>
             `;
             rHeader.querySelector('.btn-add-reinf-ex').onclick = (e) => {
@@ -2061,7 +2042,7 @@ function renderAccordionLessonContent(card, lessonId) {
             if (reinfExList.length === 0) {
                 const emptyNotice = document.createElement('div');
                 emptyNotice.style.cssText = 'padding: 1.5rem; text-align: center; color: #64748B; font-weight: 700; background: #FFFBEB; border-radius: 14px; border: 1.5px dashed #FCD34D;';
-                emptyNotice.textContent = 'لا توجد أسئلة تقوية محفوظة في هذا الدرس بعد. افتح القوالب وأضف الاختبار النصي أو أي سؤال آخر.';
+                emptyNotice.textContent = 'لا توجد أسئلة اختيار من متعدد للتقوية بعد. أضف السؤال الأول من القوالب.';
                 reinfSummary.appendChild(emptyNotice);
             } else reinfExList.forEach((rEx, rIdx) => {
                 const rCard = document.createElement('div');
@@ -3878,7 +3859,7 @@ function triggerStudentReinforcementStage() {
     }
 
     // Filter Targeted Explanation Slides & Exercises
-    const reinfSlides = (currentLesson.reinforcement_slides || []).filter(s =>
+    const reinfSlides = (currentLesson.reinforcement_slides || []).slice(0, 1).filter(s =>
         s.linked_exercise_id === 'all' || studentWrongExerciseIds.includes(s.linked_exercise_id)
     );
 
@@ -3887,12 +3868,14 @@ function triggerStudentReinforcementStage() {
     );
 
     if (studentWrongExerciseIds.length === 0) {
+        reinforcementExplanationActive = false;
         showToast('🏆 مبروك! أتقنت جميع تمارين الدرس بنجاح 100%، لا تحتاج تقوية!');
         showStudentDashboard();
         return;
     }
 
     if (reinfSlides.length > 0) {
+        reinforcementExplanationActive = true;
         // Phase 1: Show Reinforcement Explanation Slide First
         slides = reinfSlides;
         currentIndex = 0;
@@ -3906,12 +3889,25 @@ function triggerStudentReinforcementStage() {
         renderCurrentSlide();
         showToast('⚡ مرحلة التقوية: شرح تصحيح القاعدة النحوية أولاً 📚');
     } else if (reinfExercises.length > 0) {
+        reinforcementExplanationActive = false;
         // Phase 2: Show Reinforcement Practice Exercise Directly
-        runExerciseSimulator({ exercises: reinfExercises, title_ar: "تمرين تقوية المفاهيم ⚡" }, 0);
-        showToast('⚡ مرحلة التقوية: سؤال تمرين التطبيق لتثبيت الفهم ✏️');
+        showReinforcementExerciseStage();
     } else {
+        reinforcementExplanationActive = false;
         showStudentDashboard();
     }
+}
+
+function showReinforcementExerciseStage() {
+    const reinfExercises = (currentLesson?.reinforcement_exercises || []).filter(ex =>
+        ex.linked_exercise_id === 'all' || studentWrongExerciseIds.includes(ex.linked_exercise_id)
+    );
+    if (reinfExercises.length === 0) {
+        showStudentDashboard();
+        return;
+    }
+    runExerciseSimulator({ exercises: reinfExercises, title_ar: "أسئلة التقوية الاختيارية ⚡" }, 0);
+    showToast('⚡ بدأت أسئلة التقوية الاختيارية');
 }
 
 // Transition to Practice Exercise Stage

@@ -287,29 +287,40 @@ function readMinistryEditorLines(editorId) {
     return richTextPlainLines(surface ? surface.innerHTML : (editor ? editor.value : ''));
 }
 
-function collectMinistryExamQuestionsFromEditor(questionEditorId, answerEditorId, questionTemplate) {
-    const template = Array.isArray(questionTemplate) ? questionTemplate : [];
-    const questionLines = readMinistryEditorLines(questionEditorId);
-    const answerLines = readMinistryEditorLines(answerEditorId);
+function parseMinistryQuestionBlocks(editorId) {
     const questionBlocks = [];
     let currentBlock = null;
-    questionLines.forEach(line => {
-        const marker = line.match(/^السؤال\s*(\d+)\s*[:.)-]\s*(.*)$/i);
+    readMinistryEditorLines(editorId).forEach(line => {
+        const marker = line.match(/^السؤال\s*([0-9٠-٩]+)\s*[:.)-]\s*(.*)$/i);
         if (marker) {
-            currentBlock = { prompt: marker[2].trim(), options: [] };
+            const number = Number(marker[1].replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+            currentBlock = { number, prompt: marker[2].trim(), options: [] };
             questionBlocks.push(currentBlock);
         } else if (currentBlock) {
             currentBlock.options.push(line);
         }
     });
+    return questionBlocks;
+}
+
+function countMinistryEditorQuestions(editorId = 'formMinistryQuestions') {
+    return parseMinistryQuestionBlocks(editorId).length;
+}
+
+function collectMinistryExamQuestionsFromEditor(questionEditorId, answerEditorId, questionTemplate) {
+    const template = Array.isArray(questionTemplate) ? questionTemplate : [];
+    const answerLines = readMinistryEditorLines(answerEditorId);
+    const questionBlocks = parseMinistryQuestionBlocks(questionEditorId);
     const answerMap = new Map();
     answerLines.forEach((line, index) => {
-        const marker = line.match(/^السؤال\s*(\d+)\s*[:.)-]\s*(.*)$/i);
-        answerMap.set(marker ? Number(marker[1]) - 1 : index, marker ? marker[2].trim() : line);
+        const marker = line.match(/^السؤال\s*([0-9٠-٩]+)\s*[:.)-]\s*(.*)$/i);
+        const number = marker ? Number(marker[1].replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit))) : null;
+        answerMap.set(marker ? number - 1 : index, marker ? marker[2].trim() : line);
     });
     return template.map((question, index) => {
-        const optionCount = Array.isArray(question.options) ? question.options.length : 3;
         const block = questionBlocks[index] || {};
+        const existingOptionCount = Array.isArray(question.options) ? question.options.length : 3;
+        const optionCount = block.options.length >= 2 ? Math.min(block.options.length, 6) : existingOptionCount;
         const options = Array.isArray(block.options) ? block.options.slice(0, optionCount) : [];
         while (options.length < optionCount) options.push(question.options[options.length] || `الخيار ${options.length + 1}`);
         const answer = answerMap.get(index) || question.answer || '';
@@ -1219,7 +1230,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const isMasteryQuiz = currentExercise && currentExercise.question_type === 'mastery_quiz';
             const isMinistryExam = currentExercise && currentExercise.question_type === 'ministry_exam';
             const masteryCount = normalizeMasteryQuestionCount(document.getElementById('formMasteryQuizCount')?.value, currentExercise?.quiz_questions?.length || 10);
-            const ministryCount = normalizeMasteryQuestionCount(document.getElementById('formMinistryQuestionCount')?.value, currentExercise?.quiz_questions?.length || 10);
+            const ministryCountInput = document.getElementById('formMinistryQuestionCount');
+            const configuredMinistryCount = normalizeMasteryQuestionCount(ministryCountInput?.value, currentExercise?.quiz_questions?.length || 10);
+            const pastedMinistryCount = isMinistryExam ? countMinistryEditorQuestions() : 0;
+            const ministryCount = isMinistryExam && pastedMinistryCount > configuredMinistryCount
+                ? normalizeMasteryQuestionCount(pastedMinistryCount, configuredMinistryCount)
+                : configuredMinistryCount;
+            if (isMinistryExam && pastedMinistryCount > configuredMinistryCount && ministryCountInput) {
+                ministryCountInput.value = ministryCount;
+                showToast(`تم اكتشاف ${pastedMinistryCount} سؤالاً، وتم تحديث العدد تلقائياً قبل الحفظ.`);
+            }
             const updatedData = isTextQuiz5 ? {
                 question_type: 'text_quiz_5',
                 instruction_badge: getVal('formExBadge') || 'اختبار نصي: اختر الإجابة الصحيحة لكل سؤال',
@@ -1277,8 +1297,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden_blocks: activeExHiddenBlocks
             };
 
-            if ((isTextQuiz5 || isMasteryQuiz || isMinistryExam) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option) || (isMinistryExam && !question.answer))) {
-                showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : isMinistryExam ? 'أكمل نص السؤال وخياراته والإجابة الصحيحة قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
+            if ((isTextQuiz5 || isMasteryQuiz) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option))) {
+                showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
                 return;
             }
 

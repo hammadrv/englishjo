@@ -290,17 +290,29 @@ function collectMinistryExamQuestionsFromEditor(questionEditorId, answerEditorId
     const template = Array.isArray(questionTemplate) ? questionTemplate : [];
     const questionLines = readMinistryEditorLines(questionEditorId);
     const answerLines = readMinistryEditorLines(answerEditorId);
-    let questionCursor = 0;
+    const questionBlocks = [];
+    let currentBlock = null;
+    questionLines.forEach(line => {
+        const marker = line.match(/^السؤال\s*(\d+)\s*[:.)-]\s*(.*)$/i);
+        if (marker) {
+            currentBlock = { prompt: marker[2].trim(), options: [] };
+            questionBlocks.push(currentBlock);
+        } else if (currentBlock) {
+            currentBlock.options.push(line);
+        }
+    });
+    const answerMap = new Map();
+    answerLines.forEach((line, index) => {
+        const marker = line.match(/^السؤال\s*(\d+)\s*[:.)-]\s*(.*)$/i);
+        answerMap.set(marker ? Number(marker[1]) - 1 : index, marker ? marker[2].trim() : line);
+    });
     return template.map((question, index) => {
         const optionCount = Array.isArray(question.options) ? question.options.length : 3;
-        const rawPrompt = questionLines[questionCursor] || '';
-        const prompt = rawPrompt.replace(/^السؤال\s*\d+\s*[:.)-]\s*/i, '').trim();
-        questionCursor += 1;
-        const options = questionLines.slice(questionCursor, questionCursor + optionCount).filter(Boolean);
-        questionCursor += optionCount;
-        const rawAnswer = answerLines[index] || '';
-        const answer = rawAnswer.replace(/^السؤال\s*\d+\s*[:.)-]\s*/i, '').trim();
-        return { prompt, options, answer };
+        const block = questionBlocks[index] || {};
+        const options = Array.isArray(block.options) ? block.options.slice(0, optionCount) : [];
+        while (options.length < optionCount) options.push(question.options[options.length] || `الخيار ${options.length + 1}`);
+        const answer = answerMap.get(index) || question.answer || '';
+        return { prompt: block.prompt || question.prompt || '', options, answer };
     });
 }
 

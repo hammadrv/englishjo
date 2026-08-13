@@ -2341,6 +2341,7 @@ function renderAccordionLessonContent(card, lessonId) {
                 const data = await res.json();
                 if (!res.ok || !data.success) throw new Error(data.message || 'create failed');
                 syncCurriculumState(data.curriculum, lesson.id);
+                currentLesson = currentUnit?.lessons.find(item => item.id === lesson.id) || currentLesson;
                 renderAccordionLessonContent(card, lesson.id);
                 const latest = (currentLesson.ministry_exam_questions || []).find(question => question.id === data.new_ministry_exam_id);
                 if (latest) {
@@ -2377,18 +2378,20 @@ function renderAccordionLessonContent(card, lessonId) {
                         <button type="button" class="btn-delete-ministry-exam"><i class="fa-solid fa-trash"></i> حذف الورقة</button>
                     </div>
                 `;
-                preview.querySelector('.btn-edit-ministry-exam').onclick = () => {
+                const editButton = preview.querySelector('.btn-edit-ministry-exam');
+                const deleteButton = preview.querySelector('.btn-delete-ministry-exam');
+
+                editButton.addEventListener('click', () => {
                     currentLesson = lesson;
                     currentExercise = exam;
                     openExerciseEditModal();
-                };
-                preview.querySelector('.btn-delete-ministry-exam').onclick = async () => {
+                });
+                deleteButton.addEventListener('click', async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     if (!await requestDeleteConfirmation({ title: 'حذف ورقة الامتحان الوزاري', message: 'سيتم حذف ورقة الأسئلة نهائياً من هذا الدرس.' })) return;
-                    const deleteButton = preview.querySelector('.btn-delete-ministry-exam');
-                    if (deleteButton) {
-                        deleteButton.disabled = true;
-                        deleteButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الحذف...';
-                    }
+                    deleteButton.disabled = true;
+                    deleteButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الحذف...';
                     try {
                         const res = await fetch(`/api/ministry_exams/${exam.id}`, { method: 'DELETE' });
                         const data = await res.json();
@@ -2398,13 +2401,11 @@ function renderAccordionLessonContent(card, lessonId) {
                         renderAccordionLessonContent(card, lesson.id);
                         showToast('تم حذف ورقة الامتحان الوزاري');
                     } catch (err) {
-                        if (deleteButton) {
-                            deleteButton.disabled = false;
-                            deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i> حذف الورقة';
-                        }
+                        deleteButton.disabled = false;
+                        deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i> حذف الورقة';
                         showToast('تعذر حذف ورقة الامتحان الوزاري');
                     }
-                };
+                });
                 ministrySummary.appendChild(preview);
             });
         }

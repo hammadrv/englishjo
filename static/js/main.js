@@ -1275,6 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            setSaveButtonsLoading('exerciseEditForm', true);
             try {
                 const res = await fetch(`/api/exercises/${exId}`, {
                     method: 'PUT',
@@ -1282,25 +1283,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(updatedData)
                 });
                 const data = await res.json();
-                if (data.success) {
-                    curriculumData = data.curriculum;
-                    if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
-                    if (currentUnit && currentLesson) {
-                        currentLesson = currentUnit.lessons.find(lesson => lesson.id === currentLesson.id) || currentLesson;
-                        currentExercise = currentLesson.exercises?.find(exercise => exercise.id === exId)
-                            || currentLesson.exam_questions?.find(exercise => exercise.id === exId)
-                            || currentLesson.exercise || currentExercise;
-                    }
-                    const expandedCard = document.querySelector('.lesson-manager-card.expanded');
-                    if (expandedCard) {
-                        const lessonId = parseInt(expandedCard.dataset.lessonId);
-                        renderAccordionLessonContent(expandedCard, lessonId);
-                    }
-                    setExerciseEditModalOpen(false);
-                    showToast('🎉 تم حفظ التمرين الموديولي والترتيب بنجاح!');
+                if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حفظ بيانات التمرين');
+                curriculumData = data.curriculum;
+                if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
+                if (currentUnit && currentLesson) {
+                    currentLesson = currentUnit.lessons.find(lesson => lesson.id === currentLesson.id) || currentLesson;
+                    currentExercise = currentLesson.exercises?.find(exercise => exercise.id === exId)
+                        || currentLesson.exam_questions?.find(exercise => exercise.id === exId)
+                        || currentLesson.ministry_exam_questions?.find(exercise => exercise.id === exId)
+                        || currentLesson.exercise || currentExercise;
                 }
+                const expandedCard = document.querySelector('.lesson-manager-card.expanded');
+                if (expandedCard) {
+                    const lessonId = parseInt(expandedCard.dataset.lessonId);
+                    renderAccordionLessonContent(expandedCard, lessonId);
+                }
+                setExerciseEditModalOpen(false);
+                showToast('🎉 تم حفظ التمرين الموديولي والترتيب بنجاح!');
             } catch (err) {
                 showToast('تعذر حفظ بيانات التمرين');
+            } finally {
+                setSaveButtonsLoading('exerciseEditForm', false);
             }
         });
     }
@@ -2381,14 +2384,24 @@ function renderAccordionLessonContent(card, lessonId) {
                 };
                 preview.querySelector('.btn-delete-ministry-exam').onclick = async () => {
                     if (!await requestDeleteConfirmation({ title: 'حذف ورقة الامتحان الوزاري', message: 'سيتم حذف ورقة الأسئلة نهائياً من هذا الدرس.' })) return;
+                    const deleteButton = preview.querySelector('.btn-delete-ministry-exam');
+                    if (deleteButton) {
+                        deleteButton.disabled = true;
+                        deleteButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الحذف...';
+                    }
                     try {
                         const res = await fetch(`/api/ministry_exams/${exam.id}`, { method: 'DELETE' });
                         const data = await res.json();
                         if (!res.ok || !data.success) throw new Error(data.message || 'delete failed');
                         syncCurriculumState(data.curriculum, lesson.id);
+                        currentLesson = currentUnit?.lessons.find(item => item.id === lesson.id) || currentLesson;
                         renderAccordionLessonContent(card, lesson.id);
                         showToast('تم حذف ورقة الامتحان الوزاري');
                     } catch (err) {
+                        if (deleteButton) {
+                            deleteButton.disabled = false;
+                            deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i> حذف الورقة';
+                        }
                         showToast('تعذر حذف ورقة الامتحان الوزاري');
                     }
                 };

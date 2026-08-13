@@ -1411,7 +1411,15 @@ def update_ministry_exam(question_id):
 @app.route('/api/ministry_exams/<int:question_id>', methods=['DELETE'])
 @login_required
 def delete_ministry_exam(question_id):
-    return delete_exercise(question_id)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('DELETE FROM exercises WHERE id = ? AND question_type = ? AND is_exam = 2', (question_id, 'ministry_exam'))
+    deleted_count = c.rowcount
+    conn.commit()
+    conn.close()
+    if deleted_count != 1:
+        return jsonify({'success': False, 'message': 'ورقة الامتحان الوزاري غير موجودة.'}), 404
+    return jsonify({'success': True, 'curriculum': get_curriculum_data_from_db()})
 
 @app.route('/api/ministry_exams/<int:lesson_id>/download', methods=['GET'])
 def download_ministry_exam(lesson_id):

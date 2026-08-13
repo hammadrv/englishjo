@@ -602,6 +602,7 @@ body.light-theme {
 .ministry-paper-card-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
 .btn-edit-ministry-exam { background: #DBEAFE; color: #1D4ED8; }
 .btn-delete-ministry-exam { background: #FEF2F2; color: #B91C1C; }
+.btn-delete-ministry-exam:disabled { cursor: wait; opacity: 0.65; }
 .ministry-question-editor-item { border-color: #93C5FD; }
 .ministry-exam-editor-intro { background: #EFF6FF; border-color: #93C5FD; color: #1E40AF; }
 .ministry-editor-pair { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr); gap: 0.8rem; margin-top: 0.8rem; }

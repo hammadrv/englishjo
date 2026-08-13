@@ -73,9 +73,14 @@
                     </div>
 
                     <div class="unit-section-block">
-                        <h3 id="studentDashboardUnitTitle" class="unit-header-title">
-                            <i class="fa-solid fa-folder-open"></i> الوحدة الأولى: قواعد المضارع البسيط
-                        </h3>
+                        <div class="student-dashboard-section-heading">
+                            <h3 id="studentDashboardUnitTitle" class="unit-header-title">
+                                <i class="fa-solid fa-folder-open"></i> الوحدة الأولى: قواعد المضارع البسيط
+                            </h3>
+                            <button type="button" id="openStudentViewSettingsBtn" class="student-view-settings-btn" aria-label="اختيار طريقة عرض الدروس">
+                                <i class="fa-solid fa-sliders"></i><span>طريقة العرض</span>
+                            </button>
+                        </div>
 
                         <div id="studentDashboardLessonsList" class="lessons-cards-list"></div>
                     </div>
@@ -1144,6 +1149,41 @@
         </div>
     </div>
 
+    <!-- STUDENT VIEW SETTINGS -->
+    <div id="studentViewSettingsModal" class="edit-modal-backdrop hidden" aria-hidden="true">
+        <div class="student-view-settings-card" role="dialog" aria-modal="true" aria-labelledby="studentViewSettingsTitle">
+            <div class="student-view-settings-header">
+                <div>
+                    <span class="student-view-settings-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> تخصيص تجربة الطالب</span>
+                    <h3 id="studentViewSettingsTitle">اختر طريقة عرض الدروس</h3>
+                    <p>جرّب النمط المناسب لك، ثم احفظ اختيارك على هذا الجهاز.</p>
+                </div>
+                <button type="button" id="closeStudentViewSettingsBtn" class="btn-close-modal" aria-label="إغلاق">&times;</button>
+            </div>
+            <div class="student-view-options" role="radiogroup" aria-label="طرق عرض الدروس">
+                <button type="button" class="student-view-option active" data-student-view="classic" role="radio" aria-checked="true">
+                    <span class="student-view-option-icon"><i class="fa-solid fa-mobile-screen-button"></i></span>
+                    <span><strong>العرض القياسي</strong><small>نفس الشكل الحالي للبطاقات.</small></span>
+                    <i class="fa-solid fa-check student-view-option-check"></i>
+                </button>
+                <button type="button" class="student-view-option" data-student-view="compact" role="radio" aria-checked="false">
+                    <span class="student-view-option-icon"><i class="fa-solid fa-list"></i></span>
+                    <span><strong>القائمة المركّزة</strong><small>معلومات مختصرة ووصول أسرع للدرس.</small></span>
+                    <i class="fa-solid fa-check student-view-option-check"></i>
+                </button>
+                <button type="button" class="student-view-option" data-student-view="grid" role="radio" aria-checked="false">
+                    <span class="student-view-option-icon"><i class="fa-solid fa-grip"></i></span>
+                    <span><strong>شبكة البطاقات</strong><small>بطاقات مرئية مرتبة للمقارنة السريعة.</small></span>
+                    <i class="fa-solid fa-check student-view-option-check"></i>
+                </button>
+            </div>
+            <div class="student-view-settings-footer">
+                <span id="studentViewSettingsStatus"><i class="fa-solid fa-circle-info"></i> العرض القياسي مفعّل حالياً</span>
+                <button type="button" id="saveStudentViewBtn" class="student-view-save-btn"><i class="fa-solid fa-floppy-disk"></i> حفظ طريقة العرض</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirm destructive actions without relying on the browser's plain confirm dialog. -->
     <div id="deleteConfirmModal" class="edit-modal-backdrop hidden" aria-hidden="true">
         <div class="delete-confirm-card" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
@@ -1168,6 +1208,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260813-save-delete-check') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260813-student-view-options') }}"></script>
 </body>
 </html>

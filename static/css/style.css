@@ -247,8 +247,49 @@ body.light-theme {
 }
 
 .unit-section-block { display: flex; flex-direction: column; gap: 0.8rem; }
+.student-dashboard-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .unit-header-title { font-size: 1.15rem; font-weight: 900; color: var(--teal-primary); display: flex; align-items: center; gap: 0.5rem; }
 .lessons-cards-list { display: flex; flex-direction: column; gap: 0.8rem; }
+
+.student-view-settings-btn {
+    border: 1px solid var(--border-color); background: #FFFFFF; color: var(--text-navy);
+    border-radius: 12px; padding: 0.5rem 0.7rem; display: inline-flex; align-items: center;
+    gap: 0.35rem; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+}
+.student-view-settings-btn:hover { border-color: var(--teal-primary); color: var(--teal-primary); }
+
+/* Saved student dashboard alternatives. Classic remains the default with no modifier class. */
+.student-dashboard-screen.view-compact .dashboard-hero-banner { padding: 0.9rem; }
+.student-dashboard-screen.view-compact .dash-main-title { font-size: 1.2rem; }
+.student-dashboard-screen.view-compact .lessons-cards-list { gap: 0.45rem; }
+.student-dashboard-screen.view-compact .lesson-nav-card { border-radius: 13px; padding: 0.72rem 0.85rem; box-shadow: none; }
+.student-dashboard-screen.view-compact .lesson-card-title { font-size: 0.9rem; margin-bottom: 0.05rem; }
+.student-dashboard-screen.view-compact .lesson-card-sub { font-size: 0.7rem; }
+.student-dashboard-screen.view-compact .lesson-card-arrow { width: 30px; height: 30px; }
+
+.student-dashboard-screen.view-grid .lessons-cards-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.student-dashboard-screen.view-grid .lesson-nav-card { min-height: 145px; padding: 0.8rem; flex-direction: column; align-items: stretch; justify-content: space-between; gap: 0.7rem; border-radius: 16px; }
+.student-dashboard-screen.view-grid .lesson-card-info { text-align: right; }
+.student-dashboard-screen.view-grid .lesson-card-arrow { align-self: flex-start; width: 30px; height: 30px; }
+
+.student-view-settings-card { width: min(460px, calc(100vw - 2rem)); max-height: min(720px, calc(100svh - 2rem)); overflow-y: auto; background: #FFFFFF; border-radius: 24px; padding: 1.2rem; box-shadow: 0 25px 70px rgba(15,23,42,0.28); }
+.student-view-settings-header { display:flex; justify-content:space-between; align-items:flex-start; gap:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:0.9rem; margin-bottom:1rem; }
+.student-view-settings-kicker { color: var(--teal-primary); font-size:0.78rem; font-weight:900; }
+.student-view-settings-header h3 { color:var(--text-navy); font-size:1.35rem; margin:0.25rem 0; }
+.student-view-settings-header p { color:var(--text-muted); font-size:0.78rem; line-height:1.5; }
+.student-view-options { display:flex; flex-direction:column; gap:0.65rem; }
+.student-view-option { width:100%; display:grid; grid-template-columns:42px minmax(0,1fr) 22px; align-items:center; gap:0.7rem; text-align:right; border:1.5px solid var(--border-color); border-radius:16px; padding:0.75rem; background:#FFFFFF; color:var(--text-navy); cursor:pointer; font-family:inherit; }
+.student-view-option:hover, .student-view-option.active { border-color:var(--teal-primary); background:var(--teal-bg); }
+.student-view-option-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:#F1F5F9; color:var(--teal-primary); font-size:1rem; }
+.student-view-option strong, .student-view-option small { display:block; }
+.student-view-option strong { font-size:0.88rem; }
+.student-view-option small { color:var(--text-muted); font-size:0.7rem; margin-top:0.15rem; }
+.student-view-option-check { color:var(--teal-primary); opacity:0; }
+.student-view-option.active .student-view-option-check { opacity:1; }
+.student-view-settings-footer { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-top:1rem; padding-top:0.9rem; border-top:1px solid var(--border-color); }
+.student-view-settings-footer span { color:var(--text-muted); font-size:0.7rem; font-weight:700; }
+.student-view-save-btn { border:0; border-radius:12px; background:var(--teal-primary); color:#FFFFFF; padding:0.65rem 0.85rem; font-weight:900; font-size:0.75rem; cursor:pointer; white-space:nowrap; }
+.student-view-save-btn:hover { background:#0F766E; }
 
 .lesson-nav-card {
     background: #FFFFFF;

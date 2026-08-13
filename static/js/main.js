@@ -513,6 +513,8 @@ function renderStudentDashboard() {
     const lessonsList = document.getElementById('studentDashboardLessonsList');
     if (!unitTitle || !lessonsList || !currentUnit) return;
 
+    applyStudentDashboardView(getSavedStudentDashboardView());
+
     unitTitle.innerHTML = `<i class="fa-solid fa-folder-open"></i> ${escapeHtml(currentUnit.title_ar || 'الوحدة الأولى')}`;
     lessonsList.innerHTML = '';
 
@@ -541,7 +543,77 @@ function renderStudentDashboard() {
     });
 }
 
+const STUDENT_DASHBOARD_VIEW_KEY = 'englishjo_student_dashboard_view';
+
+function getSavedStudentDashboardView() {
+    try {
+        const saved = window.localStorage.getItem(STUDENT_DASHBOARD_VIEW_KEY);
+        return ['classic', 'compact', 'grid'].includes(saved) ? saved : 'classic';
+    } catch (error) {
+        return 'classic';
+    }
+}
+
+function applyStudentDashboardView(view = 'classic') {
+    const dashboard = document.getElementById('studentDashboardScreen');
+    if (!dashboard) return;
+    dashboard.classList.remove('view-compact', 'view-grid');
+    if (view === 'compact') dashboard.classList.add('view-compact');
+    if (view === 'grid') dashboard.classList.add('view-grid');
+}
+
+function initStudentDashboardViewSettings() {
+    const modal = document.getElementById('studentViewSettingsModal');
+    const openButton = document.getElementById('openStudentViewSettingsBtn');
+    const closeButton = document.getElementById('closeStudentViewSettingsBtn');
+    const saveButton = document.getElementById('saveStudentViewBtn');
+    const status = document.getElementById('studentViewSettingsStatus');
+    if (!modal || !openButton || !closeButton || !saveButton) return;
+
+    let selectedView = getSavedStudentDashboardView();
+    const labels = { classic: 'العرض القياسي', compact: 'القائمة المركّزة', grid: 'شبكة البطاقات' };
+
+    const syncOptions = () => {
+        modal.querySelectorAll('.student-view-option').forEach(option => {
+            const active = option.dataset.studentView === selectedView;
+            option.classList.toggle('active', active);
+            option.setAttribute('aria-checked', String(active));
+        });
+        if (status) status.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${labels[selectedView]} مفعّل حالياً`;
+        applyStudentDashboardView(selectedView);
+    };
+
+    openButton.addEventListener('click', () => {
+        selectedView = getSavedStudentDashboardView();
+        syncOptions();
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+    });
+    closeButton.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+    });
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeButton.click();
+    });
+    modal.querySelectorAll('.student-view-option').forEach(option => {
+        option.addEventListener('click', () => {
+            selectedView = option.dataset.studentView;
+            syncOptions();
+        });
+    });
+    saveButton.addEventListener('click', () => {
+        try { window.localStorage.setItem(STUDENT_DASHBOARD_VIEW_KEY, selectedView); } catch (error) {}
+        syncOptions();
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        showToast(`✓ تم حفظ ${labels[selectedView]}`);
+    });
+    syncOptions();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    initStudentDashboardViewSettings();
     // Stage Screens
     const studentDashboardScreen = document.getElementById('studentDashboardScreen');
     const explanationStageContent = document.getElementById('explanationStageContent');

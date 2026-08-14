@@ -116,6 +116,7 @@ def init_db():
             example_ar TEXT,
             image TEXT,
             teacher_notes TEXT,
+            text_editor_html TEXT DEFAULT '',
             scene_badge TEXT,
             question_ar TEXT,
             hint_note TEXT,
@@ -151,6 +152,7 @@ def init_db():
             reveal_badge TEXT,
             reveal_explanation TEXT,
             image TEXT,
+            text_editor_html TEXT DEFAULT '',
             linked_exercise_id TEXT DEFAULT 'all',
             is_reinforcement INTEGER DEFAULT 0,
             is_exam INTEGER DEFAULT 0,
@@ -246,6 +248,13 @@ def init_db():
     lesson_columns = {row['name'] for row in c.fetchall()}
     if 'content_status' not in lesson_columns:
         c.execute("ALTER TABLE lessons ADD COLUMN content_status TEXT NOT NULL DEFAULT 'published'")
+
+    # Reusable bilingual editor content was added after the first database version.
+    for table in ('slides', 'exercises'):
+        c.execute(f'PRAGMA table_info({table})')
+        columns = {row['name'] for row in c.fetchall()}
+        if 'text_editor_html' not in columns:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN text_editor_html TEXT DEFAULT ''")
 
     conn.commit()
 
@@ -409,6 +418,7 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
                     "example_ar": s["example_ar"],
                     "image": s["image"],
                     "teacher_notes": s["teacher_notes"],
+                    "text_editor_html": s["text_editor_html"] if "text_editor_html" in s.keys() else "",
                     "scene_badge": s["scene_badge"],
                     "question_ar": s["question_ar"],
                     "hint_note": s["hint_note"],
@@ -448,6 +458,7 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
                     "reveal_badge": ex["reveal_badge"],
                     "reveal_explanation": ex["reveal_explanation"],
                     "image": ex["image"],
+                    "text_editor_html": ex["text_editor_html"] if "text_editor_html" in ex.keys() else "",
                     "linked_exercise_id": ex["linked_exercise_id"] if ex["linked_exercise_id"] == "all" else (int(ex["linked_exercise_id"]) if ex["linked_exercise_id"] and ex["linked_exercise_id"].isdigit() else "all")
                 }
                 if ex["is_exam"] == 1:
@@ -887,9 +898,9 @@ def add_slide():
 
     c.execute('''
         INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en, description_ar, description_en,
-        rule_title, rule_desc, example_en, example_ar, image, teacher_notes, scene_badge, question_ar, hint_note, wrong_note,
+        rule_title, rule_desc, example_en, example_ar, image, teacher_notes, text_editor_html, scene_badge, question_ar, hint_note, wrong_note,
         options_json, correct_index, result_title, reveal_badge, reveal_explanation, reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         lesson_id,
         payload.get("template_type", "two_stage"),
@@ -904,6 +915,7 @@ def add_slide():
         payload.get("example_ar", ""),
         payload.get("image", "/static/images/girl_school.jpg"),
         payload.get("teacher_notes", ""),
+        payload.get("text_editor_html", ""),
         payload.get("scene_badge", ""),
         payload.get("question_ar", ""),
         payload.get("hint_note", ""),
@@ -939,7 +951,7 @@ def update_slide(slide_id):
 
     possible_fields = [
         "template_type", "welcome_badge", "title_ar", "title_en", "description_ar", "description_en",
-        "rule_title", "rule_desc", "example_en", "example_ar", "image", "teacher_notes", "scene_badge",
+        "rule_title", "rule_desc", "example_en", "example_ar", "image", "teacher_notes", "text_editor_html", "scene_badge",
         "question_ar", "hint_note", "wrong_note", "correct_index", "result_title", "reveal_badge",
         "reveal_explanation", "reveal_note", "linked_exercise_id", "is_reinforcement"
     ]
@@ -1049,10 +1061,10 @@ def update_lesson(lesson_id):
             c.execute('''
                 INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en,
                     description_ar, description_en, rule_title, rule_desc, example_en, example_ar,
-                    image, teacher_notes, scene_badge, question_ar, hint_note, wrong_note,
+                    image, teacher_notes, text_editor_html, scene_badge, question_ar, hint_note, wrong_note,
                     options_json, correct_index, result_title, reveal_badge, reveal_explanation,
                     reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
             ''', (
                 lesson_id,
                 s.get("template_type", "two_stage"),
@@ -1067,6 +1079,7 @@ def update_lesson(lesson_id):
                 s.get("example_ar", ""),
                 s.get("image", ""),
                 s.get("teacher_notes", ""),
+                s.get("text_editor_html", ""),
                 s.get("scene_badge", ""),
                 s.get("question_ar", ""),
                 s.get("hint_note", ""),
@@ -1087,10 +1100,10 @@ def update_lesson(lesson_id):
         c.execute("DELETE FROM exercises WHERE lesson_id = ? AND is_reinforcement = 1", (lesson_id,))
         for e_idx, ex in enumerate(payload["reinforcement_exercises"]):
             c.execute('''
-                INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, wrong_note, result_title, reveal_badge, reveal_explanation, image, linked_exercise_id, is_reinforcement, is_exam, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
+                INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, wrong_note, result_title, reveal_badge, reveal_explanation, image, text_editor_html, linked_exercise_id, is_reinforcement, is_exam, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
             ''', (
-                lesson_id, ex.get("question_type", "multiple_choice"), ex.get("instruction_badge", ""), ex.get("sentence_ar", ""), ex.get("question_en", ""), json.dumps(ex.get("options", []), ensure_ascii=False), ex.get("correct_index", 0), ex.get("explanation", ""), ex.get("wrong_note", ""), ex.get("result_title", ""), ex.get("reveal_badge", ""), ex.get("reveal_explanation", ""), ex.get("image", ""), str(ex.get("linked_exercise_id", "all")), e_idx
+                lesson_id, ex.get("question_type", "multiple_choice"), ex.get("instruction_badge", ""), ex.get("sentence_ar", ""), ex.get("question_en", ""), json.dumps(ex.get("options", []), ensure_ascii=False), ex.get("correct_index", 0), ex.get("explanation", ""), ex.get("wrong_note", ""), ex.get("result_title", ""), ex.get("reveal_badge", ""), ex.get("reveal_explanation", ""), ex.get("image", ""), ex.get("text_editor_html", ""), str(ex.get("linked_exercise_id", "all")), e_idx
             ))
         conn.commit()
 
@@ -1160,16 +1173,16 @@ def duplicate_lesson(lesson_id):
     c.execute('SELECT * FROM slides WHERE lesson_id = ? ORDER BY id', (lesson_id,))
     for slide in c.fetchall():
         c.execute('''
-            INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en, description_ar, description_en, rule_title, rule_desc, example_en, example_ar, image, teacher_notes, scene_badge, question_ar, hint_note, wrong_note, options_json, correct_index, result_title, reveal_badge, reveal_explanation, reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (new_lesson_id, slide['template_type'], slide['welcome_badge'], slide['title_ar'], slide['title_en'], slide['description_ar'], slide['description_en'], slide['rule_title'], slide['rule_desc'], slide['example_en'], slide['example_ar'], slide['image'], slide['teacher_notes'], slide['scene_badge'], slide['question_ar'], slide['hint_note'], slide['wrong_note'], slide['options_json'], slide['correct_index'], slide['result_title'], slide['reveal_badge'], slide['reveal_explanation'], slide['reveal_note'], slide['blocks_order_json'], slide['linked_exercise_id'], slide['is_reinforcement'], slide['sort_order']))
+            INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en, description_ar, description_en, rule_title, rule_desc, example_en, example_ar, image, teacher_notes, text_editor_html, scene_badge, question_ar, hint_note, wrong_note, options_json, correct_index, result_title, reveal_badge, reveal_explanation, reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (new_lesson_id, slide['template_type'], slide['welcome_badge'], slide['title_ar'], slide['title_en'], slide['description_ar'], slide['description_en'], slide['rule_title'], slide['rule_desc'], slide['example_en'], slide['example_ar'], slide['image'], slide['teacher_notes'], slide['text_editor_html'] if 'text_editor_html' in slide.keys() else '', slide['scene_badge'], slide['question_ar'], slide['hint_note'], slide['wrong_note'], slide['options_json'], slide['correct_index'], slide['result_title'], slide['reveal_badge'], slide['reveal_explanation'], slide['reveal_note'], slide['blocks_order_json'], slide['linked_exercise_id'], slide['is_reinforcement'], slide['sort_order']))
 
     c.execute('SELECT * FROM exercises WHERE lesson_id = ? ORDER BY id', (lesson_id,))
     for exercise in c.fetchall():
         c.execute('''
-            INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, wrong_note, result_title, reveal_badge, reveal_explanation, image, linked_exercise_id, is_reinforcement, is_exam, sort_order)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (new_lesson_id, exercise['question_type'], exercise['instruction_badge'], exercise['sentence_ar'], exercise['question_en'], exercise['options_json'], exercise['correct_index'], exercise['explanation'], exercise['wrong_note'], exercise['result_title'], exercise['reveal_badge'], exercise['reveal_explanation'], exercise['image'], exercise['linked_exercise_id'], exercise['is_reinforcement'], exercise['is_exam'], exercise['sort_order']))
+            INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, wrong_note, result_title, reveal_badge, reveal_explanation, image, text_editor_html, linked_exercise_id, is_reinforcement, is_exam, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (new_lesson_id, exercise['question_type'], exercise['instruction_badge'], exercise['sentence_ar'], exercise['question_en'], exercise['options_json'], exercise['correct_index'], exercise['explanation'], exercise['wrong_note'], exercise['result_title'], exercise['reveal_badge'], exercise['reveal_explanation'], exercise['image'], exercise['text_editor_html'] if 'text_editor_html' in exercise.keys() else '', exercise['linked_exercise_id'], exercise['is_reinforcement'], exercise['is_exam'], exercise['sort_order']))
 
     conn.commit()
     conn.close()
@@ -1272,8 +1285,8 @@ def add_exercise():
     c = conn.cursor()
 
     c.execute('''
-        INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, image, linked_exercise_id, is_reinforcement, is_exam)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        INSERT INTO exercises (lesson_id, question_type, instruction_badge, sentence_ar, question_en, options_json, correct_index, explanation, image, text_editor_html, linked_exercise_id, is_reinforcement, is_exam)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     ''', (
         lesson_id,
         question_type,
@@ -1284,6 +1297,7 @@ def add_exercise():
         payload.get("correct_index", 0),
         payload.get("explanation", default['explanation']),
         payload.get("image", "" if question_type in {'text_quiz_5', 'mastery_quiz'} else "/static/images/kids_football.jpg"),
+        payload.get("text_editor_html", ""),
         str(payload.get("linked_exercise_id", "all")),
         is_reinforcement
     ))
@@ -1305,7 +1319,7 @@ def update_exercise(exercise_id):
     possible_fields = [
         "question_type", "instruction_badge", "sentence_ar", "question_en",
         "correct_index", "explanation", "wrong_note", "result_title",
-        "reveal_badge", "reveal_explanation", "image", "linked_exercise_id",
+        "reveal_badge", "reveal_explanation", "image", "text_editor_html", "linked_exercise_id",
         "is_reinforcement", "is_exam"
     ]
 

@@ -152,6 +152,11 @@
                         البنت تقرأ قصة في المكتبة.
                     </div>
 
+                    <div id="exerciseStudentTextEditor" class="student-text-editor-block bilingual-text-block hidden" dir="auto">
+                        <div class="student-text-editor-label"><i class="fa-solid fa-language"></i> ملاحظات إضافية</div>
+                        <div id="exerciseStudentTextEditorContent" class="student-text-editor-content"></div>
+                    </div>
+
                     <!-- Pixar 3D Illustration Frame -->
                     <div class="exercise-image-frame">
                         <img id="exerciseImg" src="/static/images/girl_reading_library.jpg" alt="صورة التمرين 3D" class="exercise-img">
@@ -209,6 +214,11 @@
                         <span class="text-quiz5-badge"><i class="fa-solid fa-list-ol"></i> 5 أسئلة</span>
                         <h1 id="textQuiz5Heading">اختبر فهمك</h1>
                         <p id="textQuiz5Instruction">اقرأ كل سؤال واختر إجابة واحدة. ستظهر النتيجة فورًا.</p>
+                    </div>
+
+                    <div id="textQuiz5TextEditor" class="student-text-editor-block bilingual-text-block hidden" dir="auto">
+                        <div class="student-text-editor-label"><i class="fa-solid fa-language"></i> ملاحظات إضافية</div>
+                        <div id="textQuiz5TextEditorContent" class="student-text-editor-content"></div>
                     </div>
 
                     <div id="textQuiz5Questions" class="text-quiz5-questions"></div>
@@ -1138,6 +1148,14 @@
                     </div>
                 </div>
 
+                <div class="block-option-item" data-block-type="text_editor">
+                    <i class="fa-solid fa-language icon-teal"></i>
+                    <div>
+                        <strong>محرر نص عربي وإنجليزي</strong>
+                        <span>صندوق نص حر بتنسيق بسيط يظهر للطالب في ترتيب الشريحة</span>
+                    </div>
+                </div>
+
                 <div class="block-option-item" data-block-type="discovery_block">
                     <i class="fa-solid fa-compass icon-emerald"></i>
                     <div>
@@ -1208,6 +1226,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260813-student-view-options-internal') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260814-bilingual-editor-upload') }}"></script>
 </body>
 </html>

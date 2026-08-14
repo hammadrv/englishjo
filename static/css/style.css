@@ -652,6 +652,22 @@ body.light-theme {
 .text-quiz-live-preview-card strong { display: block; margin-bottom: 0.45rem; color: #0F766E; font-size: 0.75rem; }
 .text-quiz-live-preview-prompt { margin-bottom: 0.55rem; color: var(--text-navy); font-family: 'Outfit', sans-serif; font-size: 0.86rem; font-weight: 900; line-height: 1.4; direction: ltr; text-align: left; white-space: pre-wrap; }
 .text-quiz-live-preview-option { margin-top: 0.35rem; padding: 0.45rem 0.55rem; border: 1px solid #CBD5E1; border-radius: 8px; color: #334155; font-family: 'Outfit', sans-serif; font-size: 0.75rem; font-weight: 700; direction: ltr; text-align: left; }
+.student-text-editor-block {
+    width: 100%;
+    margin: 0.8rem 0;
+    padding: 0.85rem 1rem;
+    background: #FFFFFF;
+    border: 1.5px solid #99F6E4;
+    border-radius: 14px;
+    color: var(--text-navy);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+.student-text-editor-label { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: #0F766E; font-size: 0.78rem; font-weight: 900; }
+.student-text-editor-content { white-space: normal; line-height: 1.65; font-size: 0.95rem; font-weight: 700; overflow-wrap: anywhere; }
+.student-text-editor-content ul, .student-text-editor-content ol { margin: 0.35rem 1.2rem; padding: 0; }
+.student-text-editor-content mark { background: #FEF3C7; border-radius: 4px; padding: 0.05rem 0.15rem; }
+.bilingual-editor-hint { display: block; margin-top: 0.3rem; color: #64748B; font-size: 0.72rem; font-weight: 700; }
+.mini-rich-surface.bilingual { direction: auto; text-align: start; font-family: inherit; }
 .ministry-exam-manager-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; padding: 1.2rem; border: 1.5px solid #93C5FD; border-radius: 16px; background: #EFF6FF; }
 .ministry-exam-manager-header h2 { margin: 0.3rem 0; color: var(--text-navy); font-size: 1.35rem; font-weight: 900; }
 .ministry-exam-manager-header p { margin: 0; color: #475569; font-size: 0.88rem; font-weight: 700; }

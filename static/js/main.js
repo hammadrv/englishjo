@@ -14,14 +14,15 @@ let pendingSlideContext = 'normal';
 let reinforcementExplanationActive = false;
 
 // Active Slide Block Order State (Visual Block Builder)
-let activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
+let activeBlocksOrder = ['badge_title', 'description', 'text_editor', 'image_box', 'rule_box', 'example_box'];
 let hiddenBlocksMap = {};
 let insertTargetIndex = null;
 const richTextStateKeys = {
     formDescriptionAr: 'description_ar',
     formDescriptionEn: 'description_en',
     formExampleEn: 'example_en',
-    formExampleAr: 'example_ar'
+    formExampleAr: 'example_ar',
+    formTextEditor: 'text_editor_html'
 };
 
 function stripHtml(html) {
@@ -132,8 +133,14 @@ function normalizeRichTextHtml(html) {
     return cleaned.replace(/(<br>\s*){3,}/gi, '<br><br>').trim();
 }
 
-function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtml = '') {
+function normalizeBilingualRichTextHtml(html) {
+    const cleaned = normalizeRichTextHtml(html);
+    return cleaned.replace(/([^<]*)(?=<|$)/g, text => text.replace(/[^\u0000-\u007F\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u200C-\u200F\u202A-\u202E]/g, ''));
+}
+
+function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtml = '', language = 'rich') {
     const safeInitialHtml = normalizeRichTextHtml(initialHtml);
+    const surfaceClasses = [direction === 'ltr' ? 'ltr' : '', language === 'bilingual' ? 'bilingual' : ''].filter(Boolean).join(' ');
     return `
         <div class="mini-rich-editor" data-rich-wrapper="${targetId}">
             <div class="mini-rich-toolbar" role="toolbar" aria-label="أدوات تنسيق الشرح">
@@ -145,7 +152,7 @@ function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtm
                 <button type="button" class="mini-rich-btn" data-rich-command="insertOrderedList" title="ترقيم"><i class="fa-solid fa-list-ol"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-action="clear" title="إزالة التنسيق"><i class="fa-solid fa-eraser"></i></button>
             </div>
-            <div class="mini-rich-surface ${direction === 'ltr' ? 'ltr' : ''}" contenteditable="true" data-rich-editor="${targetId}" data-placeholder="${placeholder}">${safeInitialHtml}</div>
+            <div class="mini-rich-surface ${surfaceClasses}" contenteditable="true" data-rich-editor="${targetId}" data-rich-language="${language}" data-placeholder="${placeholder}" dir="${direction === 'ltr' ? 'ltr' : direction === 'rtl' ? 'rtl' : 'auto'}">${safeInitialHtml}</div>
             <textarea id="${targetId}" class="rich-hidden-field" tabindex="-1">${escapeHtml(safeInitialHtml)}</textarea>
         </div>
     `;
@@ -157,18 +164,23 @@ function initRichTextEditors(scope = document) {
 
         const target = document.getElementById(editor.dataset.richEditor);
         if (target) editor.innerHTML = target.value || '';
+        const normalizeEditorHtml = () => editor.dataset.richLanguage === 'bilingual'
+            ? normalizeBilingualRichTextHtml(editor.innerHTML)
+            : normalizeRichTextHtml(editor.innerHTML);
 
         const syncTarget = () => {
             if (!target) return;
-            target.value = normalizeRichTextHtml(editor.innerHTML);
+            target.value = normalizeEditorHtml();
             editor.innerHTML = target.value;
             const stateKey = richTextStateKeys[editor.dataset.richEditor];
             if (stateKey) currentFormDataStore[stateKey] = target.value;
+            if (editor.dataset.richEditor === 'formExTextEditor' && currentExercise) currentExercise.text_editor_html = target.value;
             updateLivePreview();
         };
 
         editor.addEventListener('input', () => {
-            if (target) target.value = normalizeRichTextHtml(editor.innerHTML);
+            if (target) target.value = normalizeEditorHtml();
+            if (target && editor.dataset.richEditor === 'formExTextEditor' && currentExercise) currentExercise.text_editor_html = target.value;
             updateLivePreview();
         });
 
@@ -1232,6 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 image: imageVal,
                 teacher_notes: getVal('formTeacherNotes'),
                 blocks_order: activeBlocksOrder,
+                text_editor_html: getVal('formTextEditor'),
                 // Discovery / Two Stage fields
                 scene_badge: getVal('formTwoStageSceneBadge') || getVal('formDiscSceneBadge'),
                 question_ar: getVal('formTwoStageQuestion') || getVal('formDiscQuestion'),
@@ -1326,7 +1339,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 explanation: '',
                 image: '',
                 theme: activeExTheme,
-                blocks_order: ['ex_quiz5_questions'],
+                text_editor_html: getVal('formExTextEditor'),
+                blocks_order: ['ex_quiz5_questions', 'ex_text_editor'],
                 hidden_blocks: []
             } : isMasteryQuiz ? {
                 question_type: 'mastery_quiz',
@@ -1339,7 +1353,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 explanation: '',
                 image: '',
                 theme: activeExTheme,
-                blocks_order: ['ex_mastery_quiz'],
+                text_editor_html: getVal('formExTextEditor'),
+                blocks_order: ['ex_mastery_quiz', 'ex_text_editor'],
                 hidden_blocks: []
             } : isMinistryExam ? {
                 question_type: 'ministry_exam',
@@ -1353,7 +1368,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 image: '',
                 is_reinforcement: 0,
                 is_exam: 2,
-                blocks_order: ['ex_ministry_exam'],
+                text_editor_html: getVal('formExTextEditor'),
+                blocks_order: ['ex_ministry_exam', 'ex_text_editor'],
                 hidden_blocks: []
             } : {
                 instruction_badge: getVal('formExBadge'),
@@ -1366,6 +1382,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ],
                 correct_index: parseInt(getVal('formExCorrect')) || 0,
                 explanation: getVal('formExExplanation'),
+                text_editor_html: getVal('formExTextEditor'),
                 image: exImageVal || '/static/images/girl_reading_library.jpg',
                 theme: activeExTheme,
                 blocks_order: activeExBlocksOrder,
@@ -2496,7 +2513,7 @@ async function createNewSlideWithTemplate(templateType) {
         description_ar: "اكتب الشرح الموجه للطلاب هنا...",
         description_en: "Add your english explanation subtitle here...",
         teacher_notes: "",
-        blocks_order: ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'],
+        blocks_order: ['badge_title', 'description', 'text_editor', 'image_box', 'rule_box', 'example_box'],
         lesson_id: (currentLesson ? currentLesson.id : 101),
         is_reinforcement: pendingSlideContext === 'reinforcement'
     };
@@ -2536,7 +2553,7 @@ async function createNewSlideWithTemplate(templateType) {
         newSlideData.example_en = "He eats a healthy breakfast every day.";
         newSlideData.example_ar = "هو يأكل إفطاراً صحياً كل يوم.";
         newSlideData.image = "/static/images/child_breakfast.jpg";
-        newSlideData.blocks_order = ['badge_title', 'description', 'image_box', 'example_box'];
+        newSlideData.blocks_order = ['badge_title', 'description', 'text_editor', 'image_box', 'example_box'];
     }
 
     try {
@@ -2632,7 +2649,7 @@ function renderCurrentSlide() {
     }
 
     const screenContent = document.getElementById('studentScreenContent');
-    const order = slide.blocks_order || ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
+    const order = slide.blocks_order || ['badge_title', 'description', 'text_editor', 'image_box', 'rule_box', 'example_box'];
     screenContent.innerHTML = renderBlocksHtmlForData(slide, order);
 }
 
@@ -2651,6 +2668,13 @@ function renderBlocksHtmlForData(slide, blockOrder) {
                 <div class="desc-block">
                     <div class="desc-ar-text">${slide.description_ar || ''}</div>
                     <div class="desc-en-text">${slide.description_en || ''}</div>
+                </div>
+            `;
+        } else if (blockType === 'text_editor' && slide.text_editor_html) {
+            html += `
+                <div class="student-text-editor-block bilingual-text-block" dir="auto">
+                    <div class="student-text-editor-label"><i class="fa-solid fa-language"></i> ملاحظات الدرس</div>
+                    <div class="student-text-editor-content">${slide.text_editor_html}</div>
                 </div>
             `;
         } else if (blockType === 'image_box' && slide.image) {
@@ -2868,6 +2892,7 @@ function harvestCurrentFormState() {
     updateStore('rule_desc', getVal('formRuleDesc'));
     updateStore('example_en', getVal('formExampleEn'));
     updateStore('example_ar', getVal('formExampleAr'));
+    updateStore('text_editor_html', getVal('formTextEditor'));
     updateStore('image_select', getVal('formImageSelect'));
     updateStore('custom_image', getVal('formCustomImageUrl'));
     updateStore('teacher_notes', getVal('formTeacherNotes'));
@@ -2909,6 +2934,7 @@ function restoreCurrentFormState() {
     setVal('formRuleDesc', currentFormDataStore.rule_desc);
     setVal('formExampleEn', currentFormDataStore.example_en);
     setVal('formExampleAr', currentFormDataStore.example_ar);
+    setVal('formTextEditor', currentFormDataStore.text_editor_html);
     setVal('formImageSelect', currentFormDataStore.image_select);
     setVal('formCustomImageUrl', currentFormDataStore.custom_image);
     setVal('formTeacherNotes', currentFormDataStore.teacher_notes);
@@ -2991,6 +3017,15 @@ function renderDynamicBlockEditors(preserveCurrentFormState = true) {
                     ${richTextEditorHtml('formDescriptionEn', 'Add your english explanation subtitle here...', 'ltr')}
                 </div>
             `;
+        } else if (blockType === 'text_editor') {
+            blockTitleHtml = `<i class="fa-solid fa-language icon-teal"></i> محرر نص عربي وإنجليزي`;
+            fieldsHtml = `
+                <div class="form-group bilingual-editor-group">
+                    <label>نص حر للشرح أو التعليمات (العربية والإنجليزية فقط)</label>
+                    ${richTextEditorHtml('formTextEditor', 'اكتب أو الصق نصاً بالعربية أو الإنجليزية هنا...', 'auto', '', 'bilingual')}
+                    <small class="bilingual-editor-hint"><i class="fa-solid fa-circle-info"></i> يقبل النص العربي والإنجليزي مع تنسيق بسيط، ويظهر للطالب في نفس ترتيب هذا العنصر.</small>
+                </div>
+            `;
         } else if (blockType === 'rule_box') {
             blockTitleHtml = `<i class="fa-solid fa-book-open icon-teal"></i> صندوق تركيب القاعدة (Mint Teal)`;
             fieldsHtml = `
@@ -3024,7 +3059,7 @@ function renderDynamicBlockEditors(preserveCurrentFormState = true) {
             fieldsHtml = `
                 <div class="form-group">
                     <label>اختر صورة الشريحة</label>
-                    <select id="formImageSelect">
+                    <select id="formImageSelect" onchange="handleSlideImageSelectChange(this.value)">
                         <option value="/static/images/girl_school.jpg">👧 صورة الذهاب للمدرسة (girl_school.jpg)</option>
                         <option value="/static/images/kids_football.jpg">⚽ صورة لعب الكرة (kids_football.jpg)</option>
                         <option value="/static/images/child_breakfast.jpg">🥞 صورة تناول الإفطار (child_breakfast.jpg)</option>
@@ -3040,7 +3075,7 @@ function renderDynamicBlockEditors(preserveCurrentFormState = true) {
                         <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; margin-bottom: 0.3rem;"></i><br>
                         انقر هنا لاختيار صورة من جهاز الكمبيوتر الخاص بك
                     </label>
-                    <input type="file" id="formSlideFileUpload" accept="image/*" style="display: none;">
+                    <input type="file" id="formSlideFileUpload" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;" onchange="uploadSlideImageFromPC(this)">
                     <span id="slideUploadStatusText" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-top: 0.3rem; display: block;">صيغ مدعومة: JPG, PNG, WEBP, GIF</span>
                 </div>
                 <div id="customUrlContainer" class="form-group hidden">
@@ -3286,17 +3321,14 @@ function renderDynamicBlockEditors(preserveCurrentFormState = true) {
     const imgSelect = document.getElementById('formImageSelect');
     if (imgSelect) {
         imgSelect.addEventListener('change', (e) => {
-            const customContainer = document.getElementById('customUrlContainer');
-            if (customContainer) {
-                if (e.target.value === 'custom') customContainer.classList.remove('hidden');
-                else customContainer.classList.add('hidden');
-            }
-            updateLivePreview();
+            handleSlideImageSelectChange(e.target.value);
         });
     }
 
     // Restore typed text back into newly created DOM inputs
     restoreCurrentFormState();
+    const restoredImageSelect = document.getElementById('formImageSelect');
+    if (restoredImageSelect) handleSlideImageSelectChange(restoredImageSelect.value);
     initRichTextEditors(container);
 }
 
@@ -3313,7 +3345,7 @@ function openEditModal(slide, idx) {
     if (slide.blocks_order && slide.blocks_order.length > 0) {
         activeBlocksOrder = [...slide.blocks_order];
     } else {
-        activeBlocksOrder = ['badge_title', 'description', 'image_box', 'rule_box', 'example_box'];
+        activeBlocksOrder = ['badge_title', 'description', 'text_editor', 'image_box', 'rule_box', 'example_box'];
     }
 
     currentFormDataStore = {
@@ -3326,7 +3358,8 @@ function openEditModal(slide, idx) {
         rule_desc: slide.rule_desc || '',
         example_en: slide.example_en || '',
         example_ar: slide.example_ar || '',
-        image_select: ['/static/images/girl_school.jpg', '/static/images/kids_football.jpg', '/static/images/child_breakfast.jpg', '/static/images/routine.jpg', '/static/images/fact.jpg'].includes(slide.image) ? slide.image : (slide.image ? 'custom' : ''),
+        text_editor_html: slide.text_editor_html || '',
+        image_select: ['/static/images/girl_school.jpg', '/static/images/kids_football.jpg', '/static/images/child_breakfast.jpg', '/static/images/routine.jpg', '/static/images/fact.jpg'].includes(slide.image) ? slide.image : (slide.image && slide.image.startsWith('/static/uploads/') ? 'upload' : (slide.image ? 'custom' : '')),
         custom_image: slide.image || '',
         teacher_notes: slide.teacher_notes || '',
         scene_badge: slide.scene_badge || 'المشهد 1 من 5',
@@ -3433,6 +3466,15 @@ function renderBlocksHtmlForModalPreview(slide, blockOrder) {
                     <div class="desc-block">
                         <div class="desc-ar-text" data-field-target="formDescriptionAr" style="cursor:pointer;">${slide.description_ar || ''}</div>
                         <div class="desc-en-text" data-field-target="formDescriptionEn" style="cursor:pointer;">${slide.description_en || ''}</div>
+                    </div>
+                </div>
+            `;
+        } else if (blockType === 'text_editor' && slide.text_editor_html) {
+            html += `
+                <div class="preview-block-item" data-block-id="text_editor">
+                    <div class="student-text-editor-block bilingual-text-block" data-field-target="formTextEditor" dir="auto" style="cursor:pointer;">
+                        <div class="student-text-editor-label"><i class="fa-solid fa-language"></i> محرر نص عربي وإنجليزي</div>
+                        <div class="student-text-editor-content">${slide.text_editor_html}</div>
                     </div>
                 </div>
             `;
@@ -3570,6 +3612,7 @@ function updateLivePreview() {
         rule_desc: getVal('formRuleDesc'),
         example_en: getVal('formExampleEn'),
         example_ar: getVal('formExampleAr'),
+        text_editor_html: getVal('formTextEditor'),
         image: imgVal || '/static/images/kids_football.jpg',
         scene_badge: getVal('formTwoStageSceneBadge') || getVal('formDiscSceneBadge') || 'المشهد 1 من 4',
         question_ar: getVal('formTwoStageQuestion') || getVal('formDiscQuestion') || 'اختر الجملة الصحيحة للصورة.',
@@ -3648,8 +3691,8 @@ function applyThemeToPreview(themeName) {
 }
 
 function handleSlideImageSelectChange(val) {
-    const customGroup = document.getElementById('customImageUrlGroup');
-    const uploadGroup = document.getElementById('slideUploadGroup');
+    const customGroup = document.getElementById('customImageUrlGroup') || document.getElementById('customUrlContainer');
+    const uploadGroup = document.getElementById('slideUploadGroup') || document.getElementById('slideFileUploadContainer');
     if (val === 'custom') {
         if (customGroup) customGroup.classList.remove('hidden');
         if (uploadGroup) uploadGroup.classList.add('hidden');
@@ -3675,12 +3718,16 @@ async function uploadSlideImageFromPC(inputEl) {
     try {
         const res = await fetch('/api/upload_image', { method: 'POST', body: formData });
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.image_url) {
             const customUrlInput = document.getElementById('formCustomImageUrl');
             if (customUrlInput) customUrlInput.value = data.image_url;
+            const imageSelect = document.getElementById('formImageSelect');
+            if (imageSelect) imageSelect.value = 'upload';
             if (statusText) statusText.textContent = `✓ تم رفع الصورة بنجاح! (${file.name})`;
             updateLivePreview();
             showToast('🎉 تم رفع الصورة من جهاز الكمبيوتر بنجاح وتطبيقها للمعاينة!');
+        } else {
+            throw new Error(data.message || 'upload failed');
         }
     } catch (err) {
         if (statusText) statusText.textContent = "❌ فشل رفع الصورة";
@@ -3777,6 +3824,12 @@ function renderTextQuiz5Stage() {
         : 'اقرأ كل سؤال واختر إجابة واحدة. ستظهر النتيجة فورًا.';
     if (score) score.textContent = `${Object.values(textQuizAnswers).filter(Boolean).length} / ${questions.length}`;
     if (completion) completion.classList.toggle('hidden', Object.keys(textQuizAnswers).length < questions.length);
+    const textEditor = document.getElementById('textQuiz5TextEditor');
+    const textEditorContent = document.getElementById('textQuiz5TextEditorContent');
+    if (textEditor && textEditorContent) {
+        textEditorContent.innerHTML = quizExercise.text_editor_html || '';
+        textEditor.classList.toggle('hidden', !quizExercise.text_editor_html);
+    }
     const badge = document.querySelector('.text-quiz5-badge');
     if (badge) badge.innerHTML = `<i class="fa-solid ${isMasteryQuiz ? 'fa-award' : 'fa-list-ol'}"></i> ${questions.length} أسئلة`;
     list.innerHTML = '';
@@ -4054,6 +4107,13 @@ function renderCurrentExercise() {
 
     document.getElementById('exerciseInstructionBadge').textContent = ex.instruction_badge || "اختر الكلمة المناسبة لإكمال الجملة";
     document.getElementById('exerciseSentenceAr').textContent = ex.sentence_ar || "البنت تقرأ قصة في المكتبة.";
+
+    const studentTextEditor = document.getElementById('exerciseStudentTextEditor');
+    const studentTextEditorContent = document.getElementById('exerciseStudentTextEditorContent');
+    if (studentTextEditor && studentTextEditorContent) {
+        studentTextEditorContent.innerHTML = ex.text_editor_html || '';
+        studentTextEditor.classList.toggle('hidden', !ex.text_editor_html);
+    }
     
     const imgEl = document.getElementById('exerciseImg');
     if (imgEl) imgEl.src = ex.image || "/static/images/girl_reading_library.jpg";
@@ -4198,7 +4258,7 @@ function showExerciseTrialResultScreen(totalQuestions, correctCount = exerciseTr
 
 // Exercise Visual Block Builder Global Variables & State
 let activeExTheme = 'coral';
-let activeExBlocksOrder = ['ex_badge', 'ex_sentence_ar', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation'];
+let activeExBlocksOrder = ['ex_badge', 'ex_sentence_ar', 'ex_text_editor', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation'];
 let activeExHiddenBlocks = [];
 let activeExPreviewStage = 1;
 
@@ -4236,8 +4296,8 @@ function openExerciseEditModal() {
 
     activeExTheme = currentExercise.theme || 'coral';
     activeExBlocksOrder = isQuestionBankQuiz(currentExercise)
-        ? [currentExercise.question_type === 'mastery_quiz' ? 'ex_mastery_quiz' : (currentExercise.question_type === 'ministry_exam' ? 'ex_ministry_exam' : 'ex_quiz5_questions')]
-        : (currentExercise.blocks_order || ['ex_badge', 'ex_sentence_ar', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation']);
+        ? [currentExercise.question_type === 'mastery_quiz' ? 'ex_mastery_quiz' : (currentExercise.question_type === 'ministry_exam' ? 'ex_ministry_exam' : 'ex_quiz5_questions'), 'ex_text_editor']
+        : (currentExercise.blocks_order || ['ex_badge', 'ex_sentence_ar', 'ex_text_editor', 'ex_image', 'ex_question_en', 'ex_options', 'ex_wrong_note', 'ex_stage2_reveal', 'ex_explanation']);
     activeExHiddenBlocks = currentExercise.hidden_blocks || [];
     activeExPreviewStage = 1;
 
@@ -4276,9 +4336,9 @@ function renderExDynamicBlocks() {
     const isTextQuiz5 = ex.question_type === 'text_quiz_5';
     const isMasteryQuiz = ex.question_type === 'mastery_quiz';
     const isMinistryExam = ex.question_type === 'ministry_exam';
-    if (isTextQuiz5) activeExBlocksOrder = ['ex_quiz5_questions'];
-    if (isMasteryQuiz) activeExBlocksOrder = ['ex_mastery_quiz'];
-    if (isMinistryExam) activeExBlocksOrder = ['ex_ministry_exam'];
+    if (isTextQuiz5) activeExBlocksOrder = ['ex_quiz5_questions', 'ex_text_editor'];
+    if (isMasteryQuiz) activeExBlocksOrder = ['ex_mastery_quiz', 'ex_text_editor'];
+    if (isMinistryExam) activeExBlocksOrder = ['ex_ministry_exam', 'ex_text_editor'];
     const badgeVal = ex.instruction_badge || 'اختر الكلمة المناسبة لإكمال الجملة';
     const sentenceArVal = ex.sentence_ar || 'البنت تقرأ قصة في المكتبة.';
     const questionEnVal = ex.question_en || 'She ___ a story in the library.';
@@ -4443,6 +4503,16 @@ function renderExDynamicBlocks() {
                 <div class="form-group">
                     <label>الجملة المترجمة بالعربية</label>
                     <input type="text" id="formExSentenceAr" value="${sentenceArVal}" placeholder="البنت تقرأ قصة في المكتبة.">
+                </div>
+            `;
+        } else if (blockId === 'ex_text_editor') {
+            blockTitle = 'محرر نص عربي وإنجليزي';
+            blockIcon = 'fa-solid fa-language';
+            blockFieldsHtml = `
+                <div class="form-group bilingual-editor-group">
+                    <label>نص حر للمرحلة (العربية والإنجليزية فقط)</label>
+                    ${richTextEditorHtml('formExTextEditor', 'اكتب أو الصق تعليمات أو شرحاً بالعربية أو الإنجليزية...', 'auto', ex.text_editor_html || '', 'bilingual')}
+                    <small class="bilingual-editor-hint"><i class="fa-solid fa-circle-info"></i> يظهر للطالب في موضع محرر النص داخل المرحلة، ويحفظ مستقلاً عن بقية الحقول.</small>
                 </div>
             `;
         } else if (blockId === 'ex_image') {
@@ -4740,13 +4810,15 @@ async function uploadExImageFromPC(inputEl) {
     try {
         const res = await fetch('/api/upload_image', { method: 'POST', body: formData });
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.image_url) {
             const customUrlInput = document.getElementById('formExCustomImageUrl');
             if (customUrlInput) customUrlInput.value = data.image_url;
+            const imageSelect = document.getElementById('formExImage');
+            if (imageSelect) imageSelect.value = 'upload';
             if (statusText) statusText.textContent = `✓ تم رفع الصورة بنجاح! (${file.name})`;
             updateExerciseLivePreview();
             showToast('🎉 تم رفع صورة التمرين من جهازك بنجاح!');
-        }
+        } else throw new Error(data.message || 'upload failed');
     } catch (err) {
         if (statusText) statusText.textContent = "❌ فشل رفع الصورة";
         showToast('تعذر رفع صورة التمرين');
@@ -4790,6 +4862,15 @@ function updateExerciseLivePreview() {
         intro.className = 'text-quiz-live-preview-intro';
         intro.textContent = badgeVal;
         container.appendChild(intro);
+
+        const textEditorVal = getVal('formExTextEditor') || currentExercise?.text_editor_html || '';
+        if (textEditorVal) {
+            const editorCard = document.createElement('div');
+            editorCard.className = 'student-text-editor-block bilingual-text-block';
+            editorCard.dir = 'auto';
+            editorCard.innerHTML = `<div class="student-text-editor-label"><i class="fa-solid fa-language"></i> ملاحظات إضافية</div><div class="student-text-editor-content">${textEditorVal}</div>`;
+            container.appendChild(editorCard);
+        }
 
         questions.forEach((question, questionIndex) => {
             const card = document.createElement('div');
@@ -4840,6 +4921,7 @@ function updateExerciseLivePreview() {
     const revealBadgeVal = getVal('formExRevealBadge') || 'He + plays';
     const revealExplanationVal = getVal('formExRevealExplanation') || 'ممتاز! لاحظت أن He يحتاج الفعل مع s.';
     const explanationVal = getVal('formExExplanation') || '';
+    const textEditorVal = getVal('formExTextEditor') || currentExercise?.text_editor_html || '';
 
     container.innerHTML = '';
 
@@ -4850,7 +4932,9 @@ function updateExerciseLivePreview() {
         blockWrapper.className = 'preview-block-item';
         blockWrapper.dataset.blockId = blockId;
 
-        if (activeExPreviewStage === 1) {
+        if (blockId === 'ex_text_editor' && textEditorVal) {
+            blockWrapper.innerHTML = `<div class="student-text-editor-block bilingual-text-block" data-field-target="formExTextEditor" dir="auto" style="cursor:pointer;"><div class="student-text-editor-label"><i class="fa-solid fa-language"></i> ملاحظات إضافية</div><div class="student-text-editor-content">${textEditorVal}</div></div>`;
+        } else if (activeExPreviewStage === 1) {
             // STAGE 1: QUESTION & GUESSING STAGE
             if (blockId === 'ex_badge') {
                 blockWrapper.innerHTML = `<div class="exercise-instruction-badge" data-field-target="formExBadge" style="cursor:pointer;">${badgeVal}</div>`;
@@ -5226,6 +5310,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 example_ar: getVal('formExampleAr') || (currentSlide ? currentSlide.example_ar : ''),
                 image: getVal('formCustomImageUrl') || getVal('formImageSelect') || (currentSlide ? currentSlide.image : '/static/images/girl_school.jpg'),
                 teacher_notes: getVal('formTeacherNotes') || (currentSlide ? currentSlide.teacher_notes : ''),
+                text_editor_html: getVal('formTextEditor') || (currentSlide ? currentSlide.text_editor_html : ''),
                 scene_badge: getVal('formTwoStageSceneBadge') || getVal('formDiscSceneBadge') || (currentSlide ? currentSlide.scene_badge : 'المشهد 1 من 4'),
                 question_ar: getVal('formTwoStageQuestion') || getVal('formDiscQuestion') || (currentSlide ? currentSlide.question_ar : 'اختر الجملة الصحيحة للصورة.'),
                 hint_note: getVal('formTwoStageHintNote') || (currentSlide ? currentSlide.hint_note : ''),
@@ -5277,6 +5362,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const isTextQuiz5 = currentExercise.question_type === 'text_quiz_5';
             const isMasteryQuiz = currentExercise.question_type === 'mastery_quiz';
+            const isMinistryExam = currentExercise.question_type === 'ministry_exam';
             const masteryCount = normalizeMasteryQuestionCount(document.getElementById('formMasteryQuizCount')?.value, currentExercise?.quiz_questions?.length || 10);
             const exDataToSave = isTextQuiz5 ? {
                 question_type: 'text_quiz_5',
@@ -5287,7 +5373,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: [],
                 correct_index: 0,
                 explanation: '',
-                image: ''
+                image: '',
+                text_editor_html: document.getElementById('formExTextEditor')?.value || currentExercise.text_editor_html || ''
             } : isMasteryQuiz ? {
                 question_type: 'mastery_quiz',
                 instruction_badge: document.getElementById('formExBadge')?.value || currentExercise.instruction_badge || '',
@@ -5297,20 +5384,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: [],
                 correct_index: 0,
                 explanation: '',
-                image: ''
+                image: '',
+                text_editor_html: document.getElementById('formExTextEditor')?.value || currentExercise.text_editor_html || ''
+            } : isMinistryExam ? {
+                question_type: 'ministry_exam',
+                instruction_badge: document.getElementById('formExBadge')?.value || currentExercise.instruction_badge || '',
+                sentence_ar: '',
+                question_en: '',
+                quiz_questions: collectMinistryExamQuestionsFromEditor('formMinistryQuestions', 'formMinistryAnswers', normalizeMinistryExamQuestions(currentExercise.quiz_questions)),
+                options: [],
+                correct_index: 0,
+                explanation: '',
+                image: '',
+                text_editor_html: document.getElementById('formExTextEditor')?.value || currentExercise.text_editor_html || ''
             } : {
                 question_type: currentExercise.question_type || 'multiple_choice',
-                instruction_badge: document.getElementById('exFormInstructionBadge')?.value || currentExercise.instruction_badge || '',
-                sentence_ar: document.getElementById('exFormSentenceAr')?.value || currentExercise.sentence_ar || '',
-                question_en: document.getElementById('exFormQuestionEn')?.value || currentExercise.question_en || '',
+                instruction_badge: document.getElementById('formExBadge')?.value || currentExercise.instruction_badge || '',
+                sentence_ar: document.getElementById('formExSentenceAr')?.value || currentExercise.sentence_ar || '',
+                question_en: document.getElementById('formExQuestionEn')?.value || currentExercise.question_en || '',
                 options: [
-                    document.getElementById('exFormOpt0')?.value || '',
-                    document.getElementById('exFormOpt1')?.value || '',
-                    document.getElementById('exFormOpt2')?.value || ''
+                    document.getElementById('formExOpt0')?.value || '',
+                    document.getElementById('formExOpt1')?.value || '',
+                    document.getElementById('formExOpt2')?.value || ''
                 ],
-                correct_index: parseInt(document.getElementById('exFormCorrectIndex')?.value || 0),
-                explanation: document.getElementById('exFormExplanation')?.value || currentExercise.explanation || '',
-                image: document.getElementById('exFormImageSelect')?.value || currentExercise.image || '/static/images/kids_football.jpg'
+                correct_index: parseInt(document.getElementById('formExCorrect')?.value || 0),
+                explanation: document.getElementById('formExExplanation')?.value || currentExercise.explanation || '',
+                image: document.getElementById('formExCustomImageUrl')?.value || currentExercise.image || '/static/images/kids_football.jpg',
+                text_editor_html: document.getElementById('formExTextEditor')?.value || currentExercise.text_editor_html || ''
             };
 
             try {

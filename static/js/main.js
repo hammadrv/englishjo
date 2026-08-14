@@ -1094,10 +1094,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch(isExamContext ? '/api/exam_questions' : '/api/exercises', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                body: JSON.stringify({
                         lesson_id: lessonId,
                         template_type: templateType,
-                        question_type: templateType,
+                        question_type: templateType === 'text_editor' ? 'multiple_choice' : templateType,
+                        text_editor_html: templateType === 'text_editor' ? '<p>اكتب التعليمات أو الشرح هنا</p><p>Write your instructions here</p>' : '',
                         question_count: templateType === 'mastery_quiz' ? 10 : undefined,
                         is_reinforcement: isReinforcementContext
                     })
@@ -1113,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const lessonCard = [...document.querySelectorAll('.lesson-manager-card')]
                         .find(card => Number(card.dataset.lessonId) === Number(lessonId));
                     lessonCard?.querySelector(`.studio-tab-btn[data-tab-target="${isExamContext ? 'exam' : (isReinforcementContext ? 'reinf' : 'prac')}"]`)?.click();
-                    if ((templateType === 'text_quiz_5' || templateType === 'mastery_quiz') && currentUnit) {
+                    if ((templateType === 'text_quiz_5' || templateType === 'mastery_quiz' || templateType === 'text_editor') && currentUnit) {
                         currentLesson = currentUnit.lessons.find(lesson => lesson.id === lessonId) || currentLesson;
                         const questionId = isExamContext ? data.new_exam_question_id : data.new_exercise_id;
                         const sourceQuestions = isExamContext
@@ -1123,6 +1124,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         openExerciseEditModal();
                         showToast(templateType === 'mastery_quiz'
                             ? '🎉 تم إنشاء اختبار الإتقان. أدخل عدد الأسئلة الذي تريده وحدد أنواع الإجابة.'
+                            : templateType === 'text_editor'
+                            ? '🎉 تم إنشاء قالب تمرين مع محرر نص عربي وإنجليزي.'
                             : '🎉 تم إنشاء قالب 5 أسئلة. ألصق الأسئلة الآن وحدد الإجابات الصحيحة.');
                     } else {
                         showToast(isExamContext
@@ -2554,6 +2557,15 @@ async function createNewSlideWithTemplate(templateType) {
         newSlideData.example_ar = "هو يأكل إفطاراً صحياً كل يوم.";
         newSlideData.image = "/static/images/child_breakfast.jpg";
         newSlideData.blocks_order = ['badge_title', 'description', 'text_editor', 'image_box', 'example_box'];
+    } else if (templateType === 'text_editor') {
+        newSlideData.template_type = 'text_editor';
+        newSlideData.title_ar = 'شريحة نص عربي وإنجليزي';
+        newSlideData.title_en = 'Arabic & English Notes';
+        newSlideData.description_ar = '';
+        newSlideData.description_en = '';
+        newSlideData.text_editor_html = '<p>اكتب الشرح أو التعليمات هنا</p><p>Write your instructions here</p>';
+        newSlideData.image = '';
+        newSlideData.blocks_order = ['badge_title', 'text_editor'];
     }
 
     try {

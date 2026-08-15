@@ -11,7 +11,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260815-ministry-validation') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260815-five-student-views') }}">
 </head>
 <body class="light-theme">
 
@@ -1221,6 +1221,16 @@
                     <span><strong>شبكة البطاقات</strong><small>بطاقات مرئية مرتبة للمقارنة السريعة.</small></span>
                     <i class="fa-solid fa-check student-view-option-check"></i>
                 </button>
+                <button type="button" class="student-view-option" data-student-view="focus" role="radio" aria-checked="false">
+                    <span class="student-view-option-icon"><i class="fa-solid fa-book-open-reader"></i></span>
+                    <span><strong>وضع التركيز</strong><small>محتوى أكبر ومساحة أقل للتشتت أثناء التعلّم.</small></span>
+                    <i class="fa-solid fa-check student-view-option-check"></i>
+                </button>
+                <button type="button" class="student-view-option" data-student-view="timeline" role="radio" aria-checked="false">
+                    <span class="student-view-option-icon"><i class="fa-solid fa-route"></i></span>
+                    <span><strong>المسار المرحلي</strong><small>تجربة مرتبطة بالمراحل والتقدم من البداية إلى النهاية.</small></span>
+                    <i class="fa-solid fa-check student-view-option-check"></i>
+                </button>
             </div>
             <div class="student-view-settings-footer">
                 <span id="studentViewSettingsStatus"><i class="fa-solid fa-circle-info"></i> العرض القياسي مفعّل حالياً</span>
@@ -1253,6 +1263,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260815-ministry-validation') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260815-five-student-views') }}"></script>
 </body>
 </html>

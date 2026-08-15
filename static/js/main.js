@@ -598,7 +598,7 @@ const STUDENT_DASHBOARD_VIEW_KEY = 'englishjo_student_dashboard_view';
 function getSavedStudentDashboardView() {
     try {
         const saved = window.localStorage.getItem(STUDENT_DASHBOARD_VIEW_KEY);
-        return ['classic', 'compact', 'grid'].includes(saved) ? saved : 'classic';
+        return ['classic', 'compact', 'grid', 'focus', 'timeline'].includes(saved) ? saved : 'classic';
     } catch (error) {
         return 'classic';
     }
@@ -607,11 +607,14 @@ function getSavedStudentDashboardView() {
 function applyStudentExperienceView(view = 'classic') {
     const phoneFrame = document.getElementById('studentPhoneFrame');
     const dashboard = document.getElementById('studentDashboardScreen');
+    const viewClasses = ['student-view-compact', 'student-view-grid', 'student-view-focus', 'student-view-timeline', 'view-compact', 'view-grid', 'view-focus', 'view-timeline'];
     [phoneFrame, dashboard].forEach(element => {
         if (!element) return;
-        element.classList.remove('student-view-compact', 'student-view-grid', 'view-compact', 'view-grid');
+        element.classList.remove(...viewClasses);
         if (view === 'compact') element.classList.add(element === dashboard ? 'view-compact' : 'student-view-compact');
         if (view === 'grid') element.classList.add(element === dashboard ? 'view-grid' : 'student-view-grid');
+        if (view === 'focus') element.classList.add(element === dashboard ? 'view-focus' : 'student-view-focus');
+        if (view === 'timeline') element.classList.add(element === dashboard ? 'view-timeline' : 'student-view-timeline');
     });
 }
 
@@ -624,7 +627,13 @@ function initStudentDashboardViewSettings() {
     if (!modal || !openButton || !closeButton || !saveButton) return;
 
     let selectedView = getSavedStudentDashboardView();
-    const labels = { classic: 'العرض القياسي', compact: 'القائمة المركّزة', grid: 'شبكة البطاقات' };
+    const labels = {
+        classic: 'العرض القياسي',
+        compact: 'القائمة المركّزة',
+        grid: 'شبكة البطاقات',
+        focus: 'وضع التركيز',
+        timeline: 'المسار المرحلي'
+    };
 
     const syncOptions = () => {
         modal.querySelectorAll('.student-view-option').forEach(option => {

@@ -326,6 +326,51 @@ body.light-theme {
 .mobile-phone-frame.student-view-grid .text-quiz-question-card { border-radius: 16px; box-shadow: 0 4px 12px rgba(15,23,42,0.05); }
 .mobile-phone-frame.student-view-grid .exercise-trial-result-screen-inner { border-radius: 18px; box-shadow: 0 5px 16px rgba(15,23,42,0.06); }
 
+/* Focus mode: calmer reading surfaces across the dashboard and every internal screen. */
+.student-dashboard-screen.view-focus .dashboard-hero-banner { padding: 1rem; background: #F0FDFA; border-color: #99F6E4; }
+.student-dashboard-screen.view-focus .dash-main-title { font-size: 1.35rem; }
+.student-dashboard-screen.view-focus .unit-section-block { padding-inline: 0.9rem; }
+.student-dashboard-screen.view-focus .lessons-cards-list { gap: 0.55rem; }
+.student-dashboard-screen.view-focus .lesson-nav-card { border-radius: 14px; padding: 0.8rem 0.9rem; box-shadow: none; }
+.student-dashboard-screen.view-focus .lesson-card-title { font-size: 1rem; }
+.mobile-phone-frame.student-view-focus .mobile-screen-content,
+.mobile-phone-frame.student-view-focus .exercise-screen-wrapper,
+.mobile-phone-frame.student-view-focus .text-quiz5-stage,
+.mobile-phone-frame.student-view-focus .exercise-trial-result-screen { padding-inline: 1rem; background: #FFFFFF; }
+.mobile-phone-frame.student-view-focus .hero-title-en { font-size: 2.65rem; line-height: 1.08; margin-bottom: 0.8rem; }
+.mobile-phone-frame.student-view-focus .desc-ar-text,
+.mobile-phone-frame.student-view-focus .desc-en-text { font-size: 1.08rem; line-height: 1.75; }
+.mobile-phone-frame.student-view-focus .mobile-slide-img { height: 220px; }
+.mobile-phone-frame.student-view-focus .discovery-template-wrapper,
+.mobile-phone-frame.student-view-focus .student-text-editor-block { border-radius: 14px; box-shadow: none; }
+.mobile-phone-frame.student-view-focus .light-card,
+.mobile-phone-frame.student-view-focus .text-quiz-question-card,
+.mobile-phone-frame.student-view-focus .exercise-question-sentence,
+.mobile-phone-frame.student-view-focus .exercise-sentence-translation-box { border-radius: 14px; box-shadow: none; }
+.mobile-phone-frame.student-view-focus .btn-exercise-opt,
+.mobile-phone-frame.student-view-focus .text-quiz-option { min-height: 48px; font-size: 1.08rem; }
+
+/* Timeline mode: the same content gains a visible learning path and stage accents. */
+.student-dashboard-screen.view-timeline .unit-section-block { position: relative; }
+.student-dashboard-screen.view-timeline .lessons-cards-list { position: relative; gap: 0.65rem; padding-right: 0.8rem; }
+.student-dashboard-screen.view-timeline .lessons-cards-list::before { content: ''; position: absolute; top: 0.8rem; bottom: 0.8rem; right: 0.2rem; width: 3px; border-radius: 4px; background: linear-gradient(#14B8A6, #FB7185); }
+.student-dashboard-screen.view-timeline .lesson-nav-card { position: relative; border-radius: 14px; padding: 0.8rem 0.85rem; box-shadow: 0 3px 10px rgba(15,23,42,0.05); }
+.student-dashboard-screen.view-timeline .lesson-nav-card::before { content: ''; position: absolute; right: -0.75rem; width: 10px; height: 10px; border: 3px solid #FFFFFF; border-radius: 50%; background: var(--teal-primary); box-shadow: 0 0 0 2px var(--teal-primary); }
+.mobile-phone-frame.student-view-timeline .segmented-progress-bar { height: 7px; margin-inline: 1rem; border-radius: 8px; }
+.mobile-phone-frame.student-view-timeline .progress-segment { border-radius: 8px; }
+.mobile-phone-frame.student-view-timeline .mobile-screen-content,
+.mobile-phone-frame.student-view-timeline .exercise-screen-wrapper,
+.mobile-phone-frame.student-view-timeline .text-quiz5-stage,
+.mobile-phone-frame.student-view-timeline .exercise-trial-result-screen { background: #F8FAFC; }
+.mobile-phone-frame.student-view-timeline .light-card,
+.mobile-phone-frame.student-view-timeline .text-quiz-question-card,
+.mobile-phone-frame.student-view-timeline .exercise-question-sentence,
+.mobile-phone-frame.student-view-timeline .exercise-sentence-translation-box { border-radius: 12px; border-right: 4px solid var(--teal-primary); box-shadow: 0 3px 10px rgba(15,23,42,0.05); }
+.mobile-phone-frame.student-view-timeline .exercise-screen-wrapper .exercise-question-card { border-right: 4px solid #FB7185; }
+.mobile-phone-frame.student-view-timeline .text-quiz-question-card { border-right-color: #8B5CF6; }
+.mobile-phone-frame.student-view-timeline .discovery-template-wrapper,
+.mobile-phone-frame.student-view-timeline .student-text-editor-block { border-right: 4px solid #14B8A6; border-radius: 12px; }
+
 .lesson-nav-card {
     background: #FFFFFF;
     border: 1.5px solid var(--border-color);

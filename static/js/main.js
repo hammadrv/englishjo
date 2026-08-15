@@ -300,8 +300,11 @@ function readMinistryEditorLines(editorId) {
 }
 
 function parseMinistryQuestionMarker(line) {
-    const cleaned = String(line || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim();
-    const marker = cleaned.match(/^(?:\*{1,3}\s*)?(?:السؤال\s*)?([0-9٠-٩]+)\s*[\.:)\-]\s*(.*?)(?:\s*\*{1,3})?$/i);
+    const cleaned = String(line || '')
+        .replace(/[\u200B\u200C\u200D\uFEFF]/g, '')
+        .replace(/^[\s*_~`]+|[\s*_~`]+$/g, '')
+        .trim();
+    const marker = cleaned.match(/^(?:السؤال|سؤال|question|q\.?\s*)?\s*([0-9٠-٩]+)\s*[*_~`]*\s*[\.:)\-]\s*(.*?)\s*[*_~`]*$/i);
     if (!marker) return null;
     const number = Number(marker[1].replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
     const prompt = marker[2].replace(/^\*+|\*+$/g, '').trim();
@@ -332,9 +335,16 @@ function collectMinistryExamQuestionsFromEditor(questionEditorId, answerEditorId
     const answerLines = readMinistryEditorLines(answerEditorId);
     const questionBlocks = parseMinistryQuestionBlocks(questionEditorId);
     const answerMap = new Map();
-    answerLines.forEach((line, index) => {
+    let sequentialAnswerIndex = 0;
+    answerLines.forEach(line => {
         const marker = parseMinistryQuestionMarker(line);
-        answerMap.set(marker ? marker.number - 1 : index, marker ? marker.prompt : line);
+        if (marker) {
+            answerMap.set(marker.number - 1, marker.prompt);
+            return;
+        }
+        if (/^(?:الإجابات?|answer(?:s)?|مفتاح الإجابة|correct answers?)\s*[:：]?$/i.test(line)) return;
+        answerMap.set(sequentialAnswerIndex, line);
+        sequentialAnswerIndex += 1;
     });
     return template.map((question, index) => {
         const block = questionBlocks[index] || {};
@@ -361,8 +371,16 @@ function validateMinistryExamEditorData(questionEditorId, answerEditorId, questi
         if (block.options.length < 2) errors.push(`السؤال ${questionNumber}: يجب إضافة خيارين على الأقل.`);
         if (block.options.length > 6) errors.push(`السؤال ${questionNumber}: الحد الأقصى 6 خيارات.`);
     });
-    if (!answerLines.length) errors.push('صندوق الإجابات فارغ.');
-    if (answerLines.length !== Number(expectedCount)) errors.push(`تم العثور على ${answerLines.length} إجابة بينما العدد المحدد هو ${expectedCount}.`);
+    const numberedAnswers = answerLines.filter(line => parseMinistryQuestionMarker(line));
+    const plainAnswers = answerLines.filter(line => {
+        if (parseMinistryQuestionMarker(line)) return false;
+        return !/^(?:الإجابات?|answer(?:s)?|مفتاح الإجابة|correct answers?)\s*[:：]?$/i.test(line);
+    });
+    const detectedAnswerCount = numberedAnswers.length || plainAnswers.length;
+    if (!detectedAnswerCount) errors.push('صندوق الإجابات فارغ.');
+    if (detectedAnswerCount !== Number(expectedCount)) errors.push(`تم العثور على ${detectedAnswerCount} إجابة بينما العدد المحدد هو ${expectedCount}.`);
+    const answerNumbers = numberedAnswers.map(line => parseMinistryQuestionMarker(line).number);
+    if (new Set(answerNumbers).size !== answerNumbers.length) errors.push('يوجد رقم سؤال مكرر في صندوق الإجابات.');
     questions.forEach((question, index) => {
         if (!String(question.answer || '').trim()) errors.push(`السؤال ${index + 1}: الإجابة الصحيحة فارغة.`);
     });
@@ -376,6 +394,7 @@ function showMinistryValidation(errors = []) {
         ? `<strong><i class="fa-solid fa-triangle-exclamation"></i> لم يتم الحفظ بعد:</strong><ul>${errors.slice(0, 8).map(error => `<li>${escapeHtml(error)}</li>`).join('')}</ul>`
         : '';
     box.classList.toggle('hidden', errors.length === 0);
+    if (errors.length) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function defaultMasteryQuizQuestions(count = 10) {

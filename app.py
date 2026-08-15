@@ -1311,6 +1311,26 @@ def add_exercise():
 @login_required
 def update_exercise(exercise_id):
     payload = request.get_json() or {}
+
+    if payload.get("question_type") == "ministry_exam":
+        ministry_questions = payload.get("quiz_questions")
+        validation_errors = []
+        if not isinstance(ministry_questions, list) or not ministry_questions:
+            validation_errors.append("يجب إضافة سؤال واحد على الأقل.")
+        else:
+            for question_index, question in enumerate(ministry_questions, start=1):
+                prompt = str(question.get("prompt", "")).strip() if isinstance(question, dict) else ""
+                options = question.get("options", []) if isinstance(question, dict) else []
+                answer = str(question.get("answer", "")).strip() if isinstance(question, dict) else ""
+                if not prompt:
+                    validation_errors.append(f"السؤال {question_index}: نص السؤال فارغ.")
+                if not isinstance(options, list) or not 2 <= len(options) <= 6:
+                    validation_errors.append(f"السؤال {question_index}: يجب أن يحتوي على 2 إلى 6 خيارات.")
+                if not answer:
+                    validation_errors.append(f"السؤال {question_index}: الإجابة الصحيحة فارغة.")
+        if validation_errors:
+            return jsonify({"success": False, "message": "بيانات الامتحان الوزاري غير مكتملة.", "validation_errors": validation_errors[:12]}), 400
+
     conn = get_db_connection()
     c = conn.cursor()
 

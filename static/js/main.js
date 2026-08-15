@@ -299,14 +299,22 @@ function readMinistryEditorLines(editorId) {
     return richTextPlainLines(surface ? surface.innerHTML : (editor ? editor.value : ''));
 }
 
+function parseMinistryQuestionMarker(line) {
+    const cleaned = String(line || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim();
+    const marker = cleaned.match(/^(?:\*{1,3}\s*)?(?:السؤال\s*)?([0-9٠-٩]+)\s*[\.:)\-]\s*(.*?)(?:\s*\*{1,3})?$/i);
+    if (!marker) return null;
+    const number = Number(marker[1].replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+    const prompt = marker[2].replace(/^\*+|\*+$/g, '').trim();
+    return Number.isInteger(number) ? { number, prompt } : null;
+}
+
 function parseMinistryQuestionBlocks(editorId) {
     const questionBlocks = [];
     let currentBlock = null;
     readMinistryEditorLines(editorId).forEach(line => {
-        const marker = line.match(/^السؤال\s*([0-9٠-٩]+)\s*[:.)-]\s*(.*)$/i);
+        const marker = parseMinistryQuestionMarker(line);
         if (marker) {
-            const number = Number(marker[1].replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-            currentBlock = { number, prompt: marker[2].trim(), options: [] };
+            currentBlock = { number: marker.number, prompt: marker.prompt, options: [] };
             questionBlocks.push(currentBlock);
         } else if (currentBlock) {
             currentBlock.options.push(line);
@@ -325,9 +333,8 @@ function collectMinistryExamQuestionsFromEditor(questionEditorId, answerEditorId
     const questionBlocks = parseMinistryQuestionBlocks(questionEditorId);
     const answerMap = new Map();
     answerLines.forEach((line, index) => {
-        const marker = line.match(/^السؤال\s*([0-9٠-٩]+)\s*[:.)-]\s*(.*)$/i);
-        const number = marker ? Number(marker[1].replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit))) : null;
-        answerMap.set(marker ? number - 1 : index, marker ? marker[2].trim() : line);
+        const marker = parseMinistryQuestionMarker(line);
+        answerMap.set(marker ? marker.number - 1 : index, marker ? marker.prompt : line);
     });
     return template.map((question, index) => {
         const block = questionBlocks[index] || {};
@@ -338,6 +345,37 @@ function collectMinistryExamQuestionsFromEditor(questionEditorId, answerEditorId
         const answer = answerMap.get(index) || question.answer || '';
         return { prompt: block.prompt || question.prompt || '', options, answer };
     });
+}
+
+function validateMinistryExamEditorData(questionEditorId, answerEditorId, questions, expectedCount) {
+    const questionLines = readMinistryEditorLines(questionEditorId);
+    const answerLines = readMinistryEditorLines(answerEditorId);
+    const blocks = parseMinistryQuestionBlocks(questionEditorId);
+    const errors = [];
+    if (!questionLines.length) errors.push('صندوق الأسئلة فارغ.');
+    if (!blocks.length) errors.push('لم أتعرف على أي سؤال. ابدأ السطر بصيغة: 1. السؤال أو السؤال 1: السؤال.');
+    if (blocks.length !== Number(expectedCount)) errors.push(`تم التعرف على ${blocks.length} سؤالاً بينما العدد المحدد هو ${expectedCount}.`);
+    blocks.forEach((block, index) => {
+        const questionNumber = block.number || index + 1;
+        if (!block.prompt) errors.push(`السؤال ${questionNumber}: نص السؤال فارغ.`);
+        if (block.options.length < 2) errors.push(`السؤال ${questionNumber}: يجب إضافة خيارين على الأقل.`);
+        if (block.options.length > 6) errors.push(`السؤال ${questionNumber}: الحد الأقصى 6 خيارات.`);
+    });
+    if (!answerLines.length) errors.push('صندوق الإجابات فارغ.');
+    if (answerLines.length !== Number(expectedCount)) errors.push(`تم العثور على ${answerLines.length} إجابة بينما العدد المحدد هو ${expectedCount}.`);
+    questions.forEach((question, index) => {
+        if (!String(question.answer || '').trim()) errors.push(`السؤال ${index + 1}: الإجابة الصحيحة فارغة.`);
+    });
+    return errors;
+}
+
+function showMinistryValidation(errors = []) {
+    const box = document.getElementById('ministryExamValidation');
+    if (!box) return;
+    box.innerHTML = errors.length
+        ? `<strong><i class="fa-solid fa-triangle-exclamation"></i> لم يتم الحفظ بعد:</strong><ul>${errors.slice(0, 8).map(error => `<li>${escapeHtml(error)}</li>`).join('')}</ul>`
+        : '';
+    box.classList.toggle('hidden', errors.length === 0);
 }
 
 function defaultMasteryQuizQuestions(count = 10) {
@@ -1392,6 +1430,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden_blocks: activeExHiddenBlocks
             };
 
+            if (isMinistryExam) {
+                const ministryErrors = validateMinistryExamEditorData('formMinistryQuestions', 'formMinistryAnswers', updatedData.quiz_questions, ministryCount);
+                showMinistryValidation(ministryErrors);
+                if (ministryErrors.length) {
+                    showToast('لم يتم الحفظ: راجع تنبيه التحقق داخل صندوق الامتحان.');
+                    return;
+                }
+            }
+
             if ((isTextQuiz5 || isMasteryQuiz) && updatedData.quiz_questions.some(question => !question.prompt || question.options.some(option => !option))) {
                 showToast(isMasteryQuiz ? 'أكمل أسئلة اختبار الإتقان وخياراتها قبل الحفظ.' : 'أكمل نص كل سؤال والاختيارات الثلاثة قبل الحفظ.');
                 return;
@@ -1405,7 +1452,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(updatedData)
                 });
                 const data = await res.json();
-                if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حفظ بيانات التمرين');
+                if (!res.ok || !data.success) {
+                    if (isMinistryExam && Array.isArray(data.validation_errors)) showMinistryValidation(data.validation_errors);
+                    throw new Error(data.message || 'تعذر حفظ بيانات التمرين');
+                }
                 curriculumData = data.curriculum;
                 if (currentUnit) currentUnit = curriculumData.units.find(u => u.id === currentUnit.id) || curriculumData.units[0];
                 if (currentUnit && currentLesson) {
@@ -1423,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setExerciseEditModalOpen(false);
                 showToast('🎉 تم حفظ التمرين الموديولي والترتيب بنجاح!');
             } catch (err) {
-                showToast('تعذر حفظ بيانات التمرين');
+                showToast(`تعذر حفظ بيانات التمرين: ${err.message || 'تحقق من البيانات والاتصال'}`);
             } finally {
                 setSaveButtonsLoading('exerciseEditForm', false);
             }
@@ -4412,6 +4462,7 @@ function renderExDynamicBlocks() {
                         ${richTextEditorHtml('formMinistryAnswers', 'السؤال 1: الإجابة الصحيحة', 'rtl', ministryAnswersToEditorHtml(quizQuestions))}
                     </section>
                 </div>
+                <div id="ministryExamValidation" class="ministry-validation-message hidden" role="alert" aria-live="polite"></div>
                 <div class="ministry-question-controls-list">
                     <div class="ministry-controls-heading"><strong>إدارة عدد الخيارات لكل سؤال</strong><small>هذه الأدوات تعدّل بنية الورقة مع بقاء التحرير داخل الصندوقين الموحدين.</small></div>
                     ${quizQuestions.map((question, quizIndex) => `

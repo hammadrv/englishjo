@@ -1110,6 +1110,40 @@ def update_lesson(lesson_id):
     conn.close()
     return jsonify({"success": True, "curriculum": get_curriculum_data_from_db()})
 
+@app.route('/api/units/<int:unit_id>/lessons/reorder', methods=['PUT'])
+@login_required
+def reorder_lessons(unit_id):
+    """Persist the order of lessons within one unit after a drag-and-drop action."""
+    payload = request.get_json(silent=True) or {}
+    raw_lesson_ids = payload.get('lesson_ids')
+    if not isinstance(raw_lesson_ids, list):
+        return jsonify({'success': False, 'message': 'ترتيب الدروس غير صالح.'}), 400
+
+    try:
+        lesson_ids = [int(lesson_id) for lesson_id in raw_lesson_ids]
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'يوجد رقم درس غير صالح.'}), 400
+
+    if len(lesson_ids) != len(set(lesson_ids)):
+        return jsonify({'success': False, 'message': 'لا يمكن تكرار الدرس في الترتيب.'}), 400
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT id FROM lessons WHERE unit_id = ? ORDER BY sort_order ASC, id ASC', (unit_id,))
+    unit_lesson_ids = [row['id'] for row in c.fetchall()]
+
+    if set(lesson_ids) != set(unit_lesson_ids) or len(lesson_ids) != len(unit_lesson_ids):
+        conn.close()
+        return jsonify({'success': False, 'message': 'يجب إرسال جميع دروس الوحدة دون حذف أو تكرار.'}), 400
+
+    c.executemany(
+        'UPDATE lessons SET sort_order = ? WHERE id = ? AND unit_id = ?',
+        [(sort_order, lesson_id, unit_id) for sort_order, lesson_id in enumerate(lesson_ids)]
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'curriculum': get_curriculum_data_from_db()})
+
 @app.route('/api/lessons', methods=['POST'])
 @login_required
 def add_lesson():
@@ -1127,10 +1161,13 @@ def add_lesson():
     max_id = c.fetchone()[0] or 100
     new_lesson_id = max_id + 1
 
+    c.execute('SELECT COALESCE(MAX(sort_order), -1) + 1 FROM lessons WHERE unit_id = ?', (unit_id,))
+    next_sort_order = c.fetchone()[0]
+
     c.execute('''
-        INSERT INTO lessons (id, unit_id, badge, title_ar, title_en, subtitle, reinforcement_type, content_status)
-        VALUES (?, ?, ?, ?, ?, ?, 'slides', 'draft')
-    ''', (new_lesson_id, unit_id, f"الدرس {new_lesson_id - 100}", f"الدرس: {title_ar}", f"Lesson – {title_en}", subtitle))
+        INSERT INTO lessons (id, unit_id, badge, title_ar, title_en, subtitle, reinforcement_type, content_status, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, 'slides', 'draft', ?)
+    ''', (new_lesson_id, unit_id, f"الدرس {new_lesson_id - 100}", f"الدرس: {title_ar}", f"Lesson – {title_en}", subtitle, next_sort_order))
 
     # Add default slide
     c.execute('''

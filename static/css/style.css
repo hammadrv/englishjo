@@ -927,6 +927,27 @@ body.light-theme {
 .meta-badge.teal { background: #F0FDFA; color: #0D9488; }
 .meta-badge.peach { background: #FFF7ED; color: #C2410C; }
 
+.lesson-drag-handle {
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 12px;
+    background: #F8FAFC;
+    color: #64748B;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: grab;
+    transition: var(--transition);
+}
+.lesson-drag-handle:hover { background: #E6FFFB; border-color: var(--teal-primary); color: var(--teal-primary); }
+.lesson-drag-handle:active { cursor: grabbing; }
+.lesson-manager-card.is-dragging { opacity: 0.48; border-style: dashed; }
+.lesson-manager-card.is-drag-over { border-color: var(--teal-primary); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18); transform: translateY(-2px); }
+.unit-lessons-list.is-saving-order { cursor: progress; }
+.unit-lessons-list.is-saving-order .lesson-drag-handle { cursor: progress; opacity: 0.7; }
+
 .accordion-toggle-arrow {
     width: 40px;
     height: 40px;
@@ -1903,6 +1924,16 @@ body.light-theme {
     border-color: #99F6E4;
     color: #0D9488;
 }
+.mini-rich-color-input {
+    width: 34px;
+    height: 34px;
+    padding: 3px;
+    border: 1px solid #D7E0EA;
+    border-radius: 8px;
+    background: #F8FAFC;
+    cursor: pointer;
+}
+.mini-rich-image-input { display: none; }
 .mini-rich-surface {
     min-height: 92px;
     max-height: 170px;
@@ -1913,6 +1944,13 @@ body.light-theme {
     font-weight: 700;
     line-height: 1.55;
     outline: none;
+}
+.mini-rich-surface img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0.6rem auto;
+    border-radius: 10px;
 }
 .form-row .mini-rich-surface {
     min-height: 76px;

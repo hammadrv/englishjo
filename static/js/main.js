@@ -107,8 +107,16 @@ function requestDeleteConfirmation({ title = 'تأكيد الحذف', message = 
 function normalizeRichTextHtml(html) {
     const template = document.createElement('template');
     template.innerHTML = html || '';
-    const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'MARK', 'BR', 'UL', 'OL', 'LI', 'P', 'DIV']);
+    const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'MARK', 'BR', 'UL', 'OL', 'LI', 'P', 'DIV', 'SPAN', 'FONT', 'IMG']);
     const blockTags = new Set(['P', 'DIV']);
+    const safeColor = value => {
+        const color = String(value || '').trim();
+        return /^(#[0-9a-f]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\))$/i.test(color) ? color : '';
+    };
+    const safeImageSource = value => {
+        const source = String(value || '').trim();
+        return source.startsWith('/static/') || /^https?:\/\//i.test(source) ? source : '';
+    };
 
     template.content.querySelectorAll('*').forEach(el => {
         if (!allowedTags.has(el.tagName)) {
@@ -116,7 +124,31 @@ function normalizeRichTextHtml(html) {
             return;
         }
 
+        if (el.tagName === 'IMG') {
+            const source = safeImageSource(el.getAttribute('src'));
+            if (!source) {
+                el.remove();
+                return;
+            }
+            const alt = String(el.getAttribute('alt') || '').slice(0, 160);
+            el.setAttribute('src', source);
+            el.setAttribute('alt', alt);
+            el.removeAttribute('style');
+            el.style.maxWidth = '100%';
+            el.style.height = 'auto';
+            el.style.display = 'block';
+            el.style.margin = '0.6rem auto';
+            Array.from(el.attributes).forEach(attr => {
+                if (!['src', 'alt', 'style'].includes(attr.name)) el.removeAttribute(attr.name);
+            });
+            return;
+        }
+
+        const color = safeColor(el.getAttribute('color') || el.style?.color);
         Array.from(el.attributes).forEach(attr => el.removeAttribute(attr.name));
+        if (color && (el.tagName === 'SPAN' || el.tagName === 'FONT')) {
+            el.style.color = color;
+        }
     });
 
     let cleaned = template.innerHTML
@@ -148,6 +180,10 @@ function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtm
                 <button type="button" class="mini-rich-btn" data-rich-command="italic" title="مائل"><i class="fa-solid fa-italic"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-command="underline" title="تحته خط"><i class="fa-solid fa-underline"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-action="mark" title="تمييز"><i class="fa-solid fa-highlighter"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-action="color" title="لون الخط"><i class="fa-solid fa-palette"></i></button>
+                <input type="color" class="mini-rich-color-input" value="#0D9488" title="اختر لون الخط" aria-label="اختر لون الخط">
+                <button type="button" class="mini-rich-btn" data-rich-action="image" title="إدراج صورة"><i class="fa-solid fa-image"></i></button>
+                <input type="file" class="mini-rich-image-input" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="اختر صورة لإدراجها">
                 <button type="button" class="mini-rich-btn" data-rich-command="insertUnorderedList" title="نقاط"><i class="fa-solid fa-list-ul"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-command="insertOrderedList" title="ترقيم"><i class="fa-solid fa-list-ol"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-action="clear" title="إزالة التنسيق"><i class="fa-solid fa-eraser"></i></button>
@@ -193,8 +229,66 @@ function initRichTextEditors(scope = document) {
         });
 
         const wrapper = editor.closest('.mini-rich-editor');
+        let savedSelection = null;
+        const rememberSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || !selection.rangeCount || !editor.contains(selection.anchorNode)) return;
+            savedSelection = selection.getRangeAt(0).cloneRange();
+        };
+        const restoreSelection = () => {
+            if (!savedSelection) return;
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(savedSelection);
+        };
+
+        editor.addEventListener('mouseup', rememberSelection);
+        editor.addEventListener('keyup', rememberSelection);
+        editor.addEventListener('input', rememberSelection);
+
+        const colorInput = wrapper?.querySelector('.mini-rich-color-input');
+        colorInput?.addEventListener('change', () => {
+            editor.focus();
+            restoreSelection();
+            document.execCommand('foreColor', false, colorInput.value);
+            syncTarget();
+        });
+
+        const imageInput = wrapper?.querySelector('.mini-rich-image-input');
+        imageInput?.addEventListener('change', async () => {
+            const file = imageInput.files?.[0];
+            imageInput.value = '';
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image_file', file);
+            try {
+                const response = await fetch('/api/upload_image', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (!response.ok || !data.success || !data.image_url) throw new Error(data.message || 'upload failed');
+                editor.focus();
+                restoreSelection();
+                document.execCommand('insertHTML', false, `<img src="${escapeHtml(data.image_url)}" alt="صورة مضافة">`);
+                syncTarget();
+                showToast('✓ تمت إضافة الصورة داخل محرر النص');
+            } catch (error) {
+                showToast(error.message || 'تعذر رفع الصورة داخل محرر النص');
+            }
+        });
+
         wrapper?.querySelectorAll('[data-rich-command], [data-rich-action]').forEach(btn => {
+            btn.addEventListener('mousedown', rememberSelection);
             btn.addEventListener('click', () => {
+                if (btn.dataset.richAction === 'color') {
+                    rememberSelection();
+                    colorInput?.click();
+                    return;
+                }
+                if (btn.dataset.richAction === 'image') {
+                    rememberSelection();
+                    imageInput?.click();
+                    return;
+                }
                 editor.focus();
                 if (btn.dataset.richAction === 'clear') {
                     document.execCommand('removeFormat', false, null);
@@ -1569,12 +1663,115 @@ function showStudioLevel2(unitId) {
     currentUnit = curriculumData.units.find(u => u.id === unitId) || curriculumData.units[0];
     
     document.getElementById('selectedUnitTitle').textContent = currentUnit.title_ar;
-    document.getElementById('selectedUnitSub').textContent = `انقر على أي درس لتمدده ورؤية محتوياته في نفس المكان`;
+    document.getElementById('selectedUnitSub').textContent = `اسحب مقبض الترتيب لنقل الدروس، وانقر على أي درس لرؤية محتوياته`;
 
     document.getElementById('studioLevel1').classList.add('hidden');
     document.getElementById('studioLevel2').classList.remove('hidden');
 
     renderUnitLessonsList();
+}
+
+let draggedLessonId = null;
+let lessonOrderSaving = false;
+
+function clearLessonDragState(container) {
+    if (!container) return;
+    container.querySelectorAll('.lesson-manager-card').forEach(card => {
+        card.classList.remove('is-dragging', 'is-drag-over');
+    });
+    container.classList.remove('is-saving-order');
+    draggedLessonId = null;
+}
+
+function setupLessonDragAndDrop(container) {
+    if (!container) return;
+
+    const shouldBindContainerEvents = container.dataset.lessonDndReady !== 'true';
+    const cards = container.querySelectorAll('.lesson-manager-card');
+    cards.forEach(card => {
+        const handle = card.querySelector('.lesson-drag-handle');
+        if (!handle) return;
+
+        handle.addEventListener('dragstart', (event) => {
+            draggedLessonId = Number(card.dataset.lessonId);
+            card.classList.add('is-dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', String(draggedLessonId));
+        });
+
+        handle.addEventListener('dragend', () => {
+            if (!lessonOrderSaving) clearLessonDragState(container);
+        });
+    });
+
+    if (!shouldBindContainerEvents) return;
+    container.dataset.lessonDndReady = 'true';
+
+    container.addEventListener('dragover', (event) => {
+        if (draggedLessonId === null) return;
+        const targetCard = event.target.closest('.lesson-manager-card');
+        if (!targetCard || Number(targetCard.dataset.lessonId) === draggedLessonId) return;
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        container.querySelectorAll('.lesson-manager-card').forEach(card => card.classList.remove('is-drag-over'));
+        targetCard.classList.add('is-drag-over');
+
+        const draggedCard = container.querySelector(`.lesson-manager-card[data-lesson-id="${draggedLessonId}"]`);
+        if (!draggedCard) return;
+        const rect = targetCard.getBoundingClientRect();
+        if (event.clientY < rect.top + rect.height / 2) {
+            targetCard.before(draggedCard);
+        } else {
+            targetCard.after(draggedCard);
+        }
+    });
+
+    container.addEventListener('drop', async (event) => {
+        if (draggedLessonId === null) return;
+        event.preventDefault();
+
+        const oldLessons = [...(currentUnit?.lessons || [])];
+        const orderedIds = [...container.querySelectorAll('.lesson-manager-card')]
+            .map(card => Number(card.dataset.lessonId));
+        const oldIds = oldLessons.map(lesson => lesson.id);
+        if (orderedIds.length !== oldIds.length || orderedIds.every((id, index) => id === oldIds[index])) {
+            clearLessonDragState(container);
+            return;
+        }
+
+        const orderedLessons = orderedIds
+            .map(id => oldLessons.find(lesson => lesson.id === id))
+            .filter(Boolean);
+        currentUnit.lessons = orderedLessons;
+        lessonOrderSaving = true;
+        container.classList.add('is-saving-order');
+        container.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(`/api/units/${currentUnit.id}/lessons/reorder`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lesson_ids: orderedIds })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'reorder failed');
+
+            const expandedLessonId = container.querySelector('.lesson-manager-card.expanded')?.dataset.lessonId;
+            syncCurriculumState(data.curriculum, expandedLessonId ? Number(expandedLessonId) : null);
+            renderUnitLessonsList();
+            renderStudentDashboard();
+            showToast('✓ تم حفظ ترتيب الدروس بنجاح');
+        } catch (error) {
+            currentUnit.lessons = oldLessons;
+            renderUnitLessonsList();
+            showToast(error.message || 'تعذر حفظ ترتيب الدروس');
+        } finally {
+            lessonOrderSaving = false;
+            container.removeAttribute('aria-busy');
+            clearLessonDragState(container);
+        }
+    });
 }
 
 function renderUnitLessonsList() {
@@ -1613,6 +1810,9 @@ function renderUnitLessonsList() {
                         <span class="meta-badge teal">شرح تفاعلي</span>
                         <span class="meta-badge peach">تمرين تفاعلي</span>
                     </div>
+                    <button type="button" class="lesson-drag-handle" draggable="true" title="اسحب لترتيب الدروس" aria-label="اسحب لترتيب الدروس">
+                        <i class="fa-solid fa-grip-vertical"></i>
+                    </button>
                     <div class="accordion-toggle-arrow"><i class="fa-solid fa-chevron-down"></i></div>
                 </div>
             </div>
@@ -1705,7 +1905,7 @@ function renderUnitLessonsList() {
 
         const header = card.querySelector('.lesson-card-header');
         header.addEventListener('click', (e) => {
-            if (e.target.closest('.btn-edit-lesson-trigger')) return;
+            if (e.target.closest('.btn-edit-lesson-trigger, .lesson-drag-handle')) return;
             const allCards = container.querySelectorAll('.lesson-manager-card');
             const isExpanded = card.classList.contains('expanded');
             allCards.forEach(c => c.classList.remove('expanded'));
@@ -1819,6 +2019,7 @@ function renderUnitLessonsList() {
     });
 
     container.appendChild(newAddRow);
+    setupLessonDragAndDrop(container);
 }
 
 // Render Accordion Lesson Content Inline Under Card

@@ -900,7 +900,7 @@ def add_slide():
         INSERT INTO slides (lesson_id, template_type, welcome_badge, title_ar, title_en, description_ar, description_en,
         rule_title, rule_desc, example_en, example_ar, image, teacher_notes, text_editor_html, scene_badge, question_ar, hint_note, wrong_note,
         options_json, correct_index, result_title, reveal_badge, reveal_explanation, reveal_note, blocks_order_json, linked_exercise_id, is_reinforcement, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         lesson_id,
         payload.get("template_type", "two_stage"),

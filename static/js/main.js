@@ -2283,10 +2283,7 @@ function renderAccordionLessonContent(card, lessonId) {
             rHeader.querySelector('.btn-add-reinf-slide')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 currentLesson = lesson;
-                pendingSlideContext = 'reinforcement';
-                slides = reinfSlidesList;
-                const addSlideTemplateModal = document.getElementById('addSlideTemplateModal');
-                if (addSlideTemplateModal) addSlideTemplateModal.classList.remove('hidden');
+                createNewReinforcementExplanation(lesson);
             });
             reinfSummary.appendChild(rHeader);
 
@@ -2784,6 +2781,52 @@ function renderAccordionLessonContent(card, lessonId) {
                 ministrySummary.appendChild(preview);
             });
         }
+    }
+}
+
+// Create the single explanation box directly so the reinforcement action does not
+// depend on the general slide template picker state.
+async function createNewReinforcementExplanation(lesson) {
+    if (!lesson || (lesson.reinforcement_slides || []).length > 0) return;
+
+    const expandedCard = document.querySelector(`.lesson-manager-card[data-lesson-id="${lesson.id}"]`);
+    const button = expandedCard?.querySelector('.btn-add-reinf-slide');
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ إنشاء صندوق الشرح...';
+    }
+
+    try {
+        const response = await fetch('/api/slides', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                lesson_id: lesson.id,
+                is_reinforcement: true,
+                template_type: 'text_editor',
+                welcome_badge: 'تقوية المفاهيم',
+                title_ar: 'صندوق شرح التقوية',
+                title_en: 'Reinforcement Explanation',
+                description_ar: 'اكتب هنا كل الشرح الذي يحتاجه الطالب بعد الخطأ.',
+                description_en: 'Write the full explanation the student needs after a wrong answer.',
+                text_editor_html: '<p>اكتب شرح التقوية هنا...</p>',
+                image: '',
+                blocks_order: ['badge_title', 'description', 'text_editor']
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'reinforcement slide creation failed');
+
+        syncCurriculumState(data.curriculum, lesson.id, { preferReinforcement: true });
+        const refreshedCard = document.querySelector(`.lesson-manager-card[data-lesson-id="${lesson.id}"]`);
+        if (refreshedCard) renderAccordionLessonContent(refreshedCard, lesson.id);
+        showToast('✓ تم إضافة صندوق شرح التقوية، يمكنك تعديله الآن');
+    } catch (error) {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fa-solid fa-plus-circle"></i> أضف صندوق الشرح';
+        }
+        showToast(error.message || 'تعذر إضافة صندوق شرح التقوية');
     }
 }
 

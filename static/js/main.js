@@ -281,15 +281,15 @@ function ministryAnswerToEditorHtml(question) {
 function ministryQuestionsToEditorHtml(questions) {
     return questions.map((question, index) => {
         const normalized = normalizeMinistryExamQuestions([question], 1)[0];
-        return [`السؤال ${index + 1}: ${normalized.prompt}`, ...normalized.options]
+        return [`${index + 1}. ${normalized.prompt}`, ...normalized.options]
             .map(line => `<div>${escapeHtml(line)}</div>`).join('');
     }).join('');
 }
 
 function ministryAnswersToEditorHtml(questions) {
-    return questions.map((question, index) => {
+    return questions.map(question => {
         const normalized = normalizeMinistryExamQuestions([question], 1)[0];
-        return `<div>السؤال ${index + 1}: ${escapeHtml(normalized.answer)}</div>`;
+        return `<div>${escapeHtml(normalized.answer)}</div>`;
     }).join('');
 }
 
@@ -4482,12 +4482,12 @@ function renderExDynamicBlocks() {
                 </div>
                 <div class="ministry-editor-pair ministry-global-editors">
                     <section class="ministry-editor-box ministry-question-box">
-                        <div class="ministry-editor-box-title"><i class="fa-solid fa-file-lines"></i><strong>صندوق Word واحد: الأسئلة والخيارات</strong><small>كل سؤال يبدأ بسطر مستقل، وتحته خياراته. يظهر هذا الصندوق في ورقة الطالب.</small></div>
-                        ${richTextEditorHtml('formMinistryQuestions', 'السؤال 1: اكتب السؤال هنا\nالخيار الأول\nالخيار الثاني', 'ltr', ministryQuestionsToEditorHtml(quizQuestions))}
+                        <div class="ministry-editor-box-title"><i class="fa-solid fa-file-lines"></i><strong>صندوق Word واحد: الأسئلة والخيارات</strong><small>ابدأ كل سؤال بـ 1. أو *1.* ثم اكتب الخيارات تحته. لا تحتاج لكتابة كلمة السؤال.</small></div>
+                        ${richTextEditorHtml('formMinistryQuestions', '1. اكتب السؤال هنا\na) الخيار الأول\nb) الخيار الثاني', 'ltr', ministryQuestionsToEditorHtml(quizQuestions))}
                     </section>
                     <section class="ministry-editor-box ministry-answer-box">
-                        <div class="ministry-editor-box-title"><i class="fa-solid fa-key"></i><strong>صندوق Word واحد: مفتاح الإجابة</strong><small>اكتب إجابة كل سؤال في السطر المقابل. يظهر في الصفحات الأخيرة للمعلم.</small></div>
-                        ${richTextEditorHtml('formMinistryAnswers', 'السؤال 1: الإجابة الصحيحة', 'rtl', ministryAnswersToEditorHtml(quizQuestions))}
+                        <div class="ministry-editor-box-title"><i class="fa-solid fa-key"></i><strong>صندوق Word واحد: مفتاح الإجابة</strong><small>اكتب حرف الإجابة فقط في كل سطر وبنفس ترتيب الأسئلة، مثل: b ثم b ثم a.</small></div>
+                        ${richTextEditorHtml('formMinistryAnswers', 'b\nb\na\n... إجابة واحدة في كل سطر وبنفس ترتيب الأسئلة', 'ltr', ministryAnswersToEditorHtml(quizQuestions))}
                     </section>
                 </div>
                 <div id="ministryExamValidation" class="ministry-validation-message hidden" role="alert" aria-live="polite"></div>

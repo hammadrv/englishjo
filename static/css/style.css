@@ -1924,6 +1924,17 @@ body.light-theme {
     border-color: #99F6E4;
     color: #0D9488;
 }
+.mini-rich-btn.active {
+    background: #CCFBF1;
+    border-color: #0D9488;
+    color: #0F766E;
+}
+.mini-rich-toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: #CBD5E1;
+    margin: 0 0.15rem;
+}
 .mini-rich-color-input {
     width: 34px;
     height: 34px;
@@ -1945,6 +1956,8 @@ body.light-theme {
     line-height: 1.55;
     outline: none;
 }
+.mini-rich-surface[dir="rtl"] { direction: rtl; text-align: right; }
+.mini-rich-surface[dir="ltr"] { direction: ltr; text-align: left; }
 .mini-rich-surface img {
     max-width: 100%;
     height: auto;

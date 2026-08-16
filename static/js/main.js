@@ -145,9 +145,21 @@ function normalizeRichTextHtml(html) {
         }
 
         const color = safeColor(el.getAttribute('color') || el.style?.color);
+        const direction = ['rtl', 'ltr'].includes(String(el.getAttribute('dir') || '').toLowerCase())
+            ? String(el.getAttribute('dir')).toLowerCase()
+            : '';
+        const isDirectionWrapper = el.tagName === 'SPAN' && el.style?.display === 'block' && direction;
         Array.from(el.attributes).forEach(attr => el.removeAttribute(attr.name));
         if (color && (el.tagName === 'SPAN' || el.tagName === 'FONT')) {
             el.style.color = color;
+        }
+        if (direction && (el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'LI')) {
+            el.setAttribute('dir', direction);
+            if (isDirectionWrapper) {
+                el.style.display = 'block';
+                el.style.direction = direction;
+                el.style.textAlign = direction === 'rtl' ? 'right' : 'left';
+            }
         }
     });
 
@@ -184,6 +196,9 @@ function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtm
                 <input type="color" class="mini-rich-color-input" value="#0D9488" title="اختر لون الخط" aria-label="اختر لون الخط">
                 <button type="button" class="mini-rich-btn" data-rich-action="image" title="إدراج صورة"><i class="fa-solid fa-image"></i></button>
                 <input type="file" class="mini-rich-image-input" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="اختر صورة لإدراجها">
+                <span class="mini-rich-toolbar-divider" aria-hidden="true"></span>
+                <button type="button" class="mini-rich-btn" data-rich-action="direction" data-rich-direction="rtl" title="اتجاه النص: من اليمين إلى اليسار" aria-label="اتجاه النص من اليمين إلى اليسار"><i class="fa-solid fa-align-right"></i></button>
+                <button type="button" class="mini-rich-btn" data-rich-action="direction" data-rich-direction="ltr" title="اتجاه النص: من اليسار إلى اليمين" aria-label="اتجاه النص من اليسار إلى اليمين"><i class="fa-solid fa-align-left"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-command="insertUnorderedList" title="نقاط"><i class="fa-solid fa-list-ul"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-command="insertOrderedList" title="ترقيم"><i class="fa-solid fa-list-ol"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-action="clear" title="إزالة التنسيق"><i class="fa-solid fa-eraser"></i></button>
@@ -276,7 +291,43 @@ function initRichTextEditors(scope = document) {
             }
         });
 
+        const directionButtons = wrapper?.querySelectorAll('[data-rich-action="direction"]') || [];
+        const setEditorDirection = (direction, persist = true) => {
+            const safeDirection = direction === 'ltr' ? 'ltr' : 'rtl';
+            editor.setAttribute('dir', safeDirection);
+            editor.style.direction = safeDirection;
+            editor.style.textAlign = safeDirection === 'rtl' ? 'right' : 'left';
+
+            let directionWrapper = editor.firstElementChild;
+            if (!directionWrapper || directionWrapper.tagName !== 'SPAN' || directionWrapper.style.display !== 'block') {
+                directionWrapper = document.createElement('span');
+                while (editor.firstChild) directionWrapper.appendChild(editor.firstChild);
+                editor.appendChild(directionWrapper);
+            }
+            directionWrapper.setAttribute('dir', safeDirection);
+            directionWrapper.dataset.richDirectionWrapper = 'true';
+            directionWrapper.style.display = 'block';
+            directionWrapper.style.direction = safeDirection;
+            directionWrapper.style.textAlign = safeDirection === 'rtl' ? 'right' : 'left';
+
+            directionButtons.forEach(button => {
+                const active = button.dataset.richDirection === safeDirection;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            if (persist) syncTarget();
+        };
+
+        const savedDirectionWrapper = editor.firstElementChild;
+        const initialDirection = savedDirectionWrapper?.getAttribute('dir') || editor.getAttribute('dir') || 'rtl';
+        setEditorDirection(initialDirection, false);
+        directionButtons.forEach(button => {
+            button.addEventListener('mousedown', rememberSelection);
+            button.addEventListener('click', () => setEditorDirection(button.dataset.richDirection));
+        });
+
         wrapper?.querySelectorAll('[data-rich-command], [data-rich-action]').forEach(btn => {
+            if (btn.dataset.richAction === 'direction') return;
             btn.addEventListener('mousedown', rememberSelection);
             btn.addEventListener('click', () => {
                 if (btn.dataset.richAction === 'color') {

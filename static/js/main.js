@@ -197,8 +197,8 @@ function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtm
                 <button type="button" class="mini-rich-btn" data-rich-action="image" title="إدراج صورة"><i class="fa-solid fa-image"></i></button>
                 <input type="file" class="mini-rich-image-input" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="اختر صورة لإدراجها">
                 <span class="mini-rich-toolbar-divider" aria-hidden="true"></span>
-                <button type="button" class="mini-rich-btn" data-rich-action="direction" data-rich-direction="rtl" title="اتجاه النص: من اليمين إلى اليسار" aria-label="اتجاه النص من اليمين إلى اليسار"><i class="fa-solid fa-align-right"></i></button>
-                <button type="button" class="mini-rich-btn" data-rich-action="direction" data-rich-direction="ltr" title="اتجاه النص: من اليسار إلى اليمين" aria-label="اتجاه النص من اليسار إلى اليمين"><i class="fa-solid fa-align-left"></i></button>
+                <button type="button" class="mini-rich-btn mini-rich-direction-btn" data-rich-action="direction" data-rich-direction="rtl" title="اتجاه النص: من اليمين إلى اليسار" aria-label="اتجاه النص من اليمين إلى اليسار"><i class="fa-solid fa-align-right"></i><span>RTL</span></button>
+                <button type="button" class="mini-rich-btn mini-rich-direction-btn" data-rich-action="direction" data-rich-direction="ltr" title="اتجاه النص: من اليسار إلى اليمين" aria-label="اتجاه النص من اليسار إلى اليمين"><i class="fa-solid fa-align-left"></i><span>LTR</span></button>
                 <button type="button" class="mini-rich-btn" data-rich-command="insertUnorderedList" title="نقاط"><i class="fa-solid fa-list-ul"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-command="insertOrderedList" title="ترقيم"><i class="fa-solid fa-list-ol"></i></button>
                 <button type="button" class="mini-rich-btn" data-rich-action="clear" title="إزالة التنسيق"><i class="fa-solid fa-eraser"></i></button>
@@ -292,23 +292,31 @@ function initRichTextEditors(scope = document) {
         });
 
         const directionButtons = wrapper?.querySelectorAll('[data-rich-action="direction"]') || [];
-        const setEditorDirection = (direction, persist = true) => {
-            const safeDirection = direction === 'ltr' ? 'ltr' : 'rtl';
-            editor.setAttribute('dir', safeDirection);
-            editor.style.direction = safeDirection;
-            editor.style.textAlign = safeDirection === 'rtl' ? 'right' : 'left';
-
+        const ensureDirectionWrapper = (direction) => {
             let directionWrapper = editor.firstElementChild;
-            if (!directionWrapper || directionWrapper.tagName !== 'SPAN' || directionWrapper.style.display !== 'block') {
+            const isExistingDirectionWrapper = directionWrapper
+                && directionWrapper.tagName === 'SPAN'
+                && (directionWrapper.dataset.richDirectionWrapper === 'true' || directionWrapper.style.display === 'block' || ['rtl', 'ltr'].includes(directionWrapper.getAttribute('dir')));
+            if (!isExistingDirectionWrapper) {
                 directionWrapper = document.createElement('span');
                 while (editor.firstChild) directionWrapper.appendChild(editor.firstChild);
                 editor.appendChild(directionWrapper);
             }
-            directionWrapper.setAttribute('dir', safeDirection);
+            directionWrapper.setAttribute('dir', direction);
             directionWrapper.dataset.richDirectionWrapper = 'true';
             directionWrapper.style.display = 'block';
-            directionWrapper.style.direction = safeDirection;
-            directionWrapper.style.textAlign = safeDirection === 'rtl' ? 'right' : 'left';
+            directionWrapper.style.direction = direction;
+            directionWrapper.style.textAlign = direction === 'rtl' ? 'right' : 'left';
+            return directionWrapper;
+        };
+        const setEditorDirection = (direction, persist = true) => {
+            const safeDirection = direction === 'ltr' ? 'ltr' : 'rtl';
+            editor.dataset.activeDirection = safeDirection;
+            editor.setAttribute('dir', safeDirection);
+            editor.style.direction = safeDirection;
+            editor.style.textAlign = safeDirection === 'rtl' ? 'right' : 'left';
+            const hasEditorContent = stripHtml(editor.innerHTML) || editor.querySelector('img');
+            if (persist || hasEditorContent) ensureDirectionWrapper(safeDirection);
 
             directionButtons.forEach(button => {
                 const active = button.dataset.richDirection === safeDirection;
@@ -321,6 +329,9 @@ function initRichTextEditors(scope = document) {
         const savedDirectionWrapper = editor.firstElementChild;
         const initialDirection = savedDirectionWrapper?.getAttribute('dir') || editor.getAttribute('dir') || 'rtl';
         setEditorDirection(initialDirection, false);
+        editor.addEventListener('beforeinput', () => {
+            if (editor.dataset.activeDirection) ensureDirectionWrapper(editor.dataset.activeDirection);
+        });
         directionButtons.forEach(button => {
             button.addEventListener('mousedown', rememberSelection);
             button.addEventListener('click', () => setEditorDirection(button.dataset.richDirection));
@@ -542,6 +553,16 @@ function showMinistryValidation(errors = []) {
     if (errors.length) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function showTextQuizValidation(errors = []) {
+    const box = document.getElementById('textQuizValidation');
+    if (!box) return;
+    box.innerHTML = errors.length
+        ? `<strong><i class="fa-solid fa-triangle-exclamation"></i> لم يتم الحفظ بعد:</strong><ul>${errors.slice(0, 8).map(error => `<li>${escapeHtml(error)}</li>`).join('')}</ul>`
+        : '';
+    box.classList.toggle('hidden', errors.length === 0);
+    if (errors.length) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function defaultMasteryQuizQuestions(count = 10) {
     const safeCount = normalizeMasteryQuestionCount(count);
     return Array.from({ length: safeCount }, (_, index) => ({
@@ -677,14 +698,33 @@ function collectTextQuizQuestionsFromEditor() {
         const editorSurface = document.querySelector(`[data-rich-editor="formTextQuizQ${index}"]`);
         const editorHtml = editorSurface ? editorSurface.innerHTML : (editor ? editor.value : '');
         const lines = richTextPlainLines(editorHtml);
-        const options = lines.slice(1, 4);
-        while (options.length < 3) options.push('');
+        const savedQuestion = normalizeTextQuizQuestions(currentExercise?.quiz_questions)[index];
+        // Keep the last saved value when a rich editor has not finished mounting
+        // or when the browser reports an empty contenteditable surface.
+        const prompt = lines[0] || savedQuestion.prompt || '';
+        const options = [0, 1, 2].map(optionIndex => lines[optionIndex + 1] || savedQuestion.options[optionIndex] || '');
         return {
-            prompt: lines[0] || '',
+            prompt,
             options,
             correct_index: Math.max(0, Math.min(2, Number(document.getElementById(`formTextQuizCorrect${index}`)?.value) || 0))
         };
     });
+}
+
+function validateTextQuizQuestions(questions) {
+    const errors = [];
+    if (!Array.isArray(questions) || questions.length !== 5) {
+        errors.push('يجب أن يحتوي الاختبار النصي على 5 أسئلة.');
+        return errors;
+    }
+    questions.forEach((question, index) => {
+        if (!String(question?.prompt || '').trim()) errors.push(`السؤال ${index + 1}: نص السؤال فارغ.`);
+        const options = Array.isArray(question?.options) ? question.options : [];
+        if (options.length !== 3 || options.some(option => !String(option || '').trim())) {
+            errors.push(`السؤال ${index + 1}: اكتب 3 خيارات كاملة.`);
+        }
+    });
+    return errors;
 }
 
 function syncCurriculumState(nextCurriculum, preferredLessonId = null, options = {}) {
@@ -1531,6 +1571,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const isTextQuiz5 = currentExercise && currentExercise.question_type === 'text_quiz_5';
             const isMasteryQuiz = currentExercise && currentExercise.question_type === 'mastery_quiz';
             const isMinistryExam = currentExercise && currentExercise.question_type === 'ministry_exam';
+            const isReinforcementExercise = Boolean(
+                currentExercise?.is_reinforcement
+                || currentLesson?.reinforcement_exercises?.some(exercise => exercise.id === exId)
+            );
             const masteryCount = normalizeMasteryQuestionCount(document.getElementById('formMasteryQuizCount')?.value, currentExercise?.quiz_questions?.length || 10);
             const ministryCountInput = document.getElementById('formMinistryQuestionCount');
             const configuredMinistryCount = normalizeMasteryQuestionCount(ministryCountInput?.value, currentExercise?.quiz_questions?.length || 10);
@@ -1555,7 +1599,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 theme: activeExTheme,
                 text_editor_html: getVal('formExTextEditor'),
                 blocks_order: ['ex_quiz5_questions', 'ex_text_editor'],
-                hidden_blocks: []
+                hidden_blocks: [],
+                is_reinforcement: isReinforcementExercise ? 1 : 0,
+                is_exam: 0
             } : isMasteryQuiz ? {
                 question_type: 'mastery_quiz',
                 instruction_badge: getVal('formExBadge') || 'اختبار إتقان نهائي: أجب عن جميع الأسئلة ثم ثبّت إجاباتك',
@@ -1569,7 +1615,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 theme: activeExTheme,
                 text_editor_html: getVal('formExTextEditor'),
                 blocks_order: ['ex_mastery_quiz', 'ex_text_editor'],
-                hidden_blocks: []
+                hidden_blocks: [],
+                is_reinforcement: isReinforcementExercise ? 1 : 0,
+                is_exam: 0
             } : isMinistryExam ? {
                 question_type: 'ministry_exam',
                 instruction_badge: getVal('formExBadge') || 'الامتحان الوزاري - اختيار من متعدد',
@@ -1600,8 +1648,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 image: exImageVal || '/static/images/girl_reading_library.jpg',
                 theme: activeExTheme,
                 blocks_order: activeExBlocksOrder,
-                hidden_blocks: activeExHiddenBlocks
+                hidden_blocks: activeExHiddenBlocks,
+                ...(currentExercise?.is_reinforcement !== undefined ? { is_reinforcement: isReinforcementExercise ? 1 : 0 } : {})
             };
+
+            if (isTextQuiz5) {
+                const textQuizErrors = validateTextQuizQuestions(updatedData.quiz_questions);
+                showTextQuizValidation(textQuizErrors);
+                if (textQuizErrors.length) {
+                    showToast('لم يتم الحفظ: راجع تنبيه أسئلة الاختبار داخل المودال.');
+                    return;
+                }
+            }
 
             if (isMinistryExam) {
                 const ministryErrors = validateMinistryExamEditorData('formMinistryQuestions', 'formMinistryAnswers', updatedData.quiz_questions, ministryCount);
@@ -1634,6 +1692,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentUnit && currentLesson) {
                     currentLesson = currentUnit.lessons.find(lesson => lesson.id === currentLesson.id) || currentLesson;
                     currentExercise = currentLesson.exercises?.find(exercise => exercise.id === exId)
+                        || currentLesson.reinforcement_exercises?.find(exercise => exercise.id === exId)
                         || currentLesson.exam_questions?.find(exercise => exercise.id === exId)
                         || currentLesson.ministry_exam_questions?.find(exercise => exercise.id === exId)
                         || currentLesson.exercise || currentExercise;
@@ -4814,6 +4873,7 @@ function renderExDynamicBlocks() {
                     <strong>${isMasteryQuiz ? 'نموذج اختبار الإتقان' : 'طريقة الإدخال'}</strong>
                     <span>${isMasteryQuiz ? 'اختر عدد الأسئلة، ثم اكتب كل سؤال وأضف له من خيارين إلى 10 خيارات. يمكنك اختيار إجابة واحدة أو عدة إجابات وحفظ الاختبار كبنك واحد.' : 'لكل سؤال: اكتب السطر الأول للسؤال، ثم تحته 3 أسطر للاختيارات. بعدها حدد رقم الإجابة الصحيحة.'}</span>
                 </div>
+                ${!isMasteryQuiz ? '<div id="textQuizValidation" class="ministry-validation-message hidden" role="alert" aria-live="polite"></div>' : ''}
                 ${isMasteryQuiz ? `
                     <div class="form-group mastery-count-field">
                         <label for="formMasteryQuizCount">عدد أسئلة الاختبار</label>

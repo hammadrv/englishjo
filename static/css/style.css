@@ -709,6 +709,8 @@ body.light-theme {
 }
 .student-text-editor-label { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: #0F766E; font-size: 0.78rem; font-weight: 900; }
 .student-text-editor-content { white-space: normal; line-height: 1.65; font-size: 0.95rem; font-weight: 700; overflow-wrap: anywhere; }
+.student-text-editor-content [dir="rtl"] { direction: rtl; text-align: right; }
+.student-text-editor-content [dir="ltr"] { direction: ltr; text-align: left; }
 .student-text-editor-content ul, .student-text-editor-content ol { margin: 0.35rem 1.2rem; padding: 0; }
 .student-text-editor-content mark { background: #FEF3C7; border-radius: 4px; padding: 0.05rem 0.15rem; }
 .bilingual-editor-hint { display: block; margin-top: 0.3rem; color: #64748B; font-size: 0.72rem; font-weight: 700; }
@@ -1917,8 +1919,15 @@ body.light-theme {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.2rem;
     transition: var(--transition);
 }
+.mini-rich-direction-btn {
+    width: 58px;
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+.mini-rich-direction-btn span { line-height: 1; }
 .mini-rich-btn:hover {
     background: #ECFDF5;
     border-color: #99F6E4;

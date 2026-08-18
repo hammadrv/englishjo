@@ -240,7 +240,9 @@ function initRichTextEditors(scope = document) {
         editor.addEventListener('paste', e => {
             e.preventDefault();
             const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-            document.execCommand('insertText', false, text);
+            const lines = text.replace(/\r\n?/g, '\n').split('\n');
+            const pastedHtml = lines.map(line => `<div>${escapeHtml(line) || '<br>'}</div>`).join('');
+            document.execCommand('insertHTML', false, pastedHtml);
         });
 
         const wrapper = editor.closest('.mini-rich-editor');
@@ -381,14 +383,35 @@ function normalizeTextQuizQuestions(questions) {
     const source = Array.isArray(questions) ? questions : [];
     return Array.from({ length: 5 }, (_, index) => {
         const item = source[index] || {};
-        const options = Array.isArray(item.options) ? item.options.slice(0, 3) : [];
+        const inlineQuestion = splitInlineTextQuizContent(item.prompt || item.question || '');
+        const options = inlineQuestion?.options?.length >= 3
+            ? inlineQuestion.options.slice(0, 3)
+            : (Array.isArray(item.options) ? item.options.slice(0, 3) : []);
         while (options.length < 3) options.push(`الخيار ${options.length + 1}`);
         return {
-            prompt: String(item.prompt || item.question || `اكتب السؤال ${index + 1} هنا`),
+            prompt: inlineQuestion?.prompt || String(item.prompt || item.question || `اكتب السؤال ${index + 1} هنا`),
             options,
             correct_index: Math.max(0, Math.min(2, Number(item.correct_index) || 0))
         };
     });
+}
+
+function splitInlineTextQuizContent(value) {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text) return null;
+    const markerPattern = /([A-C])\s*[\)\.\-:]\s*/gi;
+    const matches = [...text.matchAll(markerPattern)];
+    if (matches.length < 3) return null;
+
+    const firstMarker = matches[0].index;
+    const prompt = text.slice(0, firstMarker).trim();
+    const options = matches.slice(0, 3).map((match, index) => {
+        const start = (match.index || 0) + match[0].length;
+        const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+        return text.slice(start, end).trim();
+    });
+    if (!prompt || options.some(option => !option)) return null;
+    return { prompt, options };
 }
 
 function isQuestionBankQuiz(exercise) {
@@ -699,10 +722,14 @@ function collectTextQuizQuestionsFromEditor() {
         const editorHtml = editorSurface ? editorSurface.innerHTML : (editor ? editor.value : '');
         const lines = richTextPlainLines(editorHtml);
         const savedQuestion = normalizeTextQuizQuestions(currentExercise?.quiz_questions)[index];
+        const inlineQuestion = splitInlineTextQuizContent(lines.join(' '));
+        const hasEditorContent = lines.length > 0;
         // Keep the last saved value when a rich editor has not finished mounting
         // or when the browser reports an empty contenteditable surface.
-        const prompt = lines[0] || savedQuestion.prompt || '';
-        const options = [0, 1, 2].map(optionIndex => lines[optionIndex + 1] || savedQuestion.options[optionIndex] || '');
+        const prompt = inlineQuestion?.prompt || lines[0] || (!hasEditorContent ? savedQuestion.prompt : '');
+        const options = inlineQuestion?.options?.length >= 3
+            ? inlineQuestion.options
+            : [0, 1, 2].map(optionIndex => lines[optionIndex + 1] || (!hasEditorContent ? savedQuestion.options[optionIndex] : ''));
         return {
             prompt,
             options,

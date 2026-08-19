@@ -1627,8 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 text_editor_html: getVal('formExTextEditor'),
                 blocks_order: ['ex_quiz5_questions', 'ex_text_editor'],
                 hidden_blocks: [],
-                is_reinforcement: isReinforcementExercise ? 1 : 0,
-                is_exam: 0
+                is_reinforcement: isReinforcementExercise ? 1 : 0
             } : isMasteryQuiz ? {
                 question_type: 'mastery_quiz',
                 instruction_badge: getVal('formExBadge') || 'اختبار إتقان نهائي: أجب عن جميع الأسئلة ثم ثبّت إجاباتك',
@@ -1643,8 +1642,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 text_editor_html: getVal('formExTextEditor'),
                 blocks_order: ['ex_mastery_quiz', 'ex_text_editor'],
                 hidden_blocks: [],
-                is_reinforcement: isReinforcementExercise ? 1 : 0,
-                is_exam: 0
+                is_reinforcement: isReinforcementExercise ? 1 : 0
             } : isMinistryExam ? {
                 question_type: 'ministry_exam',
                 instruction_badge: getVal('formExBadge') || 'الامتحان الوزاري - اختيار من متعدد',

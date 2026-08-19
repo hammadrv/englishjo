@@ -1310,6 +1310,8 @@ body.light-theme {
 #exerciseEditModal .modal-preview-col {
     min-height: 0;
     height: 100%;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
     overflow-y: scroll;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -1330,7 +1332,8 @@ body.light-theme {
 }
 #exerciseEditModal .live-preview-sticky {
     min-height: max-content;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: flex-start !important;
 }
 #exerciseEditModal {
     overflow: hidden !important;

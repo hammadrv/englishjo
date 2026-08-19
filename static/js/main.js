@@ -4752,6 +4752,24 @@ function switchExModalPreviewStage(stageNum) {
         btn3.style.background = '#FFFFFF'; btn3.style.color = '#DC2626'; btn3.classList.add('active');
     }
     updateExerciseLivePreview();
+    resetExercisePreviewScroll();
+}
+
+// The phone preview has its own scroll container. Always start a newly selected
+// preview stage at the top so the first question cannot remain clipped.
+function resetExercisePreviewScroll() {
+    const modalPreview = document.querySelector('#exerciseEditModal .modal-preview-col');
+    const phoneScreen = document.querySelector('#liveExPhoneFrame .exercise-screen-wrapper');
+    const reset = () => {
+        if (modalPreview) modalPreview.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        if (phoneScreen) phoneScreen.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    };
+    reset();
+    requestAnimationFrame(() => {
+        reset();
+        requestAnimationFrame(reset);
+    });
+    window.setTimeout(reset, 120);
 }
 
 // Open Live Exercise Editor Modal with Visual Block Builder
@@ -4759,6 +4777,7 @@ function setExerciseEditModalOpen(isOpen) {
     const modal = document.getElementById('exerciseEditModal');
     if (modal) modal.classList.toggle('hidden', !isOpen);
     document.body.classList.toggle('exercise-modal-open', isOpen);
+    if (isOpen) resetExercisePreviewScroll();
 }
 
 function openExerciseEditModal() {
@@ -4790,6 +4809,7 @@ function openExerciseEditModal() {
     updateExerciseLivePreview();
 
     setExerciseEditModalOpen(true);
+    window.setTimeout(resetExercisePreviewScroll, 0);
 }
 
 // Apply Theme Palette for Exercise Preview

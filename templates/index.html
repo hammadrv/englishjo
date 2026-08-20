@@ -694,6 +694,16 @@
                     <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف اختبار الإتقان</button>
                 </div>
 
+                <!-- QUICK BULK IMPORT -->
+                <div class="picker-exercise-option bulk-question-import-card" data-type="bulk_question_import" style="background: linear-gradient(145deg, #FFFFFF 0%, #EFF6FF 100%); border: 2px solid #60A5FA; border-radius: 16px; padding: 1.2rem; cursor: pointer; transition: all 0.2s ease;">
+                    <div class="picker-icon-box" style="width: 48px; height: 48px; border-radius: 12px; background: #DBEAFE; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
+                        <i class="fa-solid fa-paste"></i>
+                    </div>
+                    <h4 style="font-weight: 800; color: #1E3A8A; margin-bottom: 0.4rem;">إضافة أسئلة بالنسخ واللصق</h4>
+                    <p style="font-size: 0.85rem; color: #475569;">ألصق الأسئلة والخيارات ومفتاح الإجابة مرة واحدة، وسيتم إنشاء بنك اختبار مرتب تلقائياً.</p>
+                    <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #2563EB; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">📋 ابدأ الإضافة السريعة</button>
+                </div>
+
                 <div class="picker-exercise-option bilingual-text-template-card" data-type="text_editor" style="background: #FFFFFF; border: 2px solid #2DD4BF; border-radius: 16px; padding: 1.2rem; cursor: pointer; transition: all 0.2s ease;">
                     <div class="picker-icon-box" style="width: 48px; height: 48px; border-radius: 12px; background: #CCFBF1; color: #0F766E; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.8rem;">
                         <i class="fa-solid fa-language"></i>
@@ -703,6 +713,56 @@
                     <button type="button" class="btn-add-ex-template" style="margin-top: 1rem; width: 100%; background: #0F766E; color: #FFF; border: none; padding: 0.6rem; border-radius: 10px; font-weight: 700; cursor: pointer;">➕ أضف هذا القالب</button>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: QUICK QUESTION BANK IMPORT -->
+    <div id="bulkQuestionImportModal" class="edit-modal-backdrop hidden">
+        <div class="bulk-question-import-modal">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3><i class="fa-solid fa-paste"></i> إضافة الأسئلة بالنسخ واللصق</h3>
+                    <span class="sub-desc-span">الصق الأسئلة والخيارات، ثم الصق مفتاح الإجابة وسيُنشأ الاختبار تلقائياً</span>
+                </div>
+                <button type="button" id="closeBulkQuestionImportBtn" class="btn-close-modal">&times;</button>
+            </div>
+            <div class="bulk-import-body">
+                <div class="bulk-import-format-row">
+                    <label for="bulkImportAnswerType">نوع الإجابات</label>
+                    <select id="bulkImportAnswerType">
+                        <option value="multiple_choice">اختيار من متعدد: إجابة واحدة</option>
+                        <option value="checkboxes">خانات اختيار: أكثر من إجابة</option>
+                    </select>
+                    <button type="button" id="bulkImportExampleBtn" class="btn-secondary">عرض مثال جاهز</button>
+                </div>
+                <div class="bulk-import-columns">
+                    <label class="bulk-import-box">
+                        <span><i class="fa-solid fa-list-check"></i> الأسئلة والخيارات</span>
+                        <small>اكتب السؤال في سطر يبدأ بـ 1. ثم الخيارات تحته بـ A) أو B).</small>
+                        <textarea id="bulkImportQuestions" dir="auto" placeholder="1. When I arrived, the train ____.
+A) left
+B) had left
+C) has left
+
+2. She was tired because she ____ all night.
+A) had studied
+B) studied
+C) has studied"></textarea>
+                    </label>
+                    <label class="bulk-import-box bulk-import-answer-box">
+                        <span><i class="fa-solid fa-key"></i> مفتاح الإجابة</span>
+                        <small>إجابة في كل سطر: 1. B ثم 2. A، أو اكتب B ثم A بالترتيب.</small>
+                        <textarea id="bulkImportAnswers" dir="auto" placeholder="1. B
+2. A"></textarea>
+                    </label>
+                </div>
+                <div id="bulkImportValidation" class="bulk-import-validation hidden" role="alert" aria-live="polite"></div>
+                <div id="bulkImportPreview" class="bulk-import-preview" aria-live="polite"></div>
+                <div class="bulk-import-actions">
+                    <button type="button" id="bulkImportCancelBtn" class="btn-secondary">إلغاء</button>
+                    <button type="button" id="bulkImportCreateBtn" class="btn-next"><i class="fa-solid fa-wand-magic-sparkles"></i> إنشاء الاختبار وحفظه</button>
+                </div>
             </div>
         </div>
     </div>

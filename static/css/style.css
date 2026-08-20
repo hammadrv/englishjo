@@ -2861,3 +2861,40 @@ textarea {
         max-height: 38%;
     }
 }
+
+/* Quick question-bank import */
+.bulk-question-import-modal {
+    width: min(1080px, 96vw);
+    max-height: min(900px, 94vh);
+    overflow: auto;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+}
+.bulk-import-body { padding: 1.2rem 1.35rem 1.35rem; }
+.bulk-import-format-row { display:flex; align-items:center; gap:.7rem; margin-bottom:1rem; flex-wrap:wrap; }
+.bulk-import-format-row label { font-weight:800; color:#1e293b; }
+.bulk-import-format-row select { min-width:260px; border:1px solid #bfdbfe; border-radius:10px; padding:.65rem .8rem; background:#eff6ff; color:#1e3a8a; font:inherit; }
+.bulk-import-columns { display:grid; grid-template-columns: minmax(0, 1.6fr) minmax(250px, .8fr); gap:1rem; }
+.bulk-import-box { display:flex; flex-direction:column; gap:.45rem; color:#1e293b; font-weight:800; }
+.bulk-import-box > span { color:#1d4ed8; font-size:1.05rem; }
+.bulk-import-box small { color:#64748b; font-weight:600; }
+.bulk-import-box textarea { width:100%; min-height:320px; resize:vertical; border:1px solid #bfdbfe; border-radius:14px; background:#f8fbff; padding:.85rem; font:600 .95rem/1.65 'Outfit','Cairo',sans-serif; color:#1e293b; outline:none; }
+.bulk-import-box textarea:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+.bulk-import-answer-box textarea { min-height:220px; }
+.bulk-import-validation { margin-top:1rem; padding:.8rem 1rem; border:1px solid #fecaca; border-radius:12px; background:#fff1f2; color:#b91c1c; font-weight:700; }
+.bulk-import-validation.success { border-color:#a7f3d0; background:#ecfdf5; color:#047857; }
+.bulk-import-validation ul { margin:.35rem 1.2rem 0 0; }
+.bulk-import-preview { margin-top:1rem; display:grid; gap:.55rem; max-height:260px; overflow:auto; }
+.bulk-import-preview:empty { display:none; }
+.bulk-import-preview-item { display:flex; align-items:center; justify-content:space-between; gap:.8rem; border:1px solid #e2e8f0; border-radius:10px; padding:.65rem .8rem; background:#fff; }
+.bulk-import-preview-item strong { color:#0f172a; }
+.bulk-import-preview-item span { color:#64748b; font-size:.86rem; }
+.bulk-import-preview-item.is-invalid { border-color:#fda4af; background:#fff1f2; }
+.bulk-import-actions { display:flex; justify-content:flex-end; gap:.7rem; margin-top:1.15rem; }
+.bulk-import-actions button { min-width:130px; }
+@media (max-width: 700px) {
+    .bulk-import-columns { grid-template-columns: 1fr; }
+    .bulk-import-box textarea, .bulk-import-answer-box textarea { min-height:220px; }
+    .bulk-import-actions { position:sticky; bottom:0; background:#fff; padding-top:.8rem; }
+}

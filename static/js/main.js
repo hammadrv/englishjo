@@ -10,6 +10,7 @@ let currentIndex = 0;
 let teacherNotesVisible = false;
 let currentActiveTheme = 'coral';
 let pendingExerciseContext = 'practice';
+let bulkImportContext = 'practice';
 let pendingSlideContext = 'normal';
 let reinforcementExplanationActive = false;
 
@@ -622,6 +623,111 @@ function normalizeMasteryQuizQuestions(questions, count) {
             correct_indices: answerType === 'checkboxes' ? correctIndices : [correctIndices[0]]
         };
     });
+}
+
+// Fast teacher-friendly question import. The parser intentionally accepts both
+// English and Arabic numbering/answer letters so pasted worksheets need little
+// or no cleanup before they become a question bank.
+function bulkArabicDigitsToNumber(value) {
+    const normalized = String(value || '').replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit));
+    const number = Number(normalized);
+    return Number.isInteger(number) ? number : null;
+}
+
+function bulkQuestionMarker(line) {
+    const cleaned = String(line || '').replace(/[\u200B-\u200D\uFEFF\u2060]/g, '').replace(/^\*+|\*+$/g, '').trim();
+    const match = cleaned.match(/^(?:السؤال|سؤال|question|q\.?\s*)?\s*([0-9٠-٩]+)\s*[.)\-:：]\s*(.*)$/i);
+    if (!match) return null;
+    const number = bulkArabicDigitsToNumber(match[1]);
+    return number ? { number, prompt: match[2].replace(/^\*+|\*+$/g, '').trim() } : null;
+}
+
+function bulkOptionMarker(line) {
+    const match = String(line || '').trim().match(/^([A-Fa-fأإآاﺃﺇﺁبＢＣＤＥＦ])\s*[.)\-:：]\s*(.*)$/i);
+    if (!match) return null;
+    return { letter: match[1].toUpperCase(), text: match[2].replace(/^\*+|\*+$/g, '').trim() };
+}
+
+function normalizeBulkAnswerLetters(value) {
+    const text = String(value || '').trim().toUpperCase();
+    const replacements = { 'أ': 'A', 'إ': 'A', 'آ': 'A', 'ا': 'A', 'ب': 'B', 'ج': 'C', 'د': 'D', 'ه': 'E', 'ة': 'E', 'و': 'F' };
+    const normalized = [...text].map(char => replacements[char] || char).join('');
+    return [...new Set((normalized.match(/[A-F]/g) || []))];
+}
+
+function parseBulkAnswerKey(text, questionCount) {
+    const answers = new Map();
+    let sequentialIndex = 0;
+    String(text || '').split(/\r?\n/).map(line => line.replace(/[\u200B-\u200D\uFEFF\u2060]/g, '').replace(/^\*+|\*+$/g, '').trim()).filter(Boolean).forEach(line => {
+        if (/^(?:الإجابات?|الاجابات?|answer(?:s)?|مفتاح الإجابة|correct answers?)\s*[:：]?$/i.test(line)) return;
+        const numbered = line.match(/^(?:السؤال|سؤال|question|q\.?\s*)?\s*([0-9٠-٩]+)\s*[.)\-:：]\s*(.+)$/i);
+        const index = numbered ? bulkArabicDigitsToNumber(numbered[1]) - 1 : sequentialIndex++;
+        const value = numbered ? numbered[2] : line;
+        const letters = normalizeBulkAnswerLetters(value);
+        if (index >= 0 && index < questionCount && letters.length) answers.set(index, letters);
+    });
+    return answers;
+}
+
+function parseBulkQuestionImport(questionText, answerText, answerType = 'multiple_choice') {
+    const questions = [];
+    const errors = [];
+    let current = null;
+    const lines = String(questionText || '').replace(/\r/g, '').split('\n').map(line => line.replace(/[\u200B-\u200D\uFEFF\u2060]/g, '').replace(/^\*+|\*+$/g, '').trim()).filter(Boolean);
+    lines.forEach(line => {
+        const marker = bulkQuestionMarker(line);
+        if (marker) {
+            current = { number: marker.number, prompt: marker.prompt, options: [], inlineAnswers: [] };
+            questions.push(current);
+            return;
+        }
+        if (!current) return;
+        const answerLine = line.match(/^(?:الإجابة|الاجابة|answer|correct(?: answer)?|الإجابة الصحيحة)\s*[:：\-]?\s*(.*)$/i);
+        if (answerLine) {
+            current.inlineAnswers = normalizeBulkAnswerLetters(answerLine[1]);
+            return;
+        }
+        const option = bulkOptionMarker(line);
+        if (option) current.options.push(option.text);
+        else if (!current.prompt) current.prompt = line;
+        else current.prompt += ` ${line}`;
+    });
+
+    const answerMap = parseBulkAnswerKey(answerText, questions.length);
+    questions.forEach((question, index) => {
+        const letters = question.inlineAnswers.length ? question.inlineAnswers : (answerMap.get(index) || []);
+        if (!question.prompt) errors.push(`السؤال ${index + 1}: نص السؤال فارغ.`);
+        if (question.options.length < 2) errors.push(`السؤال ${index + 1}: أضف خيارين على الأقل بصيغة A) و B).`);
+        if (question.options.length > 10) errors.push(`السؤال ${index + 1}: الحد الأقصى 10 خيارات.`);
+        if (!letters.length) errors.push(`السؤال ${index + 1}: لم أجد الإجابة الصحيحة.`);
+        const correctIndices = letters.map(letter => letter.charCodeAt(0) - 65).filter(indexValue => indexValue >= 0 && indexValue < question.options.length);
+        if (letters.length && !correctIndices.length) errors.push(`السؤال ${index + 1}: حرف الإجابة لا يطابق الخيارات.`);
+        if (answerType !== 'checkboxes' && correctIndices.length > 1) errors.push(`السؤال ${index + 1}: اختر إجابة واحدة فقط أو استخدم نوع الخانات المتعددة.`);
+        question.prompt = question.prompt.trim();
+        question.options = question.options.slice(0, 10);
+        question.answer_type = answerType === 'checkboxes' ? 'checkboxes' : 'multiple_choice';
+        question.correct_indices = [...new Set(correctIndices.length ? correctIndices : [0])];
+        question.correct_index = question.correct_indices[0];
+        delete question.number;
+        delete question.inlineAnswers;
+    });
+    if (!questions.length) errors.unshift('لم أتعرف على أي سؤال. ابدأ كل سؤال بصيغة 1. نص السؤال ثم الخيارات تحته.');
+    return { questions, errors };
+}
+
+function showBulkImportResult(result) {
+    const validation = document.getElementById('bulkImportValidation');
+    const preview = document.getElementById('bulkImportPreview');
+    if (!validation || !preview) return;
+    validation.classList.toggle('hidden', !result.errors.length);
+    validation.classList.toggle('success', !result.errors.length && result.questions.length > 0);
+    validation.innerHTML = result.errors.length
+        ? `<strong><i class="fa-solid fa-triangle-exclamation"></i> راجع البيانات قبل الحفظ:</strong><ul>${result.errors.slice(0, 10).map(error => `<li>${escapeHtml(error)}</li>`).join('')}</ul>`
+        : `<strong><i class="fa-solid fa-circle-check"></i> ممتاز، تم التعرف على ${result.questions.length} سؤالاً.</strong> اضغط إنشاء الاختبار وحفظه.`;
+    preview.innerHTML = result.questions.map((question, index) => {
+        const answer = (question.correct_indices || []).map(value => String.fromCharCode(65 + value)).join('، ');
+        return `<div class="bulk-import-preview-item ${result.errors.some(error => error.includes(`السؤال ${index + 1}:`)) ? 'is-invalid' : ''}"><strong>${index + 1}. ${escapeHtml(question.prompt || 'سؤال بلا نص')}</strong><span>${question.options.length} خيارات · الإجابة: ${answer || 'غير محددة'}</span></div>`;
+    }).join('');
 }
 
 function collectQuestionBankQuestionsFromEditor(prefix, count) {
@@ -1365,6 +1471,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const isExamContext = pendingExerciseContext === 'exam';
             const isReinforcementContext = pendingExerciseContext === 'reinforcement';
             const addExerciseTemplateModal = document.getElementById('addExerciseTemplateModal');
+
+            if (templateType === 'bulk_question_import') {
+                bulkImportContext = pendingExerciseContext;
+                if (addExerciseTemplateModal) addExerciseTemplateModal.classList.add('hidden');
+                document.getElementById('bulkQuestionImportModal')?.classList.remove('hidden');
+                document.getElementById('bulkImportQuestions')?.focus();
+                pendingExerciseContext = 'practice';
+                return;
+            }
+
             if (addExerciseTemplateModal) addExerciseTemplateModal.classList.add('hidden');
 
             const lessonId = currentLesson ? currentLesson.id : 101;
@@ -1425,6 +1541,99 @@ document.addEventListener('DOMContentLoaded', () => {
             if (addExerciseTemplateModal) addExerciseTemplateModal.classList.add('hidden');
         });
     }
+
+    // Quick bulk question import modal
+    const bulkImportModal = document.getElementById('bulkQuestionImportModal');
+    const bulkImportQuestions = document.getElementById('bulkImportQuestions');
+    const bulkImportAnswers = document.getElementById('bulkImportAnswers');
+    const bulkImportType = document.getElementById('bulkImportAnswerType');
+    const bulkImportPreview = document.getElementById('bulkImportPreview');
+    const bulkImportValidation = document.getElementById('bulkImportValidation');
+    const bulkImportCreateBtn = document.getElementById('bulkImportCreateBtn');
+
+    const readBulkImport = () => parseBulkQuestionImport(
+        bulkImportQuestions?.value || '',
+        bulkImportAnswers?.value || '',
+        bulkImportType?.value || 'multiple_choice'
+    );
+    const refreshBulkImportPreview = () => showBulkImportResult(readBulkImport());
+
+    [bulkImportQuestions, bulkImportAnswers, bulkImportType].forEach(element => {
+        element?.addEventListener('input', refreshBulkImportPreview);
+        element?.addEventListener('change', refreshBulkImportPreview);
+    });
+
+    document.getElementById('bulkImportExampleBtn')?.addEventListener('click', () => {
+        if (bulkImportQuestions) bulkImportQuestions.value = `1. When I arrived at the station, the train ____.
+A) left
+B) had left
+C) has left
+
+2. She was tired because she ____ all night.
+A) had studied
+B) studied
+C) has studied`;
+        if (bulkImportAnswers) bulkImportAnswers.value = '1. B\n2. A';
+        refreshBulkImportPreview();
+    });
+
+    const closeBulkImport = () => {
+        bulkImportModal?.classList.add('hidden');
+        if (bulkImportValidation) bulkImportValidation.classList.add('hidden');
+        if (bulkImportPreview) bulkImportPreview.innerHTML = '';
+    };
+    document.getElementById('closeBulkQuestionImportBtn')?.addEventListener('click', closeBulkImport);
+    document.getElementById('bulkImportCancelBtn')?.addEventListener('click', closeBulkImport);
+
+    bulkImportCreateBtn?.addEventListener('click', async () => {
+        const result = readBulkImport();
+        showBulkImportResult(result);
+        if (result.errors.length || !result.questions.length) return;
+
+        const originalText = bulkImportCreateBtn.innerHTML;
+        bulkImportCreateBtn.disabled = true;
+        bulkImportCreateBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ إنشاء الاختبار...';
+        const lessonId = currentLesson ? currentLesson.id : 101;
+        const isExamContext = bulkImportContext === 'exam';
+        const isReinforcementContext = bulkImportContext === 'reinforcement';
+        try {
+            const response = await fetch(isExamContext ? '/api/exam_questions' : '/api/exercises', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lesson_id: lessonId,
+                    template_type: 'mastery_quiz',
+                    question_type: 'mastery_quiz',
+                    question_count: result.questions.length,
+                    quiz_questions: result.questions,
+                    instruction_badge: isExamContext ? 'اختبار نهائي: اختر الإجابة الصحيحة لكل سؤال' : 'اختبار تفاعلي: اختر الإجابة الصحيحة لكل سؤال',
+                    is_reinforcement: isReinforcementContext
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'تعذر إنشاء الاختبار');
+            syncCurriculumState(data.curriculum, lessonId, { preferReinforcement: isReinforcementContext });
+            const lessonCard = [...document.querySelectorAll('.lesson-manager-card')]
+                .find(card => Number(card.dataset.lessonId) === Number(lessonId));
+            lessonCard?.querySelector(`.studio-tab-btn[data-tab-target="${isExamContext ? 'exam' : (isReinforcementContext ? 'reinf' : 'prac')}"]`)?.click();
+            const sourceQuestions = isExamContext
+                ? currentLesson?.exam_questions
+                : (isReinforcementContext ? currentLesson?.reinforcement_exercises : currentLesson?.exercises);
+            const newId = isExamContext ? data.new_exam_question_id : data.new_exercise_id;
+            currentExercise = sourceQuestions?.find(exercise => exercise.id === newId) || null;
+            closeBulkImport();
+            if (currentExercise) openExerciseEditModal();
+            showToast(`✅ تم إنشاء الاختبار وحفظ ${result.questions.length} سؤالاً بنجاح`);
+        } catch (error) {
+            if (bulkImportValidation) {
+                bulkImportValidation.classList.remove('hidden', 'success');
+                bulkImportValidation.innerHTML = `<strong>تعذر الحفظ:</strong> ${escapeHtml(error.message || 'حدث خطأ غير متوقع')}`;
+            }
+        } finally {
+            bulkImportCreateBtn.disabled = false;
+            bulkImportCreateBtn.innerHTML = originalText;
+        }
+    });
 
     // Navigation Buttons in Mobile View
     if (prevSlideBtn) {

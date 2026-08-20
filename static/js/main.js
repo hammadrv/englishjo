@@ -14,6 +14,56 @@ let bulkImportContext = 'practice';
 let pendingSlideContext = 'normal';
 let reinforcementExplanationActive = false;
 
+const LESSON_TAB_DEFAULTS = {
+    exp: { label: '📚 الشرح', icon: 'fa-book-open', description: 'شرح الدرس' },
+    prac: { label: '✏️ التمرين', icon: 'fa-pen-ruler', description: 'التمرين التفاعلي' },
+    reinf: { label: '⚡ التقوية', icon: 'fa-bolt', description: 'مرحلة التقوية' },
+    exam: { label: '📝 الاختبار', icon: 'fa-award', description: 'اختبار الإتقان' },
+    ministry: { label: '📄 الامتحان الوزاري', icon: 'fa-file-word', description: 'ورقة الامتحان الوزاري' }
+};
+
+function getLessonTabSettings(lesson) {
+    let saved = lesson?.tab_settings;
+    if (typeof saved === 'string') {
+        try { saved = JSON.parse(saved); } catch (error) { saved = {}; }
+    }
+    saved = saved && typeof saved === 'object' ? saved : {};
+    return Object.fromEntries(Object.entries(LESSON_TAB_DEFAULTS).map(([key, defaults]) => {
+        const item = saved[key] && typeof saved[key] === 'object' ? saved[key] : {};
+        return [key, {
+            visible: item.visible !== false,
+            label: String(item.label || defaults.label).trim() || defaults.label
+        }];
+    }));
+}
+
+let lessonTabManagerTargetLesson = null;
+
+function closeLessonTabManager() {
+    document.getElementById('lessonTabManagerModal')?.classList.add('hidden');
+    lessonTabManagerTargetLesson = null;
+}
+
+function openLessonTabManager(lesson) {
+    const modal = document.getElementById('lessonTabManagerModal');
+    const rows = document.getElementById('lessonTabManagerRows');
+    if (!modal || !rows || !lesson) return;
+    lessonTabManagerTargetLesson = lesson;
+    const settings = getLessonTabSettings(lesson);
+    rows.innerHTML = Object.entries(LESSON_TAB_DEFAULTS).map(([key, defaults]) => {
+        const item = settings[key];
+        return `<div class="lesson-tab-manager-row ${item.visible ? '' : 'is-hidden'}" data-tab-manager-key="${key}">
+            <span class="tab-manager-icon"><i class="fa-solid ${defaults.icon}"></i></span>
+            <input class="lesson-tab-manager-toggle" type="checkbox" ${item.visible ? 'checked' : ''} aria-label="إظهار ${escapeHtml(defaults.description)}">
+            <label><span>${escapeHtml(defaults.description)}</span><input type="text" value="${escapeHtml(item.label)}" maxlength="80" aria-label="اسم ${escapeHtml(defaults.description)}"></label>
+        </div>`;
+    }).join('');
+    rows.querySelectorAll('.lesson-tab-manager-toggle').forEach(toggle => {
+        toggle.addEventListener('change', () => toggle.closest('.lesson-tab-manager-row')?.classList.toggle('is-hidden', !toggle.checked));
+    });
+    modal.classList.remove('hidden');
+}
+
 // Active Slide Block Order State (Visual Block Builder)
 let activeBlocksOrder = ['badge_title', 'description', 'text_editor', 'image_box', 'rule_box', 'example_box'];
 let hiddenBlocksMap = {};
@@ -64,7 +114,7 @@ function setSaveButtonsLoading(formId, isLoading) {
     });
 }
 
-function requestDeleteConfirmation({ title = 'تأكيد الحذف', message = 'هل تريد حذف هذا العنصر؟', item = '' } = {}) {
+function requestDeleteConfirmation({ title = 'تأكيد الحذف', message = 'هل تريد حذف هذا العنصر؟', item = '', confirmLabel = 'حذف نهائياً', confirmIcon = 'fa-trash-can' } = {}) {
     const modal = document.getElementById('deleteConfirmModal');
     const titleEl = document.getElementById('deleteConfirmTitle');
     const messageEl = document.getElementById('deleteConfirmMessage');
@@ -77,6 +127,7 @@ function requestDeleteConfirmation({ title = 'تأكيد الحذف', message = 
 
     titleEl.textContent = title;
     messageEl.textContent = item ? `${message} ${item}` : message;
+    confirmBtn.innerHTML = `<i class="fa-solid ${confirmIcon}"></i> ${confirmLabel}`;
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
 
@@ -1635,6 +1686,66 @@ C) has studied`;
         }
     });
 
+    document.getElementById('closeLessonTabManagerBtn')?.addEventListener('click', closeLessonTabManager);
+    document.getElementById('cancelLessonTabManagerBtn')?.addEventListener('click', closeLessonTabManager);
+    document.getElementById('lessonTabManagerForm')?.addEventListener('submit', async event => {
+        event.preventDefault();
+        const lesson = lessonTabManagerTargetLesson;
+        if (!lesson) return;
+        const settings = {};
+        document.querySelectorAll('#lessonTabManagerRows .lesson-tab-manager-row').forEach(row => {
+            const key = row.dataset.tabManagerKey;
+            const toggle = row.querySelector('.lesson-tab-manager-toggle');
+            const input = row.querySelector('input[type="text"]');
+            settings[key] = {
+                visible: Boolean(toggle?.checked),
+                label: String(input?.value || '').trim() || LESSON_TAB_DEFAULTS[key].label
+            };
+        });
+        if (!Object.values(settings).some(item => item.visible)) {
+            showToast('يجب إبقاء عنصر واحد ظاهرًا على الأقل.');
+            return;
+        }
+        const oldSettings = getLessonTabSettings(lesson);
+        const hiddenNames = Object.entries(settings)
+            .filter(([key, item]) => oldSettings[key].visible && !item.visible)
+            .map(([key]) => settings[key].label || LESSON_TAB_DEFAULTS[key].description);
+        if (hiddenNames.length && !await requestDeleteConfirmation({
+            title: 'تأكيد إخفاء العناصر',
+            message: 'العناصر المحددة ستختفي من شريط الدرس، ويمكن استعادتها لاحقًا من إدارة العناصر.',
+            item: hiddenNames.join('، '),
+            confirmLabel: 'إخفاء العناصر',
+            confirmIcon: 'fa-eye-slash'
+        })) return;
+
+        const saveButton = document.getElementById('saveLessonTabManagerBtn');
+        const originalText = saveButton?.innerHTML || '';
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الحفظ...';
+        }
+        try {
+            const response = await fetch(`/api/lessons/${lesson.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tab_settings: settings })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'تعذر حفظ إعدادات العناصر');
+            syncCurriculumState(data.curriculum, lesson.id);
+            renderUnitLessonsList();
+            closeLessonTabManager();
+            showToast('✅ تم حفظ إظهار وتسميات عناصر الدرس');
+        } catch (error) {
+            showToast(error.message || 'تعذر حفظ إعدادات العناصر');
+        } finally {
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = originalText;
+            }
+        }
+    });
+
     // Navigation Buttons in Mobile View
     if (prevSlideBtn) {
         prevSlideBtn.addEventListener('click', () => {
@@ -2127,6 +2238,10 @@ function renderUnitLessonsList() {
 
     container.innerHTML = '';
     currentUnit.lessons.forEach((lesson, lIdx) => {
+        const tabSettings = getLessonTabSettings(lesson);
+        const tabButton = (key) => tabSettings[key].visible
+            ? `<button class="studio-tab-btn ${key === 'exp' ? 'active' : ''}" data-tab-target="${key}" style="flex: 1; margin: 0;"><i class="fa-solid ${LESSON_TAB_DEFAULTS[key].icon}"></i> ${escapeHtml(tabSettings[key].label)}</button>`
+            : '';
         const numStr = String(lIdx + 1).padStart(2, '0');
         const card = document.createElement('div');
         card.className = `lesson-manager-card ${lesson.id === expandedLessonId ? 'expanded' : ''}`;
@@ -2162,27 +2277,14 @@ function renderUnitLessonsList() {
             </div>
 
             <div class="lesson-accordion-body">
-                <div class="studio-accordion-top-bar" style="margin-bottom: 1.2rem;">
+                <div class="studio-accordion-top-bar lesson-tabs-management-row">
+                    <button type="button" class="btn-manage-lesson-tabs"><i class="fa-solid fa-sliders"></i> إدارة العناصر</button>
                     <div class="studio-accordion-tabs" style="display: flex; flex-direction: row; gap: 0.6rem; background: #F1F5F9; border: 1.5px solid #CBD5E1; padding: 6px; border-radius: 18px; width: 100%;">
-                        <button class="studio-tab-btn active" data-tab-target="exp" style="flex: 1; margin: 0;">
-                            <i class="fa-solid fa-book-open"></i> 📚 الشرح
-                        </button>
-                        <button class="studio-tab-btn" data-tab-target="prac" style="flex: 1; margin: 0;">
-                            <i class="fa-solid fa-pen-ruler"></i> ✏️ التمرين
-                        </button>
-                        <button class="studio-tab-btn" data-tab-target="reinf" style="flex: 1; margin: 0;">
-                            <i class="fa-solid fa-bolt"></i> ⚡ التقوية
-                        </button>
-                        <button class="studio-tab-btn" data-tab-target="exam" style="flex: 1; margin: 0;">
-                            <i class="fa-solid fa-award"></i> 📝 الاختبار
-                        </button>
-                        <button class="studio-tab-btn" data-tab-target="ministry" style="flex: 1; margin: 0;">
-                            <i class="fa-solid fa-file-word"></i> 📄 الامتحان الوزاري
-                        </button>
+                        ${tabButton('exp')}${tabButton('prac')}${tabButton('reinf')}${tabButton('exam')}${tabButton('ministry')}
                     </div>
                 </div>
 
-                <div class="tab-panel-exp active">
+                <div class="tab-panel-exp ${tabSettings.exp.visible ? 'active' : 'hidden'}">
                     <div class="tab-header-box">
                         <div>
                             <h4 class="tab-explanation-title">تسلسل شرائح الشرح في الدرس</h4>
@@ -2195,7 +2297,7 @@ function renderUnitLessonsList() {
                     <div class="slides-sequence-list"></div>
                 </div>
 
-                <div class="tab-panel-prac hidden">
+                <div class="tab-panel-prac ${tabSettings.prac.visible ? 'hidden' : 'hidden'}">
                     <div class="tab-header-box">
                         <div>
                             <h4 class="tab-explanation-title">بيانات التمرين التفاعلي للدرس</h4>
@@ -2208,7 +2310,7 @@ function renderUnitLessonsList() {
                     <div class="studio-exercise-summary-card"></div>
                 </div>
 
-                <div class="tab-panel-reinf hidden">
+                <div class="tab-panel-reinf ${tabSettings.reinf.visible ? 'hidden' : 'hidden'}">
                     <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <span class="sub-badge-teal" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">⚡ مرحلة التقوية بالدرس</span>
@@ -2223,7 +2325,7 @@ function renderUnitLessonsList() {
                     <div class="studio-reinforcement-summary-card" style="margin-top: 1.5rem;"></div>
                 </div>
 
-                <div class="tab-panel-exam hidden">
+                <div class="tab-panel-exam ${tabSettings.exam.visible ? 'hidden' : 'hidden'}">
                     <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <span class="sub-badge-teal" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">📝 الاختبار النهائي لتقييم الإتقان</span>
@@ -2234,7 +2336,7 @@ function renderUnitLessonsList() {
                     <div class="studio-exam-summary-card" style="margin-top: 1.5rem;"></div>
                 </div>
 
-                <div class="tab-panel-ministry hidden">
+                <div class="tab-panel-ministry ${tabSettings.ministry.visible ? 'hidden' : 'hidden'}">
                     <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <span class="sub-badge-teal" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #93C5FD;">📄 ورقة عمل وزارية</span>
@@ -2320,6 +2422,11 @@ function renderUnitLessonsList() {
                     if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
                 }
             });
+        });
+
+        card.querySelector('.btn-manage-lesson-tabs')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openLessonTabManager(lesson);
         });
 
         card.querySelector('.btn-open-template-picker-modal')?.addEventListener('click', (e) => {

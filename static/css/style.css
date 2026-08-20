@@ -2862,6 +2862,29 @@ textarea {
     }
 }
 
+/* Lesson tab manager */
+.lesson-tabs-management-row { display:flex; align-items:center; gap:.8rem; margin-bottom:.8rem; }
+.btn-manage-lesson-tabs { border:1px solid #CBD5E1; background:#F8FAFC; color:#334155; border-radius:12px; padding:.55rem .85rem; font:800 .85rem/1.2 inherit; cursor:pointer; }
+.btn-manage-lesson-tabs:hover { border-color:#0D9488; color:#0D9488; background:#F0FDFA; }
+.lesson-tab-manager-modal { width:min(650px, 94vw); max-height:min(760px, 92vh); overflow:auto; background:#fff; border-radius:22px; box-shadow:0 24px 70px rgba(15,23,42,.28); }
+.lesson-tab-manager-form { padding:1.2rem 1.35rem 1.35rem; }
+.lesson-tab-manager-row { display:grid; grid-template-columns:auto 42px 1fr; align-items:center; gap:.8rem; padding:.85rem; margin-bottom:.65rem; border:1px solid #E2E8F0; border-radius:14px; background:#F8FAFC; }
+.lesson-tab-manager-row.is-hidden { opacity:.68; background:#F1F5F9; }
+.lesson-tab-manager-row .tab-manager-icon { width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:#CCFBF1; color:#0F766E; }
+.lesson-tab-manager-row label { font-weight:800; color:#1E293B; }
+.lesson-tab-manager-row input[type="text"] { width:100%; border:1px solid #CBD5E1; border-radius:10px; padding:.6rem .75rem; background:#fff; font:700 .95rem/1.3 inherit; color:#1E293B; }
+.lesson-tab-manager-row input[type="text"]:disabled { background:#E2E8F0; color:#64748B; }
+.lesson-tab-manager-toggle { width:42px; height:24px; appearance:none; border-radius:20px; background:#CBD5E1; position:relative; cursor:pointer; transition:.2s; }
+.lesson-tab-manager-toggle::after { content:""; position:absolute; top:3px; right:21px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 4px #64748B66; transition:.2s; }
+.lesson-tab-manager-toggle:checked { background:#0D9488; }
+.lesson-tab-manager-toggle:checked::after { right:3px; }
+.lesson-tab-manager-actions { display:flex; justify-content:flex-end; gap:.7rem; margin-top:1rem; }
+@media (max-width:600px) {
+    .lesson-tabs-management-row { flex-direction:column; align-items:stretch; }
+    .lesson-tab-manager-row { grid-template-columns:auto 42px minmax(0,1fr); }
+    .lesson-tab-manager-actions { position:sticky; bottom:0; background:#fff; padding-top:.8rem; }
+}
+
 /* Quick question-bank import */
 .bulk-question-import-modal {
     width: min(1080px, 96vw);

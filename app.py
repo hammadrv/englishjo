@@ -248,6 +248,8 @@ def init_db():
     lesson_columns = {row['name'] for row in c.fetchall()}
     if 'content_status' not in lesson_columns:
         c.execute("ALTER TABLE lessons ADD COLUMN content_status TEXT NOT NULL DEFAULT 'published'")
+    if 'tab_settings_json' not in lesson_columns:
+        c.execute("ALTER TABLE lessons ADD COLUMN tab_settings_json TEXT DEFAULT '{}'")
 
     # Reusable bilingual editor content was added after the first database version.
     for table in ('slides', 'exercises'):
@@ -388,6 +390,7 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
                 "subtitle": l_row["subtitle"],
                 "reinforcement_type": l_row["reinforcement_type"] or "slides",
                 "content_status": l_row["content_status"] or "published",
+                "tab_settings": json.loads(l_row["tab_settings_json"] or "{}") if "tab_settings_json" in l_row.keys() else {},
                 "classroom_ids": [],
                 "slides": [],
                 "reinforcement_slides": [],
@@ -1032,6 +1035,13 @@ def update_lesson(lesson_id):
                 return jsonify({'success': False, 'message': 'حالة المحتوى غير صالحة.'}), 400
             fields.append(f"{f} = ?")
             params.append(payload[f])
+
+    if 'tab_settings' in payload:
+        if not isinstance(payload['tab_settings'], dict):
+            conn.close()
+            return jsonify({'success': False, 'message': 'إعدادات عناصر الدرس غير صالحة.'}), 400
+        fields.append('tab_settings_json = ?')
+        params.append(json.dumps(payload['tab_settings'], ensure_ascii=False))
 
     if fields:
         params.append(lesson_id)

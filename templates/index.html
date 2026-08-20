@@ -11,7 +11,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260819-preview-top2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260820-tabs-manager') }}">
 </head>
 <body class="light-theme">
 
@@ -767,6 +767,26 @@ C) has studied"></textarea>
         </div>
     </div>
 
+    <!-- MODAL: LESSON TAB VISIBILITY AND NAMES -->
+    <div id="lessonTabManagerModal" class="edit-modal-backdrop hidden">
+        <div class="lesson-tab-manager-modal">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3><i class="fa-solid fa-sliders"></i> إدارة عناصر الدرس</h3>
+                    <span class="sub-desc-span">أظهر أو أخفِ العناصر وأعد تسمية ما يظهر للطالب</span>
+                </div>
+                <button type="button" id="closeLessonTabManagerBtn" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="lessonTabManagerForm" class="lesson-tab-manager-form">
+                <div id="lessonTabManagerRows"></div>
+                <div class="lesson-tab-manager-actions">
+                    <button type="button" id="cancelLessonTabManagerBtn" class="btn-secondary">إلغاء</button>
+                    <button type="submit" class="btn-next" id="saveLessonTabManagerBtn"><i class="fa-solid fa-floppy-disk"></i> حفظ إعدادات العناصر</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL 1: PICK TEMPLATE WITH REALISTIC SMARTPHONE DEVICE MOCKUPS -->
     <div id="addSlideTemplateModal" class="edit-modal-backdrop hidden">
         <div class="template-picker-modal-container">
@@ -1323,6 +1343,6 @@ C) has studied"></textarea>
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260819-mastery-save-location') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260820-tabs-manager') }}"></script>
 </body>
 </html>

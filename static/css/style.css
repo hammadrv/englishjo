@@ -1823,6 +1823,7 @@ body.light-theme {
 }
 
 .bg-emerald { background: linear-gradient(135deg, #10B981, #059669); }
+.bg-blue { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
 .emerald-tag { background: #D1FAE5; color: #065F46; }
 .emerald-btn { background: #10B981 !important; }
 .text-emerald { color: #059669 !important; }
@@ -1875,6 +1876,20 @@ body.light-theme {
 
 .btn-select-template { background: #FFFFFF; border: 1.5px solid #CBD5E1; color: var(--text-navy); padding: 0.65rem; border-radius: 50px; font-family: inherit; font-size: 0.88rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: var(--transition); }
 .picker-card-option:hover .btn-select-template { background: #7C3AED; color: white; border-color: #7C3AED; }
+
+.cumulative-exam-template-card { border-color:#93C5FD; background:linear-gradient(145deg,#FFFFFF 0%,#EFF6FF 100%); }
+.cumulative-exam-template-card:hover { border-color:#2563EB; box-shadow:0 12px 28px rgba(37,99,235,.16); }
+.cumulative-exam-template-card .btn-select-template { background:#2563EB; color:#fff; border-color:#2563EB; }
+.cumulative-exam-template-card .btn-select-template:hover { background:#1D4ED8; border-color:#1D4ED8; }
+.picker-word-page { min-height:185px; padding:1rem .9rem; border:1px solid #CBD5E1; border-radius:8px; background:#fff; box-shadow:0 5px 12px rgba(15,23,42,.08); color:#1E293B; direction:rtl; text-align:right; }
+.picker-word-page-heading { margin-bottom:.65rem; color:#1D4ED8; font-size:1rem; font-weight:900; text-align:center; }
+.picker-word-page-meta { color:#64748B; font-size:.62rem; font-weight:700; }
+.picker-word-page-line { height:1px; margin:.65rem 0; background:#CBD5E1; }
+.picker-word-page-question { margin-bottom:.45rem; font-size:.7rem; font-weight:900; }
+.picker-word-page-option { padding:.16rem 0; color:#475569; font-size:.65rem; font-weight:700; }
+.cumulative-exam-sheet { min-height:420px; padding:1.5rem; background:#fff; border:1px solid #CBD5E1; border-radius:8px; box-shadow:0 5px 14px rgba(15,23,42,.08); color:#1E293B; direction:auto; }
+.cumulative-exam-sheet h2 { margin:0 0 1rem; color:#1D4ED8; text-align:center; }
+.cumulative-exam-sheet hr { border:0; border-top:1px solid #CBD5E1; margin:1rem 0; }
 
 .form-section-card { background: #F8FAFC; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.2rem; margin-bottom: 0.5rem; }
 .highlight-teal { border-color: #CCFBF1; background: #F0FDFA; }

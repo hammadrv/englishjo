@@ -2499,7 +2499,7 @@ function renderAccordionLessonContent(card, lessonId) {
                 </div>
 
                 <div class="seq-info-box">
-                    <div class="seq-category">${slide.welcome_badge || 'شرح قاعدة'}</div>
+                    <div class="seq-category">${slide.welcome_badge || (slide.template_type === 'cumulative_exam' ? 'اختبار تراكمي 📄' : 'شرح قاعدة')}</div>
                     <h3 class="seq-title">${slide.title_ar || slide.title_en}</h3>
                     <p class="seq-desc">${stripHtml(slide.description_ar || '')}</p>
                 </div>
@@ -3339,6 +3339,16 @@ async function createNewSlideWithTemplate(templateType) {
         newSlideData.text_editor_html = '<p>اكتب الشرح أو التعليمات هنا</p><p>Write your instructions here</p>';
         newSlideData.image = '';
         newSlideData.blocks_order = ['badge_title', 'text_editor'];
+    } else if (templateType === 'cumulative_exam') {
+        newSlideData.template_type = 'cumulative_exam';
+        newSlideData.welcome_badge = 'اختبار تراكمي 📄';
+        newSlideData.title_ar = 'اختبار تراكمي';
+        newSlideData.title_en = 'Cumulative Test';
+        newSlideData.description_ar = '';
+        newSlideData.description_en = '';
+        newSlideData.image = '';
+        newSlideData.text_editor_html = '<div class="cumulative-exam-sheet"><h2>اختبار تراكمي</h2><p>اسم الطالب: ____________________ &nbsp;&nbsp;&nbsp; التاريخ: ____________________</p><hr><p>أضف أسئلة الاختبار والخيارات هنا، سؤالاً بعد سؤال.</p><p>1. اكتب سؤال الاختبار هنا</p><p>A) الخيار الأول</p><p>B) الخيار الثاني</p><p>C) الخيار الثالث</p></div>';
+        newSlideData.blocks_order = ['text_editor'];
     }
 
     try {

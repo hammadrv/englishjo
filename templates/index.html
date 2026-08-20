@@ -11,7 +11,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260820-tabs-manager-v3') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260820-cumulative-template-v1') }}">
 </head>
 <body class="light-theme">
 
@@ -1032,6 +1032,26 @@ C) has studied"></textarea>
                     <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف قالب محرر النص</button>
                 </div>
 
+                <div class="picker-card-option cumulative-exam-template-card" data-type="cumulative_exam">
+                    <div class="card-option-header">
+                        <div class="picker-icon-box bg-blue"><i class="fa-solid fa-file-word"></i></div>
+                        <div>
+                            <h4>قالب اختبار تراكمي</h4>
+                            <p>ورقة Word واحدة للأسئلة والإجابات، بدون صور</p>
+                        </div>
+                    </div>
+                    <div class="picker-word-page">
+                        <div class="picker-word-page-heading">اختبار تراكمي</div>
+                        <div class="picker-word-page-meta">اسم الطالب: __________ &nbsp;&nbsp; التاريخ: __________</div>
+                        <div class="picker-word-page-line"></div>
+                        <div class="picker-word-page-question">1. اكتب سؤال الاختبار هنا</div>
+                        <div class="picker-word-page-option">A) الخيار الأول</div>
+                        <div class="picker-word-page-option">B) الخيار الثاني</div>
+                        <div class="picker-word-page-option">C) الخيار الثالث</div>
+                    </div>
+                    <button type="button" class="btn-select-template"><i class="fa-solid fa-plus"></i> أضف اختبار تراكمي</button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1343,6 +1363,6 @@ C) has studied"></textarea>
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js', v='20260820-tabs-manager') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='20260820-cumulative-template-v1') }}"></script>
 </body>
 </html>

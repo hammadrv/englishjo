@@ -2866,8 +2866,13 @@ textarea {
 .lesson-tabs-management-row { display:flex; align-items:center; gap:.8rem; margin-bottom:.8rem; }
 .btn-manage-lesson-tabs { border:1px solid #CBD5E1; background:#F8FAFC; color:#334155; border-radius:12px; padding:.55rem .85rem; font:800 .85rem/1.2 inherit; cursor:pointer; }
 .btn-manage-lesson-tabs:hover { border-color:#0D9488; color:#0D9488; background:#F0FDFA; }
-.lesson-tab-manager-modal { width:min(650px, 94vw); max-height:min(760px, 92vh); overflow:auto; background:#fff; border-radius:22px; box-shadow:0 24px 70px rgba(15,23,42,.28); }
-.lesson-tab-manager-form { padding:1.2rem 1.35rem 1.35rem; }
+.lesson-tab-manager-modal { width:min(860px, 94vw); max-height:min(860px, 92vh); overflow:hidden; display:flex; flex-direction:column; background:#fff; border-radius:24px; box-shadow:0 24px 70px rgba(15,23,42,.28); }
+.lesson-tab-manager-modal .modal-header { flex:0 0 auto; margin:0; padding:1.2rem 1.4rem 1.05rem; gap:1rem; background:linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 58%, #F0FDFA 100%); border-bottom:1px solid #E2E8F0; }
+.lesson-tab-manager-modal .modal-title-group { min-width:0; flex:1; width:auto; display:flex; flex-direction:column; align-items:flex-end; gap:.25rem; }
+.lesson-tab-manager-modal .modal-title-group h3 { margin:0; color:#172033; font-size:clamp(1.25rem, 2.2vw, 1.75rem); line-height:1.25; white-space:normal; }
+.lesson-tab-manager-modal .sub-desc-span { display:block; max-width:100%; color:#64748B; font-size:clamp(.78rem, 1.4vw, .98rem); line-height:1.5; text-align:right; }
+.lesson-tab-manager-modal .btn-close-modal { flex:0 0 auto; width:46px; height:46px; font-size:1.5rem; }
+.lesson-tab-manager-form { min-height:0; overflow-y:auto; padding:1.2rem 1.35rem 1.35rem; scrollbar-gutter:stable; }
 .lesson-tab-manager-row { display:grid; grid-template-columns:auto 42px 1fr; align-items:center; gap:.8rem; padding:.85rem; margin-bottom:.65rem; border:1px solid #E2E8F0; border-radius:14px; background:#F8FAFC; }
 .lesson-tab-manager-row.is-hidden { opacity:.68; background:#F1F5F9; }
 .lesson-tab-manager-row .tab-manager-icon { width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:#CCFBF1; color:#0F766E; }
@@ -2878,11 +2883,22 @@ textarea {
 .lesson-tab-manager-toggle::after { content:""; position:absolute; top:3px; right:21px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 4px #64748B66; transition:.2s; }
 .lesson-tab-manager-toggle:checked { background:#0D9488; }
 .lesson-tab-manager-toggle:checked::after { right:3px; }
-.lesson-tab-manager-actions { display:flex; justify-content:flex-end; gap:.7rem; margin-top:1rem; }
+.lesson-tab-manager-actions { position:sticky; bottom:0; z-index:2; display:flex; justify-content:flex-start; gap:.7rem; margin-top:1rem; padding:1rem 0 .1rem; border-top:1px solid #E2E8F0; background:rgba(255,255,255,.97); box-shadow:0 -8px 18px rgba(15,23,42,.05); }
+.lesson-tab-manager-actions .btn-secondary { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:.75rem 1.45rem; border:1px solid #CBD5E1; border-radius:14px; background:#F8FAFC; color:#334155; font:800 1rem/1.2 inherit; cursor:pointer; transition:.2s ease; }
+.lesson-tab-manager-actions .btn-secondary:hover { border-color:#94A3B8; background:#F1F5F9; color:#0F172A; transform:translateY(-1px); }
+.lesson-tab-manager-actions .btn-next { min-height:48px; padding:.75rem 1.45rem; border-radius:14px; }
 @media (max-width:600px) {
     .lesson-tabs-management-row { flex-direction:column; align-items:stretch; }
     .lesson-tab-manager-row { grid-template-columns:auto 42px minmax(0,1fr); }
-    .lesson-tab-manager-actions { position:sticky; bottom:0; background:#fff; padding-top:.8rem; }
+    .lesson-tab-manager-modal { width:min(560px, 96vw); max-height:calc(100svh - 1rem); border-radius:18px; }
+    .lesson-tab-manager-modal .modal-header { padding:.95rem 1rem .85rem; }
+    .lesson-tab-manager-modal .btn-close-modal { width:40px; height:40px; }
+    .lesson-tab-manager-form { padding:.85rem .85rem 1rem; }
+    .lesson-tab-manager-row { grid-template-columns:auto 42px minmax(0,1fr); gap:.55rem; padding:.7rem; }
+    .lesson-tab-manager-row label { min-width:0; }
+    .lesson-tab-manager-actions { padding-top:.8rem; }
+    .lesson-tab-manager-actions .btn-secondary,
+    .lesson-tab-manager-actions .btn-next { flex:1 1 0; min-width:0; padding-inline:.7rem; font-size:.9rem; }
 }
 
 /* Quick question-bank import */

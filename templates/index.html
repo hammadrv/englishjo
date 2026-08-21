@@ -107,6 +107,7 @@
                     <div id="studentScreenContent" class="mobile-screen-content">
                         <!-- Dynamic Ordered Blocks for Student -->
                     </div>
+                    <div id="studentLessonCustomTabs" class="student-lesson-custom-tabs hidden"></div>
 
                     <!-- Bottom Sticky Mobile Navigation -->
                     <footer class="mobile-bottom-nav">
@@ -778,6 +779,17 @@ C) has studied"></textarea>
                 <button type="button" id="closeLessonTabManagerBtn" class="btn-close-modal">&times;</button>
             </div>
             <form id="lessonTabManagerForm" class="lesson-tab-manager-form">
+                <div class="lesson-tab-manager-create">
+                    <div>
+                        <strong>إضافة تبويب جديد</strong>
+                        <span>سيظهر التبويب داخل هذا الدرس فقط.</span>
+                    </div>
+                    <div class="lesson-tab-manager-create-fields">
+                        <input id="newCustomLessonTabLabel" type="text" placeholder="اسم التبويب، مثل: مراجعة" maxlength="80">
+                        <input id="newCustomLessonTabIcon" type="text" value="fa-layer-group" dir="ltr" aria-label="أيقونة التبويب">
+                        <button type="button" id="addCustomLessonTabBtn" class="btn-next"><i class="fa-solid fa-plus"></i> إضافة</button>
+                    </div>
+                </div>
                 <div id="lessonTabManagerRows"></div>
                 <div class="lesson-tab-manager-actions">
                     <button type="button" id="cancelLessonTabManagerBtn" class="btn-secondary">إلغاء</button>

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVER="${ENGLISHJO_SERVER:-root@37.27.98.74}"
-APP_DIR="${ENGLISHJO_SERVER_DIR:-/var/www/present_simple_app}"
-SERVICE="${ENGLISHJO_SERVICE:-present_simple.service}"
+SERVER="${ENGLISHJO_SERVER:-root@37.187.205.15}"
+SSH_PORT="${ENGLISHJO_SSH_PORT:-8800}"
+APP_DIR="${ENGLISHJO_SERVER_DIR:-/home/goipmanage/englishjo}"
+SERVICE="${ENGLISHJO_SERVICE:-englishjo-goip.service}"
 BRANCH="${ENGLISHJO_BRANCH:-main}"
-HEALTH_URL="${ENGLISHJO_HEALTH_URL:-https://eng.englishjo.com/}"
+HEALTH_URL="${ENGLISHJO_HEALTH_URL:-http://37.187.205.15:5050/}"
 MESSAGE="${1:-Update EnglishJo}"
+SSH_OPTS=(-p "$SSH_PORT")
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
   git add -A
@@ -21,7 +23,7 @@ git push origin "$BRANCH"
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
-ssh "$SERVER" "set -euo pipefail
+ssh "${SSH_OPTS[@]}" "$SERVER" "set -euo pipefail
 cd '$APP_DIR'
 mkdir -p backups
 tar --exclude='./venv' --exclude='./__pycache__' --exclude='./backups' -czf \"backups/pre-deploy-$STAMP.tgz\" .
@@ -35,13 +37,14 @@ rsync -az --delete \
   --exclude 'database.db' \
   --exclude 'static/uploads/' \
   --exclude '.DS_Store' \
+  -e "ssh -p $SSH_PORT" \
   ./ "$SERVER:$APP_DIR/"
 
-ssh "$SERVER" "set -euo pipefail
+ssh "${SSH_OPTS[@]}" "$SERVER" "set -euo pipefail
 find '$APP_DIR' \
   -path '$APP_DIR/venv' -prune -o \
   -path '$APP_DIR/backups' -prune -o \
-  -exec chown presentapp:presentapp {} +
+  -exec chown nginx:nginx {} +
 '$APP_DIR/venv/bin/pip' install -r '$APP_DIR/requirements.txt'
 systemctl restart '$SERVICE'
 systemctl is-active --quiet '$SERVICE'

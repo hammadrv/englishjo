@@ -28,13 +28,23 @@ function getLessonTabSettings(lesson) {
         try { saved = JSON.parse(saved); } catch (error) { saved = {}; }
     }
     saved = saved && typeof saved === 'object' ? saved : {};
-    return Object.fromEntries(Object.entries(LESSON_TAB_DEFAULTS).map(([key, defaults]) => {
+    const settings = Object.fromEntries(Object.entries(LESSON_TAB_DEFAULTS).map(([key, defaults]) => {
         const item = saved[key] && typeof saved[key] === 'object' ? saved[key] : {};
         return [key, {
             visible: item.visible !== false,
             label: String(item.label || defaults.label).trim() || defaults.label
         }];
     }));
+    settings.customTabs = Array.isArray(saved.customTabs)
+        ? saved.customTabs.map((tab, index) => ({
+            id: String(tab.id || `custom-${index + 1}`),
+            label: String(tab.label || `تبويب مخصص ${index + 1}`).trim() || `تبويب مخصص ${index + 1}`,
+            icon: String(tab.icon || 'fa-layer-group').trim() || 'fa-layer-group',
+            visible: tab.visible !== false,
+            blocks: Array.isArray(tab.blocks) ? tab.blocks : []
+        }))
+        : [];
+    return settings;
 }
 
 let lessonTabManagerTargetLesson = null;
@@ -50,7 +60,7 @@ function openLessonTabManager(lesson) {
     if (!modal || !rows || !lesson) return;
     lessonTabManagerTargetLesson = lesson;
     const settings = getLessonTabSettings(lesson);
-    rows.innerHTML = Object.entries(LESSON_TAB_DEFAULTS).map(([key, defaults]) => {
+    const builtInRows = Object.entries(LESSON_TAB_DEFAULTS).map(([key, defaults]) => {
         const item = settings[key];
         return `<div class="lesson-tab-manager-row ${item.visible ? '' : 'is-hidden'}" data-tab-manager-key="${key}">
             <span class="tab-manager-icon"><i class="fa-solid ${defaults.icon}"></i></span>
@@ -58,8 +68,18 @@ function openLessonTabManager(lesson) {
             <label><span>${escapeHtml(defaults.description)}</span><input type="text" value="${escapeHtml(item.label)}" maxlength="80" aria-label="اسم ${escapeHtml(defaults.description)}"></label>
         </div>`;
     }).join('');
+    const customRows = settings.customTabs.map(tab => `<div class="lesson-tab-manager-row custom-tab-manager-row ${tab.visible ? '' : 'is-hidden'}" data-tab-manager-key="custom:${escapeHtml(tab.id)}" data-custom-tab-id="${escapeHtml(tab.id)}">
+        <span class="tab-manager-icon"><i class="fa-solid ${escapeHtml(tab.icon)}"></i></span>
+        <input class="lesson-tab-manager-toggle" type="checkbox" ${tab.visible ? 'checked' : ''} aria-label="إظهار ${escapeHtml(tab.label)}">
+        <label><span>${escapeHtml(tab.label)}</span><input type="text" value="${escapeHtml(tab.label)}" maxlength="80" aria-label="اسم ${escapeHtml(tab.label)}"></label>
+        <button type="button" class="btn-remove-custom-tab" aria-label="حذف ${escapeHtml(tab.label)}"><i class="fa-solid fa-trash"></i></button>
+    </div>`).join('');
+    rows.innerHTML = builtInRows + customRows;
     rows.querySelectorAll('.lesson-tab-manager-toggle').forEach(toggle => {
         toggle.addEventListener('change', () => toggle.closest('.lesson-tab-manager-row')?.classList.toggle('is-hidden', !toggle.checked));
+    });
+    rows.querySelectorAll('.btn-remove-custom-tab').forEach(button => {
+        button.addEventListener('click', () => button.closest('.custom-tab-manager-row')?.remove());
     });
     modal.classList.remove('hidden');
 }
@@ -247,7 +267,7 @@ function richTextEditorHtml(targetId, placeholder, direction = 'rtl', initialHtm
                 <button type="button" class="mini-rich-btn" data-rich-action="color" title="لون الخط"><i class="fa-solid fa-palette"></i></button>
                 <input type="color" class="mini-rich-color-input" value="#0D9488" title="اختر لون الخط" aria-label="اختر لون الخط">
                 <button type="button" class="mini-rich-btn" data-rich-action="image" title="إدراج صورة"><i class="fa-solid fa-image"></i></button>
-                <input type="file" class="mini-rich-image-input" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="اختر صورة لإدراجها">
+                <input type="file" class="mini-rich-image-input" accept="image/*,.jfif,.bmp,.avif" aria-label="اختر صورة لإدراجها">
                 <span class="mini-rich-toolbar-divider" aria-hidden="true"></span>
                 <button type="button" class="mini-rich-btn mini-rich-direction-btn" data-rich-action="direction" data-rich-direction="rtl" title="اتجاه النص: من اليمين إلى اليسار" aria-label="اتجاه النص من اليمين إلى اليسار"><i class="fa-solid fa-align-right"></i><span>RTL</span></button>
                 <button type="button" class="mini-rich-btn mini-rich-direction-btn" data-rich-action="direction" data-rich-direction="ltr" title="اتجاه النص: من اليسار إلى اليمين" aria-label="اتجاه النص من اليسار إلى اليمين"><i class="fa-solid fa-align-left"></i><span>LTR</span></button>
@@ -333,7 +353,9 @@ function initRichTextEditors(scope = document) {
             formData.append('image_file', file);
             try {
                 const response = await fetch('/api/upload_image', { method: 'POST', body: formData });
-                const data = await response.json();
+                const rawResponse = await response.text();
+                let data = {};
+                try { data = rawResponse ? JSON.parse(rawResponse) : {}; } catch (parseError) { /* handled below */ }
                 if (!response.ok || !data.success || !data.image_url) throw new Error(data.message || 'upload failed');
                 editor.focus();
                 restoreSelection();
@@ -1688,12 +1710,36 @@ C) has studied`;
 
     document.getElementById('closeLessonTabManagerBtn')?.addEventListener('click', closeLessonTabManager);
     document.getElementById('cancelLessonTabManagerBtn')?.addEventListener('click', closeLessonTabManager);
+    document.getElementById('addCustomLessonTabBtn')?.addEventListener('click', () => {
+        const labelInput = document.getElementById('newCustomLessonTabLabel');
+        const iconInput = document.getElementById('newCustomLessonTabIcon');
+        const label = String(labelInput?.value || '').trim();
+        if (!label) {
+            labelInput?.focus();
+            showToast('اكتب اسم التبويب الجديد أولاً.');
+            return;
+        }
+        const id = `custom-${Date.now()}`;
+        const row = document.createElement('div');
+        row.className = 'lesson-tab-manager-row custom-tab-manager-row';
+        row.dataset.tabManagerKey = `custom:${id}`;
+        row.dataset.customTabId = id;
+        row.innerHTML = `<span class="tab-manager-icon"><i class="fa-solid ${escapeHtml(iconInput?.value.trim() || 'fa-layer-group')}"></i></span>
+            <input class="lesson-tab-manager-toggle" type="checkbox" checked aria-label="إظهار ${escapeHtml(label)}">
+            <label><span>${escapeHtml(label)}</span><input type="text" value="${escapeHtml(label)}" maxlength="80" aria-label="اسم ${escapeHtml(label)}"></label>
+            <button type="button" class="btn-remove-custom-tab" aria-label="حذف ${escapeHtml(label)}"><i class="fa-solid fa-trash"></i></button>`;
+        row.querySelector('.lesson-tab-manager-toggle')?.addEventListener('change', event => row.classList.toggle('is-hidden', !event.target.checked));
+        row.querySelector('.btn-remove-custom-tab')?.addEventListener('click', () => row.remove());
+        document.getElementById('lessonTabManagerRows')?.appendChild(row);
+        if (labelInput) labelInput.value = '';
+        showToast('تم تجهيز التبويب الجديد، اضغط حفظ لإضافته.');
+    });
     document.getElementById('lessonTabManagerForm')?.addEventListener('submit', async event => {
         event.preventDefault();
         const lesson = lessonTabManagerTargetLesson;
         if (!lesson) return;
         const settings = {};
-        document.querySelectorAll('#lessonTabManagerRows .lesson-tab-manager-row').forEach(row => {
+        document.querySelectorAll('#lessonTabManagerRows .lesson-tab-manager-row:not(.custom-tab-manager-row)').forEach(row => {
             const key = row.dataset.tabManagerKey;
             const toggle = row.querySelector('.lesson-tab-manager-toggle');
             const input = row.querySelector('input[type="text"]');
@@ -1702,12 +1748,27 @@ C) has studied`;
                 label: String(input?.value || '').trim() || LESSON_TAB_DEFAULTS[key].label
             };
         });
-        if (!Object.values(settings).some(item => item.visible)) {
+        settings.customTabs = [...document.querySelectorAll('#lessonTabManagerRows .custom-tab-manager-row')].map(row => {
+            const id = row.dataset.customTabId;
+            const oldTab = (getLessonTabSettings(lesson).customTabs || []).find(tab => tab.id === id);
+            const toggle = row.querySelector('.lesson-tab-manager-toggle');
+            const input = row.querySelector('input[type="text"]');
+            return {
+                id,
+                label: String(input?.value || '').trim() || 'تبويب مخصص',
+                icon: oldTab?.icon || 'fa-layer-group',
+                visible: Boolean(toggle?.checked),
+                blocks: oldTab?.blocks || []
+            };
+        });
+        const hasVisibleTab = Object.entries(settings).some(([key, item]) => key === 'customTabs' ? item.some(tab => tab.visible) : item.visible);
+        if (!hasVisibleTab) {
             showToast('يجب إبقاء عنصر واحد ظاهرًا على الأقل.');
             return;
         }
         const oldSettings = getLessonTabSettings(lesson);
         const hiddenNames = Object.entries(settings)
+            .filter(([key]) => LESSON_TAB_DEFAULTS[key])
             .filter(([key, item]) => oldSettings[key].visible && !item.visible)
             .map(([key]) => settings[key].label || LESSON_TAB_DEFAULTS[key].description);
         if (hiddenNames.length && !await requestDeleteConfirmation({
@@ -2229,6 +2290,348 @@ function setupLessonDragAndDrop(container) {
     });
 }
 
+const CUSTOM_BLOCK_LABELS = {
+    heading: 'عنوان', text: 'شرح / نص', image: 'صورة', callout: 'ملاحظة', question: 'سؤال', button: 'زر', list: 'قائمة', table: 'جدول', video: 'فيديو', spacer: 'مساحة فارغة', divider: 'فاصل'
+};
+
+function customBlockDefaults(type) {
+    const defaults = {
+        heading: { text: 'عنوان جديد', subtitle: '', direction: 'ltr' },
+        text: { text: 'اكتب الشرح هنا...', direction: 'rtl' },
+        image: { url: '', alt: '' },
+        callout: { title: 'ملاحظة', text: 'اكتب الملاحظة هنا...', tone: 'mint' },
+        question: { prompt: 'Write the question here', prompt_ar: 'اكتب السؤال بالعربية هنا', options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'], option_count: 4, correct_index: 0, feedback: 'Correct!' },
+        button: { text: 'افتح النشاط', url: '#', tone: 'teal', direction: 'rtl' },
+        list: { title: 'نقاط مهمة', items: 'النقطة الأولى\nالنقطة الثانية', direction: 'rtl' },
+        table: { headers: 'العنصر | الشرح', rows: 'الكلمة | معناها\nمثال | Example', direction: 'rtl' },
+        video: { title: 'فيديو الشرح', url: '' },
+        spacer: { height: 32 },
+        divider: {}
+    };
+    return { id: `custom-block-${Date.now()}-${Math.random().toString(16).slice(2)}`, type, data: JSON.parse(JSON.stringify(defaults[type] || defaults.text)) };
+}
+
+function customField(label, html, hidden = false) { return `<label${hidden ? ' hidden' : ''}>${label}${html}</label>`; }
+
+function customBlockCard(block) {
+    const data = block.data || {};
+    const card = document.createElement('article');
+    card.className = `custom-builder-block custom-builder-block-${block.type}`;
+    card.dataset.customBlockType = block.type;
+    card.dataset.customBlockId = block.id || `custom-block-${Date.now()}`;
+    const direction = value => `<select data-custom-field="direction"><option value="ltr" ${value === 'ltr' ? 'selected' : ''}>من اليسار لليمين</option><option value="rtl" ${value === 'rtl' ? 'selected' : ''}>من اليمين لليسار</option></select>`;
+    const align = data.align || (block.type === 'image' ? 'center' : 'right');
+    const width = ['25', '50', '75', '100'].includes(String(data.width)) ? String(data.width) : '100';
+    const size = ['small', 'normal', 'large'].includes(data.size) ? data.size : 'normal';
+    const marginTop = ['0', '8', '16', '24', '40', '64'].includes(String(data.margin_top)) ? String(data.margin_top) : '0';
+    const marginBottom = ['0', '8', '16', '24', '40', '64'].includes(String(data.margin_bottom)) ? String(data.margin_bottom) : '12';
+    const layoutChoiceGroup = (field, label, current, choices) => `<div class="custom-layout-choice-group"><span>${label}</span><div class="custom-layout-choice-buttons">${choices.map(choice => `<button type="button" class="custom-layout-choice ${choice.value === current ? 'active' : ''}" data-custom-layout-choice data-custom-layout-field="${field}" data-custom-layout-value="${choice.value}" title="${choice.label}"><i class="fa-solid ${choice.icon || ''}"></i><b>${choice.label}</b></button>`).join('')}</div><input type="hidden" data-custom-field="${field}" value="${current}"></div>`;
+    const layoutControls = `<div class="custom-builder-layout-controls">${layoutChoiceGroup('align', 'مكان العنصر', align, [{ value: 'right', label: 'يمين', icon: 'fa-align-right' }, { value: 'center', label: 'وسط', icon: 'fa-align-center' }, { value: 'left', label: 'يسار', icon: 'fa-align-left' }])}<div class="custom-layout-range"><label>عرض العنصر<output data-custom-range-output="width">${width}%</output></label><input type="range" min="25" max="100" step="25" value="${width}" data-custom-field="width" data-custom-range="width"></div>${layoutChoiceGroup('size', 'حجم العنصر', size, [{ value: 'small', label: 'صغير', icon: 'fa-minus' }, { value: 'normal', label: 'طبيعي', icon: 'fa-equals' }, { value: 'large', label: 'كبير', icon: 'fa-plus' }])}${customField('مسافة قبل', `<input type="number" min="0" max="64" step="8" data-custom-field="margin_top" value="${marginTop}">`)}${customField('مسافة بعد', `<input type="number" min="0" max="64" step="8" data-custom-field="margin_bottom" value="${marginBottom}">`)}</div>`;
+    let fields = '';
+    if (block.type === 'heading') fields = `<div class="custom-builder-fields">${customField('العنوان', `<input data-custom-field="text" value="${escapeHtml(data.text || '')}">`)}${customField('العنوان الفرعي', `<input data-custom-field="subtitle" value="${escapeHtml(data.subtitle || '')}">`)}${customField('المحاذاة', direction(data.direction || 'ltr'))}</div>`;
+    if (block.type === 'text') fields = `<div class="custom-builder-fields">${customField('النص', `<textarea data-custom-field="text" rows="5">${escapeHtml(data.text || '')}</textarea>`)}${customField('اتجاه النص', direction(data.direction || 'rtl'))}</div>`;
+    if (block.type === 'image') fields = `<input type="hidden" data-custom-field="url" value="${escapeHtml(data.url || '')}"><div class="custom-builder-fields">${customField('الوصف البديل', `<input data-custom-field="alt" value="${escapeHtml(data.alt || '')}">`)}</div><div class="custom-image-upload-row"><input class="custom-image-file-input" type="file" data-custom-image-file accept="image/*,.jfif,.bmp,.avif"><button type="button" class="custom-image-upload-btn" data-custom-upload-image><i class="fa-solid fa-cloud-arrow-up"></i> اختيار صورة من الجهاز</button><span data-custom-upload-status>${data.url ? 'تم اختيار الصورة' : 'لم يتم اختيار صورة'}</span></div>`;
+    if (block.type === 'callout') fields = `<div class="custom-builder-fields">${customField('العنوان', `<input data-custom-field="title" value="${escapeHtml(data.title || '')}">`)}${customField('اللون', `<select data-custom-field="tone"><option value="mint" ${data.tone === 'mint' ? 'selected' : ''}>أخضر</option><option value="blue" ${data.tone === 'blue' ? 'selected' : ''}>أزرق</option><option value="gold" ${data.tone === 'gold' ? 'selected' : ''}>ذهبي</option></select>`)}</div>${customField('النص', `<textarea data-custom-field="text" rows="3">${escapeHtml(data.text || '')}</textarea>`)}`;
+    if (block.type === 'question') {
+        const sourceOptions = Array.isArray(data.options) ? data.options : [];
+        const optionCount = Math.min(6, Math.max(2, Number(data.option_count) || sourceOptions.length || 4));
+        const options = sourceOptions.concat(['', '', '', '', '', '']).slice(0, 6);
+        const correctIndex = Math.min(optionCount - 1, Math.max(0, Number(data.correct_index) || 0));
+        fields = `${customField('السؤال بالإنجليزية', `<input data-custom-field="prompt" value="${escapeHtml(data.prompt || '')}" dir="ltr">`)}${customField('السؤال بالعربية', `<input data-custom-field="prompt_ar" value="${escapeHtml(data.prompt_ar || '')}">`)}${customField('عدد الخيارات', `<select data-custom-field="option_count">${[2, 3, 4, 5, 6].map(count => `<option value="${count}" ${count === optionCount ? 'selected' : ''}>${count} خيارات</option>`).join('')}</select>`)}<div class="custom-builder-options">${options.map((option, index) => customField(`الخيار ${index + 1}`, `<input data-custom-field="option" data-custom-option-index="${index}" value="${escapeHtml(option)}" dir="ltr">`, index >= optionCount)).join('')}</div><div class="custom-builder-fields">${customField('الإجابة الصحيحة', `<select data-custom-field="correct_index">${[0, 1, 2, 3, 4, 5].map(index => `<option value="${index}" ${index >= optionCount ? 'hidden' : ''} ${index === correctIndex ? 'selected' : ''}>الخيار ${index + 1}</option>`).join('')}</select>`)}${customField('رسالة التصحيح', `<input data-custom-field="feedback" value="${escapeHtml(data.feedback || '')}">`)}</div>`;
+    }
+    if (block.type === 'button') fields = `<div class="custom-builder-fields">${customField('نص الزر', `<input data-custom-field="text" value="${escapeHtml(data.text || '')}">`)}${customField('الرابط', `<input data-custom-field="url" value="${escapeHtml(data.url || '')}" dir="ltr" placeholder="https://...">`)}${customField('لون الزر', `<select data-custom-field="tone"><option value="teal" ${data.tone === 'teal' ? 'selected' : ''}>أخضر</option><option value="coral" ${data.tone === 'coral' ? 'selected' : ''}>مرجاني</option><option value="blue" ${data.tone === 'blue' ? 'selected' : ''}>أزرق</option></select>`)}${customField('اتجاه النص', `<select data-custom-field="direction"><option value="rtl" ${data.direction !== 'ltr' ? 'selected' : ''}>من اليمين لليسار</option><option value="ltr" ${data.direction === 'ltr' ? 'selected' : ''}>من اليسار لليمين</option></select>`)}</div>`;
+    if (block.type === 'list') fields = `<div class="custom-builder-fields">${customField('عنوان القائمة', `<input data-custom-field="title" value="${escapeHtml(data.title || '')}">`)}${customField('اتجاه النص', `<select data-custom-field="direction"><option value="rtl" ${data.direction !== 'ltr' ? 'selected' : ''}>من اليمين لليسار</option><option value="ltr" ${data.direction === 'ltr' ? 'selected' : ''}>من اليسار لليمين</option></select>`)}</div>${customField('العناصر، كل عنصر في سطر', `<textarea data-custom-field="items" rows="5">${escapeHtml(data.items || '')}</textarea>`)}`;
+    if (block.type === 'table') fields = `<div class="custom-builder-fields">${customField('رؤوس الأعمدة، افصل بينها بـ |', `<input data-custom-field="headers" value="${escapeHtml(data.headers || '')}">`)}${customField('اتجاه الجدول', `<select data-custom-field="direction"><option value="rtl" ${data.direction !== 'ltr' ? 'selected' : ''}>من اليمين لليسار</option><option value="ltr" ${data.direction === 'ltr' ? 'selected' : ''}>من اليسار لليمين</option></select>`)}</div>${customField('الصفوف، كل صف في سطر وافصل الخلايا بـ |', `<textarea data-custom-field="rows" rows="5">${escapeHtml(data.rows || '')}</textarea>`)}`;
+    if (block.type === 'video') fields = `<div class="custom-builder-fields">${customField('عنوان الفيديو', `<input data-custom-field="title" value="${escapeHtml(data.title || '')}">`)}${customField('رابط الفيديو', `<input data-custom-field="url" value="${escapeHtml(data.url || '')}" dir="ltr" placeholder="https://www.youtube.com/embed/...">`)}</div><small class="custom-builder-help">استخدم رابط Embed من YouTube أو رابط فيديو مباشر.</small>`;
+    if (block.type === 'spacer') fields = customField('ارتفاع المساحة بالبكسل', `<input type="number" min="8" max="240" step="4" data-custom-field="height" value="${Math.min(240, Math.max(8, Number(data.height) || 32))}">`);
+    card.innerHTML = `<div class="custom-builder-block-head"><strong><i class="fa-solid fa-grip-vertical"></i> ${CUSTOM_BLOCK_LABELS[block.type]}</strong><span><button type="button" data-custom-move-up aria-label="تحريك لأعلى"><i class="fa-solid fa-arrow-up"></i></button><button type="button" data-custom-move-down aria-label="تحريك لأسفل"><i class="fa-solid fa-arrow-down"></i></button><button type="button" data-custom-remove aria-label="حذف العنصر"><i class="fa-solid fa-trash"></i></button></span></div>${layoutControls}${fields}`;
+    return card;
+}
+
+function readCustomBlock(card) {
+    const data = {};
+    card.querySelectorAll('[data-custom-field]').forEach(field => { if (field.dataset.customField !== 'option') data[field.dataset.customField] = field.value; });
+    if (card.dataset.customBlockType === 'question') {
+        const optionFields = [...card.querySelectorAll('[data-custom-field="option"]')].filter(field => !field.closest('label')?.hidden);
+        data.options = optionFields.map(field => field.value);
+        data.option_count = data.options.length;
+        data.correct_index = Math.min(Math.max(0, data.option_count - 1), Number(data.correct_index || 0));
+    }
+    return { id: card.dataset.customBlockId, type: card.dataset.customBlockType, data };
+}
+
+function updateCustomQuestionOptionCount(block, value) {
+    const count = Math.min(6, Math.max(2, Number(value) || 4));
+    block.querySelectorAll('[data-custom-field="option"]').forEach(field => {
+        const index = Number(field.dataset.customOptionIndex);
+        const label = field.closest('label');
+        if (label) label.hidden = index >= count;
+    });
+    const correctSelect = block.querySelector('[data-custom-field="correct_index"]');
+    if (correctSelect) {
+        [...correctSelect.options].forEach(option => { option.hidden = Number(option.value) >= count; });
+        if (Number(correctSelect.value) >= count) correctSelect.value = String(count - 1);
+    }
+}
+
+async function uploadCustomImage(block, file) {
+    if (!block || !file) return;
+    const status = block.querySelector('[data-custom-upload-status]');
+    const button = block.querySelector('[data-custom-upload-image]');
+    const urlInput = block.querySelector('[data-custom-field="url"]');
+    const preview = block.querySelector('[data-custom-image-preview]');
+    const originalText = button?.innerHTML || '';
+    if (button) { button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الرفع...'; }
+    if (status) status.textContent = 'جارٍ رفع الصورة...';
+    try {
+        const formData = new FormData();
+        formData.append('image_file', file);
+        const response = await fetch('/api/upload_image', { method: 'POST', body: formData });
+        const rawResponse = await response.text();
+        let result = {};
+        try { result = rawResponse ? JSON.parse(rawResponse) : {}; } catch (parseError) { /* handled below */ }
+        if (!response.ok || !result.success) throw new Error(result.message || 'تعذر رفع الصورة');
+        urlInput.value = result.image_url;
+        if (preview) preview.innerHTML = `<img src="${escapeHtml(result.image_url)}" alt="">`;
+        if (status) status.textContent = 'تم رفع الصورة بنجاح';
+        const builder = block.closest('[data-custom-tab-builder]');
+        if (builder) builder._customBlocks = [...builder.querySelectorAll('[data-custom-block-id]')].map(readCustomBlock);
+    } catch (error) {
+        if (status) status.textContent = error.message || 'تعذر رفع الصورة';
+        showToast(error.message || 'تعذر رفع الصورة');
+    } finally {
+        if (button) { button.disabled = false; button.innerHTML = originalText; }
+    }
+}
+
+function customPreviewUrl(value, allowHash = false) {
+    const url = String(value || '').trim();
+    const pattern = allowHash ? /^(https?:\/\/|\/|#)/i : /^(https?:\/\/|\/)/i;
+    return pattern.test(url) ? url : '';
+}
+
+function customBlockFrame(block, content) {
+    if (!content) return '';
+    const data = block.data || {};
+    const align = ['left', 'center', 'right'].includes(data.align) ? data.align : (block.type === 'image' ? 'center' : 'right');
+    const width = ['25', '50', '75', '100'].includes(String(data.width)) ? String(data.width) : '100';
+    const size = ['small', 'normal', 'large'].includes(data.size) ? data.size : 'normal';
+    const marginTop = Math.min(64, Math.max(0, Number(data.margin_top) || 0));
+    const marginBottom = Math.min(64, Math.max(0, Number(data.margin_bottom) || 12));
+    return `<div class="student-custom-block-frame custom-block-align-${align} custom-block-width-${width} custom-block-size-${size}" style="margin-top:${marginTop}px;margin-bottom:${marginBottom}px">${content}</div>`;
+}
+
+function renderCustomBlockInner(block) {
+    const data = block.data || {};
+    if (block.type === 'heading') return `<header class="student-custom-heading" dir="${data.direction === 'rtl' ? 'rtl' : 'ltr'}"><h1>${escapeHtml(data.text || '')}</h1>${data.subtitle ? `<p>${escapeHtml(data.subtitle)}</p>` : ''}</header>`;
+    if (block.type === 'text') return `<div class="student-custom-text" dir="${data.direction === 'rtl' ? 'rtl' : 'ltr'}">${escapeHtml(data.text || '').replace(/\n/g, '<br>')}</div>`;
+    if (block.type === 'image') return data.url ? `<figure class="student-custom-image"><img src="${escapeHtml(data.url)}" alt="${escapeHtml(data.alt || '')}"></figure>` : '';
+    if (block.type === 'callout') return `<aside class="student-custom-callout tone-${escapeHtml(data.tone || 'mint')}" dir="auto">${data.title ? `<strong>${escapeHtml(data.title)}</strong>` : ''}${data.text ? `<p>${escapeHtml(data.text).replace(/\n/g, '<br>')}</p>` : ''}</aside>`;
+    if (block.type === 'divider') return '<hr class="student-custom-divider">';
+    if (block.type === 'question') return `<article class="student-custom-question" data-custom-preview-question data-correct-index="${Number(data.correct_index || 0)}"><span class="meta-badge teal">سؤال تفاعلي</span><h3 dir="ltr">${escapeHtml(data.prompt || '')}</h3>${data.prompt_ar ? `<p>${escapeHtml(data.prompt_ar)}</p>` : ''}<div class="student-custom-options">${(data.options || []).map((option, index) => `<button type="button" data-custom-answer-index="${index}">${escapeHtml(option)}</button>`).join('')}</div><div class="student-custom-feedback">${escapeHtml(data.feedback || '')}</div></article>`;
+    if (block.type === 'button') return `<div class="student-custom-button-wrap" dir="${data.direction === 'ltr' ? 'ltr' : 'rtl'}"><a class="student-custom-button tone-${escapeHtml(data.tone || 'teal')}" href="${escapeHtml(customPreviewUrl(data.url, true) || '#')}" target="_blank" rel="noopener">${escapeHtml(data.text || 'افتح النشاط')} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></div>`;
+    if (block.type === 'list') return `<section class="student-custom-list" dir="${data.direction === 'ltr' ? 'ltr' : 'rtl'}">${data.title ? `<h3>${escapeHtml(data.title)}</h3>` : ''}<ul>${String(data.items || '').split(/\r?\n/).filter(item => item.trim()).map(item => `<li>${escapeHtml(item.trim())}</li>`).join('')}</ul></section>`;
+    if (block.type === 'table') {
+        const headers = String(data.headers || '').split('|').map(item => item.trim()).filter(Boolean);
+        const rows = String(data.rows || '').split(/\r?\n/).map(row => row.split('|').map(item => item.trim())).filter(row => row.some(Boolean));
+        return `<div class="student-custom-table-wrap" dir="${data.direction === 'ltr' ? 'ltr' : 'rtl'}"><table class="student-custom-table"><thead><tr>${headers.map(header => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map((_, index) => `<td>${escapeHtml(row[index] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    if (block.type === 'video') {
+        const videoUrl = customPreviewUrl(data.url);
+        return `<section class="student-custom-video">${data.title ? `<h3>${escapeHtml(data.title)}</h3>` : ''}${videoUrl ? `<div class="student-custom-video-frame"><iframe src="${escapeHtml(videoUrl)}" title="${escapeHtml(data.title || 'فيديو الشرح')}" loading="lazy" allowfullscreen></iframe></div>` : '<div class="student-custom-video-empty"><i class="fa-solid fa-video"></i><span>أضف رابط الفيديو لعرضه هنا</span></div>'}</section>`;
+    }
+    if (block.type === 'spacer') return `<div class="student-custom-spacer" style="height:${Math.min(240, Math.max(8, Number(data.height) || 32))}px" aria-hidden="true"></div>`;
+    return '';
+}
+
+function renderCustomBlocksHtml(blocks) {
+    return (Array.isArray(blocks) ? blocks : []).map(block => customBlockFrame(block, renderCustomBlockInner(block))).join('');
+}
+
+function bindCustomPreviewQuestions(container) {
+    container?.querySelectorAll('[data-custom-preview-question]').forEach(question => question.querySelectorAll('[data-custom-answer-index]').forEach(button => button.addEventListener('click', () => {
+        const correct = Number(question.dataset.correctIndex);
+        const selected = Number(button.dataset.customAnswerIndex);
+        question.classList.add('answered');
+        button.classList.add(selected === correct ? 'correct' : 'wrong');
+        question.querySelector(`[data-custom-answer-index="${correct}"]`)?.classList.add('correct');
+    })));
+}
+
+function renderCustomBuilderPreview(builder) {
+    const preview = builder.querySelector('[data-custom-builder-preview]');
+    if (!preview) return;
+    const blocks = builder._customBlocks || [];
+    preview.innerHTML = blocks.length ? renderCustomBlocksHtml(blocks) : '<div class="custom-builder-preview-empty"><i class="fa-solid fa-mobile-screen-button"></i><strong>المعاينة ستظهر هنا</strong><span>أضف عنصرًا إلى الصفحة لترى شكله على الهاتف.</span></div>';
+    bindCustomPreviewQuestions(preview);
+}
+
+function renderStudentLessonCustomTabs(lesson, activeTabId = 'exp') {
+    const tabsContainer = document.getElementById('studentLessonCustomTabs');
+    if (!tabsContainer || !lesson) return;
+    const settings = getLessonTabSettings(lesson);
+    const visibleTabs = settings.customTabs.filter(tab => tab.visible);
+    if (!visibleTabs.length) {
+        tabsContainer.innerHTML = '';
+        tabsContainer.classList.add('hidden');
+        return;
+    }
+
+    tabsContainer.innerHTML = `<div class="student-custom-tab-nav" role="tablist">
+        <button type="button" class="student-custom-tab-btn ${activeTabId === 'exp' ? 'active' : ''}" data-student-tab-id="exp"><i class="fa-solid fa-book-open"></i> ${escapeHtml(settings.exp.label)}</button>
+        ${visibleTabs.map(tab => `<button type="button" class="student-custom-tab-btn ${tab.id === activeTabId ? 'active' : ''}" data-student-tab-id="${escapeHtml(tab.id)}"><i class="fa-solid ${escapeHtml(tab.icon)}"></i> ${escapeHtml(tab.label)}</button>`).join('')}
+    </div>`;
+    tabsContainer.classList.remove('hidden');
+
+    tabsContainer.querySelectorAll('[data-student-tab-id]').forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.studentTabId;
+            if (tabId === 'exp') {
+                tabsContainer.querySelectorAll('[data-student-tab-id]').forEach(item => item.classList.toggle('active', item === button));
+                document.querySelector('#explanationStageContent .mobile-bottom-nav')?.classList.remove('hidden');
+                currentIndex = 0;
+                renderCurrentSlide();
+                return;
+            }
+            const tab = visibleTabs.find(item => item.id === tabId);
+            if (tab) showCustomTabPreview(lesson, tab.id, tab.blocks);
+        });
+    });
+}
+
+function setupCustomTabBuilders(card) {
+    card.querySelectorAll('[data-custom-tab-builder]').forEach(builder => {
+        if (builder.dataset.ready === 'true') return;
+        builder.dataset.ready = 'true';
+        const canvas = builder.querySelector('[data-custom-builder-canvas]');
+        const empty = builder.querySelector('.custom-builder-empty');
+        const tabId = builder.dataset.tabId;
+        let blocks = [];
+        try { blocks = JSON.parse(builder.dataset.initialBlocks || '[]'); } catch (error) { blocks = []; }
+
+        const sync = () => {
+            blocks = [...canvas.querySelectorAll('[data-custom-block-id]')].map(readCustomBlock);
+            builder._customBlocks = blocks;
+            empty?.classList.toggle('hidden', blocks.length > 0);
+            renderCustomBuilderPreview(builder);
+        };
+        const setBlocks = nextBlocks => {
+            canvas.querySelectorAll('[data-custom-block-id]').forEach(item => item.remove());
+            (Array.isArray(nextBlocks) ? nextBlocks : []).forEach(block => canvas.appendChild(customBlockCard(block)));
+            sync();
+        };
+        const addBlock = (type, before = null) => {
+            const block = customBlockCard(customBlockDefaults(type));
+            if (before) canvas.insertBefore(block, before); else canvas.appendChild(block);
+            sync();
+            block.querySelector('textarea, input:not([type="hidden"]), select')?.focus();
+        };
+        setBlocks(blocks);
+
+        builder.querySelectorAll('[data-custom-block-type]').forEach(button => {
+            button.addEventListener('click', () => addBlock(button.dataset.customBlockType));
+            button.addEventListener('dragstart', event => { event.dataTransfer.setData('text/custom-block-type', button.dataset.customBlockType); event.dataTransfer.effectAllowed = 'copy'; });
+        });
+        canvas.addEventListener('dragover', event => event.preventDefault());
+        canvas.addEventListener('drop', event => { event.preventDefault(); const type = event.dataTransfer.getData('text/custom-block-type'); if (type) addBlock(type, event.target.closest('[data-custom-block-id]')); });
+        canvas.addEventListener('input', event => {
+            const range = event.target.closest('[data-custom-range]');
+            if (range) {
+                const output = range.closest('.custom-layout-range')?.querySelector(`[data-custom-range-output="${range.dataset.customRange}"]`);
+                if (output) output.textContent = `${range.value}%`;
+            }
+            sync();
+        });
+        canvas.addEventListener('change', async event => {
+            const optionCount = event.target.closest('[data-custom-field="option_count"]');
+            if (optionCount) {
+                updateCustomQuestionOptionCount(optionCount.closest('[data-custom-block-id]'), optionCount.value);
+                sync();
+                return;
+            }
+            const fileInput = event.target.closest('[data-custom-image-file]');
+            if (fileInput?.files?.[0]) {
+                await uploadCustomImage(fileInput.closest('[data-custom-block-id]'), fileInput.files[0]);
+                sync();
+                fileInput.value = '';
+                return;
+            }
+            sync();
+        });
+        canvas.addEventListener('click', event => {
+            const block = event.target.closest('[data-custom-block-id]');
+            if (!block) return;
+            const layoutChoice = event.target.closest('[data-custom-layout-choice]');
+            if (layoutChoice) {
+                const field = layoutChoice.dataset.customLayoutField;
+                const value = layoutChoice.dataset.customLayoutValue;
+                const hiddenField = block.querySelector(`[data-custom-field="${field}"]`);
+                if (hiddenField) hiddenField.value = value;
+                block.querySelectorAll(`[data-custom-layout-choice][data-custom-layout-field="${field}"]`).forEach(choice => choice.classList.toggle('active', choice === layoutChoice));
+                sync();
+                return;
+            }
+            if (event.target.closest('[data-custom-upload-image]')) {
+                block.querySelector('[data-custom-image-file]')?.click();
+                return;
+            }
+            if (event.target.closest('[data-custom-remove]')) block.remove();
+            if (event.target.closest('[data-custom-move-up]') && block.previousElementSibling) canvas.insertBefore(block, block.previousElementSibling);
+            if (event.target.closest('[data-custom-move-down]') && block.nextElementSibling) canvas.insertBefore(block.nextElementSibling, block);
+            sync();
+        });
+
+        const templateSelect = builder.querySelector('[data-custom-template-select]');
+        fetch('/api/custom_templates').then(response => response.json()).then(data => {
+            (data.custom_templates || []).filter(template => template.category === 'lesson').forEach(template => {
+                const option = document.createElement('option'); option.value = template.id; option.textContent = template.name; option.dataset.blocks = JSON.stringify(template.data?.blocks || []); templateSelect?.appendChild(option);
+            });
+        }).catch(() => {});
+        builder.querySelector('[data-load-custom-template]')?.addEventListener('click', () => { const option = templateSelect?.selectedOptions[0]; if (!option?.dataset.blocks) return; try { setBlocks(JSON.parse(option.dataset.blocks)); } catch (error) { showToast('تعذر تحميل القالب.'); } });
+        builder.querySelector('[data-save-custom-template]')?.addEventListener('click', async () => {
+            sync();
+            const nameInput = builder.querySelector('[data-custom-template-name]');
+            const name = String(nameInput?.value || '').trim();
+            if (!name) { nameInput?.focus(); showToast('اكتب اسم القالب أولاً.'); return; }
+            const response = await fetch('/api/custom_templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, category: 'lesson', icon: '⭐', data: { blocks } }) });
+            const result = await response.json();
+            if (!response.ok || !result.success) { showToast(result.message || 'تعذر حفظ القالب.'); return; }
+            nameInput.value = ''; showToast('تم حفظ القالب ضمن قوالبك.');
+        });
+        builder.querySelector('[data-save-custom-tab]')?.addEventListener('click', async () => {
+            sync();
+            const lesson = currentUnit?.lessons?.find(item => item.id === Number(card.dataset.lessonId));
+            if (!lesson) return;
+            const settings = getLessonTabSettings(lesson);
+            const tab = settings.customTabs.find(item => item.id === tabId);
+            if (!tab) return;
+            tab.blocks = blocks;
+            const response = await fetch(`/api/lessons/${lesson.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tab_settings: { ...settings, customTabs: settings.customTabs } }) });
+            const result = await response.json();
+            if (!response.ok || !result.success) { showToast(result.message || 'تعذر حفظ التبويب.'); return; }
+            syncCurriculumState(result.curriculum, lesson.id); renderUnitLessonsList(); showToast('تم حفظ محتوى التبويب بنجاح.');
+        });
+        builder.closest('[data-tab-panel]')?.querySelector('[data-preview-custom-tab], .btn-preview-custom-tab')?.addEventListener('click', () => showCustomTabPreview(currentUnit?.lessons?.find(item => item.id === Number(card.dataset.lessonId)), tabId, blocks));
+    });
+}
+
+function showCustomTabPreview(lesson, tabId, blocks) {
+    if (!lesson) return;
+    currentLesson = lesson;
+    const presentationView = document.getElementById('presentationView');
+    const studioView = document.getElementById('studioView');
+    presentationView?.classList.add('active'); studioView?.classList.remove('active');
+    document.getElementById('studentDashboardScreen')?.classList.add('hidden');
+    document.getElementById('exerciseStageContent')?.classList.add('hidden');
+    document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
+    document.getElementById('explanationStageContent')?.classList.remove('hidden');
+    const screen = document.getElementById('studentScreenContent');
+    renderStudentLessonCustomTabs(lesson, tabId);
+    if (screen) screen.innerHTML = `<div class="student-custom-tab-preview"><span class="welcome-badge">${escapeHtml((lesson.tab_settings?.customTabs || []).find(tab => tab.id === tabId)?.label || 'تبويب مخصص')}</span>${renderCustomBlocksHtml(blocks)}</div>`;
+    document.querySelector('#explanationStageContent .mobile-bottom-nav')?.classList.add('hidden');
+    screen?.querySelectorAll('[data-custom-preview-question]').forEach(question => question.querySelectorAll('[data-custom-answer-index]').forEach(button => button.addEventListener('click', () => { const correct = Number(question.dataset.correctIndex); const selected = Number(button.dataset.customAnswerIndex); question.classList.add('answered'); button.classList.add(selected === correct ? 'correct' : 'wrong'); question.querySelector(`[data-custom-answer-index="${correct}"]`)?.classList.add('correct'); })));
+}
+
 function renderUnitLessonsList() {
     const container = document.getElementById('unitLessonsList');
     if (!container || !currentUnit || !currentUnit.lessons) return;
@@ -2242,6 +2645,51 @@ function renderUnitLessonsList() {
         const tabButton = (key) => tabSettings[key].visible
             ? `<button class="studio-tab-btn ${key === 'exp' ? 'active' : ''}" data-tab-target="${key}" style="flex: 1; margin: 0;"><i class="fa-solid ${LESSON_TAB_DEFAULTS[key].icon}"></i> ${escapeHtml(tabSettings[key].label)}</button>`
             : '';
+        const customTabs = tabSettings.customTabs || [];
+        const customTabButtons = customTabs.filter(tab => tab.visible).map(tab => `<button class="studio-tab-btn" data-tab-target="${escapeHtml(tab.id)}" style="flex: 1; margin: 0;"><i class="fa-solid ${escapeHtml(tab.icon)}"></i> ${escapeHtml(tab.label)}</button>`).join('');
+        const customTabPanels = customTabs.map(tab => `<div class="tab-panel-custom tab-content-panel hidden" data-tab-panel="${escapeHtml(tab.id)}">
+                    <div class="custom-tab-panel-header">
+                        <div><span class="sub-badge-teal">تبويب مخصص</span><h4 class="tab-explanation-title">${escapeHtml(tab.label)}</h4><p class="tab-explanation-sub">ابنِ صفحة هذا التبويب بالسحب والإفلات، ثم احفظها للطالب.</p></div>
+                        <button type="button" class="btn-preview-mobile btn-preview-custom-tab" data-custom-tab-id="${escapeHtml(tab.id)}"><i class="fa-solid fa-mobile-screen-button"></i> معاينة الطالب</button>
+                    </div>
+                    <div class="custom-tab-builder" data-custom-tab-builder data-tab-id="${escapeHtml(tab.id)}" data-initial-blocks="${escapeHtml(JSON.stringify(tab.blocks || []))}">
+                        <div class="custom-builder-workspace">
+                            <section class="custom-builder-preview-pane">
+                                <div class="custom-builder-pane-heading"><strong><i class="fa-solid fa-mobile-screen-button"></i> معاينة الهاتف</strong><span>تتحدث مباشرة مع كل تعديل.</span></div>
+                                <div class="custom-builder-phone">
+                                    <div class="custom-builder-phone-status"><span>9:41</span><i class="fa-solid fa-signal"></i><i class="fa-solid fa-wifi"></i><i class="fa-solid fa-battery-three-quarters"></i></div>
+                                    <div class="custom-builder-phone-screen" data-custom-builder-preview><div class="custom-builder-preview-empty"><i class="fa-solid fa-mobile-screen-button"></i><strong>المعاينة ستظهر هنا</strong><span>أضف عنصرًا إلى الصفحة لترى شكله على الهاتف.</span></div></div>
+                                </div>
+                            </section>
+                            <section class="custom-builder-editor-pane">
+                                <div class="custom-builder-pane-heading"><strong><i class="fa-solid fa-layer-group"></i> بناء الصفحة</strong><span>اضغط أو اسحب العناصر إلى مساحة العمل.</span></div>
+                                <div class="custom-builder-layout">
+                                    <aside class="custom-builder-palette">
+                                        <button type="button" draggable="true" data-custom-block-type="heading"><i class="fa-solid fa-heading"></i> عنوان</button>
+                                        <button type="button" draggable="true" data-custom-block-type="text"><i class="fa-solid fa-align-left"></i> شرح / نص</button>
+                                        <button type="button" draggable="true" data-custom-block-type="image"><i class="fa-solid fa-image"></i> صورة</button>
+                                        <button type="button" draggable="true" data-custom-block-type="callout"><i class="fa-solid fa-lightbulb"></i> ملاحظة</button>
+                                        <button type="button" draggable="true" data-custom-block-type="question"><i class="fa-solid fa-circle-question"></i> سؤال</button>
+                                        <button type="button" draggable="true" data-custom-block-type="button"><i class="fa-solid fa-link"></i> زر</button>
+                                        <button type="button" draggable="true" data-custom-block-type="list"><i class="fa-solid fa-list"></i> قائمة</button>
+                                        <button type="button" draggable="true" data-custom-block-type="table"><i class="fa-solid fa-table"></i> جدول</button>
+                                        <button type="button" draggable="true" data-custom-block-type="video"><i class="fa-solid fa-video"></i> فيديو</button>
+                                        <button type="button" draggable="true" data-custom-block-type="spacer"><i class="fa-solid fa-arrows-up-down"></i> مساحة</button>
+                                        <button type="button" draggable="true" data-custom-block-type="divider"><i class="fa-solid fa-minus"></i> فاصل</button>
+                                    </aside>
+                                    <div class="custom-builder-canvas" data-custom-builder-canvas><div class="custom-builder-empty"><i class="fa-solid fa-hand-pointer"></i><strong>صفحة فارغة</strong><span>اسحب العناصر هنا أو اضغط على عنصر لإضافته</span></div></div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="custom-builder-footer">
+                            <select data-custom-template-select><option value="">تحميل قالب من قوالبي...</option></select>
+                            <button type="button" class="btn-secondary" data-load-custom-template><i class="fa-solid fa-file-import"></i> استخدام القالب</button>
+                            <input type="text" data-custom-template-name placeholder="اسم القالب الجديد">
+                            <button type="button" class="btn-secondary" data-save-custom-template><i class="fa-solid fa-bookmark"></i> حفظ كقالب</button>
+                            <button type="button" class="btn-next" data-save-custom-tab><i class="fa-solid fa-floppy-disk"></i> حفظ التبويب</button>
+                        </div>
+                    </div>
+                </div>`).join('');
         const numStr = String(lIdx + 1).padStart(2, '0');
         const card = document.createElement('div');
         card.className = `lesson-manager-card ${lesson.id === expandedLessonId ? 'expanded' : ''}`;
@@ -2280,11 +2728,11 @@ function renderUnitLessonsList() {
                 <div class="studio-accordion-top-bar lesson-tabs-management-row">
                     <button type="button" class="btn-manage-lesson-tabs"><i class="fa-solid fa-sliders"></i> إدارة العناصر</button>
                     <div class="studio-accordion-tabs" style="display: flex; flex-direction: row; gap: 0.6rem; background: #F1F5F9; border: 1.5px solid #CBD5E1; padding: 6px; border-radius: 18px; width: 100%;">
-                        ${tabButton('exp')}${tabButton('prac')}${tabButton('reinf')}${tabButton('exam')}${tabButton('ministry')}
+                        ${tabButton('exp')}${tabButton('prac')}${tabButton('reinf')}${tabButton('exam')}${tabButton('ministry')}${customTabButtons}
                     </div>
                 </div>
 
-                <div class="tab-panel-exp ${tabSettings.exp.visible ? 'active' : 'hidden'}">
+                <div class="tab-panel-exp ${tabSettings.exp.visible ? 'active' : 'hidden'}" data-tab-panel="exp">
                     <div class="tab-header-box">
                         <div>
                             <h4 class="tab-explanation-title">تسلسل شرائح الشرح في الدرس</h4>
@@ -2297,7 +2745,7 @@ function renderUnitLessonsList() {
                     <div class="slides-sequence-list"></div>
                 </div>
 
-                <div class="tab-panel-prac ${tabSettings.prac.visible ? 'hidden' : 'hidden'}">
+                <div class="tab-panel-prac ${tabSettings.prac.visible ? 'hidden' : 'hidden'}" data-tab-panel="prac">
                     <div class="tab-header-box">
                         <div>
                             <h4 class="tab-explanation-title">بيانات التمرين التفاعلي للدرس</h4>
@@ -2310,7 +2758,7 @@ function renderUnitLessonsList() {
                     <div class="studio-exercise-summary-card"></div>
                 </div>
 
-                <div class="tab-panel-reinf ${tabSettings.reinf.visible ? 'hidden' : 'hidden'}">
+                <div class="tab-panel-reinf ${tabSettings.reinf.visible ? 'hidden' : 'hidden'}" data-tab-panel="reinf">
                     <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <span class="sub-badge-teal" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">⚡ مرحلة التقوية بالدرس</span>
@@ -2325,7 +2773,7 @@ function renderUnitLessonsList() {
                     <div class="studio-reinforcement-summary-card" style="margin-top: 1.5rem;"></div>
                 </div>
 
-                <div class="tab-panel-exam ${tabSettings.exam.visible ? 'hidden' : 'hidden'}">
+                <div class="tab-panel-exam ${tabSettings.exam.visible ? 'hidden' : 'hidden'}" data-tab-panel="exam">
                     <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <span class="sub-badge-teal" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">📝 الاختبار النهائي لتقييم الإتقان</span>
@@ -2336,7 +2784,7 @@ function renderUnitLessonsList() {
                     <div class="studio-exam-summary-card" style="margin-top: 1.5rem;"></div>
                 </div>
 
-                <div class="tab-panel-ministry ${tabSettings.ministry.visible ? 'hidden' : 'hidden'}">
+                <div class="tab-panel-ministry ${tabSettings.ministry.visible ? 'hidden' : 'hidden'}" data-tab-panel="ministry">
                     <div class="tab-header-box" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <span class="sub-badge-teal" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #93C5FD;">📄 ورقة عمل وزارية</span>
@@ -2346,6 +2794,7 @@ function renderUnitLessonsList() {
                     </div>
                     <div class="studio-ministry-summary-card" style="margin-top: 1.5rem;"></div>
                 </div>
+                ${customTabPanels}
             </div>
         `;
 
@@ -2384,43 +2833,11 @@ function renderUnitLessonsList() {
                 btn.classList.add('active');
 
                 const target = btn.dataset.tabTarget;
-                const expPanel = card.querySelector('.tab-panel-exp');
-                const pracPanel = card.querySelector('.tab-panel-prac');
-                const reinfPanel = card.querySelector('.tab-panel-reinf');
-                const examPanel = card.querySelector('.tab-panel-exam');
-                const ministryPanel = card.querySelector('.tab-panel-ministry');
-
-                if (target === 'exp') {
-                    if (expPanel) { expPanel.classList.remove('hidden'); expPanel.classList.add('active'); }
-                    if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
-                    if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
-                    if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
-                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
-                } else if (target === 'prac') {
-                    if (pracPanel) { pracPanel.classList.remove('hidden'); pracPanel.classList.add('active'); }
-                    if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
-                    if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
-                    if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
-                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
-                } else if (target === 'reinf') {
-                    if (reinfPanel) { reinfPanel.classList.remove('hidden'); reinfPanel.classList.add('active'); }
-                    if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
-                    if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
-                    if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
-                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
-                } else if (target === 'exam') {
-                    if (examPanel) { examPanel.classList.remove('hidden'); examPanel.classList.add('active'); }
-                    if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
-                    if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
-                    if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
-                    if (ministryPanel) { ministryPanel.classList.add('hidden'); ministryPanel.classList.remove('active'); }
-                } else if (target === 'ministry') {
-                    if (ministryPanel) { ministryPanel.classList.remove('hidden'); ministryPanel.classList.add('active'); }
-                    if (expPanel) { expPanel.classList.add('hidden'); expPanel.classList.remove('active'); }
-                    if (pracPanel) { pracPanel.classList.add('hidden'); pracPanel.classList.remove('active'); }
-                    if (reinfPanel) { reinfPanel.classList.add('hidden'); reinfPanel.classList.remove('active'); }
-                    if (examPanel) { examPanel.classList.add('hidden'); examPanel.classList.remove('active'); }
-                }
+                card.querySelectorAll('[data-tab-panel]').forEach(panel => {
+                    const active = panel.dataset.tabPanel === target;
+                    panel.classList.toggle('hidden', !active);
+                    panel.classList.toggle('active', active);
+                });
             });
         });
 
@@ -2452,6 +2869,8 @@ function renderUnitLessonsList() {
             currentExercise = lesson.exercise;
             renderAccordionLessonContent(card, lesson.id);
         }
+
+        setupCustomTabBuilders(card);
     });
 
     const newAddRow = document.createElement('div');
@@ -3398,6 +3817,8 @@ function showStudentDashboard() {
     document.getElementById('exerciseStageContent').classList.add('hidden');
     document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
     document.getElementById('exerciseTrialResultScreen')?.classList.add('hidden');
+    document.getElementById('studentLessonCustomTabs')?.classList.add('hidden');
+    document.querySelector('#explanationStageContent .mobile-bottom-nav')?.classList.remove('hidden');
 }
 
 // Open Specific Lesson from Student Dashboard
@@ -3415,6 +3836,8 @@ function openLesson(lessonId) {
         document.getElementById('textQuiz5StageContent')?.classList.add('hidden');
         document.getElementById('exerciseTrialResultScreen')?.classList.add('hidden');
         document.getElementById('explanationStageContent').classList.remove('hidden');
+        document.querySelector('#explanationStageContent .mobile-bottom-nav')?.classList.remove('hidden');
+        renderStudentLessonCustomTabs(currentLesson, 'exp');
         renderCurrentSlide();
     }
 }
@@ -3870,7 +4293,7 @@ function renderDynamicBlockEditors(preserveCurrentFormState = true) {
                         <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; margin-bottom: 0.3rem;"></i><br>
                         انقر هنا لاختيار صورة من جهاز الكمبيوتر الخاص بك
                     </label>
-                    <input type="file" id="formSlideFileUpload" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;" onchange="uploadSlideImageFromPC(this)">
+                    <input type="file" id="formSlideFileUpload" accept="image/*,.jfif,.bmp,.avif" style="display: none;" onchange="uploadSlideImageFromPC(this)">
                     <span id="slideUploadStatusText" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-top: 0.3rem; display: block;">صيغ مدعومة: JPG, PNG, WEBP, GIF</span>
                 </div>
                 <div id="customUrlContainer" class="form-group hidden">
@@ -3983,7 +4406,7 @@ function renderDynamicBlockEditors(preserveCurrentFormState = true) {
                             </select>
                         </div>
                         <div class="form-group hidden" id="slideUploadGroup" style="margin:0; flex:1;">
-                            <input type="file" id="formSlideFileUpload" accept="image/*" onchange="uploadSlideImageFromPC(this)">
+                            <input type="file" id="formSlideFileUpload" accept="image/*,.jfif,.bmp,.avif" onchange="uploadSlideImageFromPC(this)">
                         </div>
                         <div class="form-group hidden" id="customImageUrlGroup" style="margin:0; flex:1;">
                             <input type="text" id="formCustomImageUrl" placeholder="https://example.com/image.jpg" oninput="updateLivePreview()">
@@ -4512,8 +4935,10 @@ async function uploadSlideImageFromPC(inputEl) {
 
     try {
         const res = await fetch('/api/upload_image', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success && data.image_url) {
+        const rawResponse = await res.text();
+        let data = {};
+        try { data = rawResponse ? JSON.parse(rawResponse) : {}; } catch (parseError) { /* handled below */ }
+        if (res.ok && data.success && data.image_url) {
             const customUrlInput = document.getElementById('formCustomImageUrl');
             if (customUrlInput) customUrlInput.value = data.image_url;
             const imageSelect = document.getElementById('formImageSelect');
@@ -4522,11 +4947,11 @@ async function uploadSlideImageFromPC(inputEl) {
             updateLivePreview();
             showToast('🎉 تم رفع الصورة من جهاز الكمبيوتر بنجاح وتطبيقها للمعاينة!');
         } else {
-            throw new Error(data.message || 'upload failed');
+            throw new Error(data.message || `فشل رفع الصورة (${res.status || 'غير معروف'})`);
         }
     } catch (err) {
-        if (statusText) statusText.textContent = "❌ فشل رفع الصورة";
-        showToast('تعذر رفع الصورة من جهازك');
+        if (statusText) statusText.textContent = `❌ ${err.message || 'فشل رفع الصورة'}`;
+        showToast(err.message || 'تعذر رفع الصورة من جهازك');
     }
 }
 
@@ -5353,7 +5778,7 @@ function renderExDynamicBlocks() {
                         <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; margin-bottom: 0.3rem;"></i><br>
                         انقر هنا لااختيار صورة جديدة من جهازك
                     </label>
-                    <input type="file" id="formExFileUploadInput" accept="image/*" style="display: none;" onchange="uploadExImageFromPC(this)">
+                    <input type="file" id="formExFileUploadInput" accept="image/*,.jfif,.bmp,.avif" style="display: none;" onchange="uploadExImageFromPC(this)">
                     <span id="exUploadStatusText" class="upload-status-hint" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-top: 0.3rem; display: block;">صيغ مدعومة: JPG, PNG, WEBP</span>
                 </div>
 
@@ -5626,8 +6051,10 @@ async function uploadExImageFromPC(inputEl) {
 
     try {
         const res = await fetch('/api/upload_image', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success && data.image_url) {
+        const rawResponse = await res.text();
+        let data = {};
+        try { data = rawResponse ? JSON.parse(rawResponse) : {}; } catch (parseError) { /* handled below */ }
+        if (res.ok && data.success && data.image_url) {
             const customUrlInput = document.getElementById('formExCustomImageUrl');
             if (customUrlInput) customUrlInput.value = data.image_url;
             const imageSelect = document.getElementById('formExImage');
@@ -5635,10 +6062,10 @@ async function uploadExImageFromPC(inputEl) {
             if (statusText) statusText.textContent = `✓ تم رفع الصورة بنجاح! (${file.name})`;
             updateExerciseLivePreview();
             showToast('🎉 تم رفع صورة التمرين من جهازك بنجاح!');
-        } else throw new Error(data.message || 'upload failed');
+        } else throw new Error(data.message || `فشل رفع الصورة (${res.status || 'غير معروف'})`);
     } catch (err) {
-        if (statusText) statusText.textContent = "❌ فشل رفع الصورة";
-        showToast('تعذر رفع صورة التمرين');
+        if (statusText) statusText.textContent = `❌ ${err.message || 'فشل رفع الصورة'}`;
+        showToast(err.message || 'تعذر رفع صورة التمرين');
     }
 }
 

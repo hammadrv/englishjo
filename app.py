@@ -855,13 +855,29 @@ def upload_image():
     if file.filename == '':
         return jsonify({"success": False, "message": "اسم الملف فارغ"}), 400
     
-    ext = os.path.splitext(file.filename)[1].lower()
-    allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
-    allowed_mimetypes = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
-    if ext not in allowed_extensions or file.mimetype not in allowed_mimetypes:
-        return jsonify({"success": False, "message": "يُسمح برفع صور JPG أو PNG أو GIF أو WebP فقط."}), 400
-    
-    filename = f"img_{int(time.time() * 1000)}{ext}"
+    # Windows browsers may send image/jpg, application/octet-stream, or no
+    # MIME type at all. Validate the file signature instead of trusting that
+    # browser-provided value, then normalize the saved extension.
+    header = file.stream.read(32)
+    file.stream.seek(0)
+    detected_ext = None
+    if header.startswith(b'\xff\xd8\xff'):
+        detected_ext = '.jpg'
+    elif header.startswith(b'\x89PNG\r\n\x1a\n'):
+        detected_ext = '.png'
+    elif header.startswith((b'GIF87a', b'GIF89a')):
+        detected_ext = '.gif'
+    elif header.startswith(b'RIFF') and header[8:12] == b'WEBP':
+        detected_ext = '.webp'
+    elif header.startswith(b'BM'):
+        detected_ext = '.bmp'
+    elif header[4:8] == b'ftyp' and header[8:12] in {b'avif', b'avis'}:
+        detected_ext = '.avif'
+
+    if not detected_ext:
+        return jsonify({"success": False, "message": "الملف المحدد ليس صورة مدعومة أو أن الصورة تالفة. اختر JPG أو PNG أو GIF أو WebP أو BMP."}), 400
+
+    filename = f"img_{int(time.time() * 1000)}{detected_ext}"
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
     
@@ -1659,7 +1675,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("🎓 تم تشغيل منصة شريحة Present Simple التفاعلية (مع قاعدة بيانات SQLite الدائمة) بنجاح!")
     print("📌 العنوان المحلي (Local):    http://127.0.0.1:5050")
-    print("📌 العنوان على الشبكة (IP):    http://192.168.68.63:5050")
+    print("📌 العنوان على الشبكة (IP):    http://37.187.205.15:5050")
     print("🔌 المنفذ المستخدم (Port):    5050")
     print("💾 قاعدة البيانات المستخدمة:   database.db")
     print("=" * 60)

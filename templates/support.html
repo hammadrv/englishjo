@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تواصل معنا | Contact Us | منصة EnglishJo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --navy: #17233d;
+            --muted: #65758e;
+            --teal: #0d9488;
+            --teal-dark: #0f766e;
+            --teal-pale: #effcf9;
+            --coral: #ff6b57;
+            --line: #dce5ef;
+            --surface: #ffffff;
+            --page: #f5f8fb;
+            --danger-bg: #fff1f2;
+            --danger: #be123c;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--page);
+            color: var(--navy);
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .support-page { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 1.2rem 0 3rem; }
+        .support-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 0 1.2rem; }
+        .brand { display: inline-flex; align-items: center; gap: .55rem; color: var(--teal-dark); font-weight: 900; font-size: 1.05rem; text-decoration: none; }
+        .brand i { color: var(--coral); }
+        .back-link { display: inline-flex; align-items: center; gap: .45rem; color: var(--muted); font-weight: 800; text-decoration: none; }
+        .back-link:hover { color: var(--teal-dark); }
+
+        .hero { padding: 2.8rem clamp(1.2rem, 4vw, 4rem); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 14px 35px rgba(23, 35, 61, .06); }
+        .hero-kicker { display: inline-flex; align-items: center; gap: .5rem; color: var(--teal-dark); background: var(--teal-pale); border: 1px solid #b7eee5; border-radius: 999px; padding: .45rem .9rem; font-size: .9rem; font-weight: 800; }
+        h1 { margin: .9rem 0 .4rem; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.25; }
+        .hero p { max-width: 700px; margin: 0; color: var(--muted); font-size: 1rem; font-weight: 700; line-height: 1.9; }
+
+        .content-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 1.2rem; margin-top: 1.2rem; align-items: start; }
+        .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(1rem, 3vw, 1.5rem); box-shadow: 0 10px 25px rgba(23, 35, 61, .04); }
+        .panel h2 { display: flex; align-items: center; gap: .55rem; margin: 0 0 1rem; font-size: 1.25rem; }
+        .panel h2 i { color: var(--teal); }
+        .field { margin-bottom: .9rem; }
+        label { display: block; margin-bottom: .35rem; color: var(--navy); font-size: .9rem; font-weight: 800; }
+        input, textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; background: #fbfdff; color: var(--navy); font: 600 .95rem/1.65 'Cairo', sans-serif; outline: none; padding: .7rem .85rem; transition: border-color .2s, box-shadow .2s, background .2s; }
+        input:focus, textarea:focus { border-color: var(--teal); background: #fff; box-shadow: 0 0 0 3px rgba(13, 148, 136, .12); }
+        textarea { min-height: 150px; resize: vertical; }
+        .form-actions { display: flex; justify-content: flex-start; margin-top: 1.1rem; }
+        .submit-button { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 48px; border: 0; border-radius: 10px; padding: .75rem 1.2rem; background: var(--teal); color: #fff; cursor: pointer; font: 800 .95rem 'Cairo', sans-serif; box-shadow: 0 8px 16px rgba(13, 148, 136, .18); }
+        .submit-button:hover { background: var(--teal-dark); }
+        .alert { display: flex; align-items: flex-start; gap: .55rem; margin-bottom: 1rem; padding: .75rem .9rem; border-radius: 10px; font-weight: 800; line-height: 1.7; }
+        .alert.success { background: var(--teal-pale); border: 1px solid #a7e9df; color: var(--teal-dark); }
+        .alert.error { background: var(--danger-bg); border: 1px solid #fecdd3; color: var(--danger); }
+
+        .request-list { display: grid; gap: .8rem; max-height: 690px; overflow-y: auto; padding-inline-end: .2rem; }
+        .request-item { border: 1px solid var(--line); border-radius: 12px; padding: .95rem; background: #fcfeff; }
+        .request-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; }
+        .request-subject { margin: 0; font-size: 1rem; line-height: 1.5; }
+        .request-date { flex: 0 0 auto; color: var(--muted); font-size: .72rem; font-weight: 700; direction: ltr; }
+        .request-meta { margin: .25rem 0 .6rem; color: var(--teal-dark); font-size: .82rem; font-weight: 800; overflow-wrap: anywhere; }
+        .request-message { margin: 0; color: #40516b; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.85; }
+        .empty-state { margin: 0; color: var(--muted); font-weight: 700; line-height: 1.8; }
+        .public-note { margin-top: .9rem; color: var(--muted); font-size: .78rem; font-weight: 700; line-height: 1.7; }
+
+        @media (max-width: 780px) {
+            .support-page { width: min(100% - 1rem, 650px); padding-top: .5rem; }
+            .support-nav { align-items: flex-start; }
+            .brand { font-size: .92rem; }
+            .hero { padding-block: 1.6rem; }
+            .content-grid { grid-template-columns: 1fr; }
+            .request-list { max-height: none; }
+        }
+        @media (max-width: 430px) {
+            .support-nav { flex-direction: column; }
+            .request-header { flex-direction: column; gap: .2rem; }
+            .request-date { order: -1; }
+            .form-actions, .submit-button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <main class="support-page">
+        <nav class="support-nav" aria-label="التنقل">
+            <a class="brand" href="/learn"><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i><span>منصة EnglishJo</span></a>
+            <a class="back-link" href="/learn"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i><span>العودة إلى المنصة</span></a>
+        </nav>
+
+        <section class="hero" aria-labelledby="support-title">
+            <div class="hero-kicker"><i class="fa-solid fa-headset" aria-hidden="true"></i><span>نحن هنا للمساعدة</span></div>
+            <h1 id="support-title">تواصل معنا <span style="color: var(--teal);">Contact Us</span></h1>
+            <p>يسعدنا أن نسمع منك. اكتب بياناتك ورسالتك بوضوح وسيراجعها فريق المنصة للمتابعة.</p>
+        </section>
+
+        <section class="content-grid">
+            <div class="panel">
+                <h2><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>أرسل رسالتك</span></h2>
+                {% if submitted %}
+                    <div class="alert success" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>تم إرسال طلب الدعم بنجاح، وأصبح ظاهرًا في قائمة الطلبات.</span></div>
+                {% endif %}
+                {% if error %}
+                    <div class="alert error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>{{ error }}</span></div>
+                {% endif %}
+                <form method="post" action="{{ url_for('support') }}">
+                    <div class="field">
+                        <label for="support-name">الاسم</label>
+                        <input id="support-name" name="name" type="text" value="{{ form_data.name }}" autocomplete="name" minlength="2" maxlength="100" required>
+                    </div>
+                    <div class="field">
+                        <label for="support-email">البريد الإلكتروني</label>
+                        <input id="support-email" name="email" type="email" value="{{ form_data.email }}" autocomplete="email" maxlength="254" required>
+                    </div>
+                    <div class="field">
+                        <label for="support-subject">عنوان الرسالة</label>
+                        <input id="support-subject" name="subject" type="text" value="{{ form_data.subject }}" maxlength="180" required>
+                    </div>
+                    <div class="field">
+                        <label for="support-message">الرسالة</label>
+                        <textarea id="support-message" name="message" maxlength="5000" required>{{ form_data.message }}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="submit-button" type="submit"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>إرسال طلب الدعم</span></button>
+                    </div>
+                </form>
+                <p class="public-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> الطلبات المرسلة تظهر في القسم المقابل بشكل عام لتسهيل المتابعة.</p>
+            </div>
+
+            <div class="panel">
+                <h2><i class="fa-solid fa-inbox" aria-hidden="true"></i><span>طلبات الدعم المنشورة</span></h2>
+                {% if support_requests %}
+                    <div class="request-list">
+                        {% for item in support_requests %}
+                            <article class="request-item">
+                                <div class="request-header">
+                                    <h3 class="request-subject">{{ item.subject }}</h3>
+                                    <time class="request-date" datetime="{{ item.created_at }}">{{ item.created_at }}</time>
+                                </div>
+                                <div class="request-meta">{{ item.name }} · {{ item.email }}</div>
+                                <p class="request-message">{{ item.message }}</p>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">لا توجد طلبات منشورة حتى الآن. كن أول من يرسل رسالة إلى فريق الدعم.</p>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>

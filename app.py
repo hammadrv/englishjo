@@ -51,7 +51,10 @@ def login_required(f):
     return decorated_function
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
+    # Several Gunicorn workers can save lesson content at the same time. Let SQLite
+    # wait for an active writer instead of failing the teacher's save request.
+    conn = sqlite3.connect(DB_FILE, timeout=30)
+    conn.execute('PRAGMA busy_timeout = 30000')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -128,6 +131,7 @@ def init_db():
             reveal_explanation TEXT,
             reveal_note TEXT,
             blocks_order_json TEXT,
+            components_json TEXT DEFAULT '[]',
             linked_exercise_id TEXT DEFAULT 'all',
             is_reinforcement INTEGER DEFAULT 0,
             sort_order INTEGER DEFAULT 0,
@@ -172,6 +176,19 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Public support requests are intentionally separate from the teaching data.
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS support_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_support_requests_created_at ON support_requests(created_at DESC)')
 
     # Learner profiles and evidence of learning are kept separately from content.
     c.execute('''
@@ -257,6 +274,11 @@ def init_db():
         columns = {row['name'] for row in c.fetchall()}
         if 'text_editor_html' not in columns:
             c.execute(f"ALTER TABLE {table} ADD COLUMN text_editor_html TEXT DEFAULT ''")
+
+    c.execute('PRAGMA table_info(slides)')
+    slide_columns = {row['name'] for row in c.fetchall()}
+    if 'components_json' not in slide_columns:
+        c.execute("ALTER TABLE slides ADD COLUMN components_json TEXT DEFAULT '[]'")
 
     conn.commit()
 
@@ -433,6 +455,7 @@ def get_curriculum_data_from_db(include_drafts=True, student_id=None):
                     "reveal_explanation": s["reveal_explanation"],
                     "reveal_note": s["reveal_note"],
                     "blocks_order": json.loads(s["blocks_order_json"] or "[]"),
+                    "components": json.loads(s["components_json"] or "[]") if "components_json" in s.keys() else [],
                     "linked_exercise_id": s["linked_exercise_id"] if s["linked_exercise_id"] == "all" else (int(s["linked_exercise_id"]) if s["linked_exercise_id"] and s["linked_exercise_id"].isdigit() else "all")
                 }
                 if s["is_reinforcement"] == 1:
@@ -578,6 +601,56 @@ def index():
 @app.route('/learn')
 def learn():
     return render_template('index.html', app_mode='student')
+
+
+@app.route('/support', methods=['GET', 'POST'])
+@app.route('/contact', methods=['GET', 'POST'])
+def support():
+    form_data = {'name': '', 'email': '', 'subject': '', 'message': ''}
+    error = None
+    submitted = False
+
+    if request.method == 'POST':
+        form_data = {
+            'name': re.sub(r'\s+', ' ', request.form.get('name', '').strip()),
+            'email': request.form.get('email', '').strip().lower(),
+            'subject': re.sub(r'\s+', ' ', request.form.get('subject', '').strip()),
+            'message': request.form.get('message', '').strip(),
+        }
+        email_is_valid = re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', form_data['email'])
+        if not 2 <= len(form_data['name']) <= 100:
+            error = 'يرجى كتابة الاسم بين حرفين و100 حرف.'
+        elif not email_is_valid or len(form_data['email']) > 254:
+            error = 'يرجى إدخال بريد إلكتروني صحيح.'
+        elif not 2 <= len(form_data['subject']) <= 180:
+            error = 'يرجى كتابة عنوان للرسالة بين حرفين و180 حرفاً.'
+        elif not 5 <= len(form_data['message']) <= 5000:
+            error = 'يرجى كتابة رسالة بين 5 و5000 حرف.'
+        else:
+            conn = get_db_connection()
+            conn.execute('''
+                INSERT INTO support_requests (name, email, subject, message)
+                VALUES (?, ?, ?, ?)
+            ''', (form_data['name'], form_data['email'], form_data['subject'], form_data['message']))
+            conn.commit()
+            conn.close()
+            form_data = {'name': '', 'email': '', 'subject': '', 'message': ''}
+            submitted = True
+
+    conn = get_db_connection()
+    requests = conn.execute('''
+        SELECT id, name, email, subject, message, created_at
+        FROM support_requests
+        ORDER BY datetime(created_at) DESC, id DESC
+    ''').fetchall()
+    conn.close()
+    return render_template(
+        'support.html',
+        support_requests=requests,
+        form_data=form_data,
+        error=error,
+        submitted=submitted,
+    )
 
 
 @app.route('/api/student/session', methods=['POST'])
@@ -987,6 +1060,11 @@ def update_slide(slide_id):
     if "blocks_order" in payload:
         fields.append("blocks_order_json = ?")
         params.append(json.dumps(payload["blocks_order"], ensure_ascii=False))
+
+    if "components" in payload:
+        components = payload["components"] if isinstance(payload["components"], list) else []
+        fields.append("components_json = ?")
+        params.append(json.dumps(components, ensure_ascii=False))
 
     if fields:
         params.append(slide_id)

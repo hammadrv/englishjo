@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تواصل معنا | Contact Us | منصة EnglishJo</title>
+    <title>EnglishJO Support &amp; Contact Us</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -48,6 +48,12 @@
         .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(1rem, 3vw, 1.5rem); box-shadow: 0 10px 25px rgba(23, 35, 61, .04); }
         .panel h2 { display: flex; align-items: center; gap: .55rem; margin: 0 0 1rem; font-size: 1.25rem; }
         .panel h2 i { color: var(--teal); }
+        .info-stack { display: grid; gap: 1.2rem; margin-top: 1.2rem; }
+        .info-card { margin: 0; }
+        .info-card h2 { color: var(--navy); }
+        .info-card p, .contact-intro { margin: 0; color: #34495b; line-height: 1.8; }
+        .contact-panel { margin: 1.2rem auto 0; max-width: 820px; }
+        .contact-intro { margin: -.35rem 0 1.1rem; color: var(--muted); font-weight: 600; }
         .field { margin-bottom: .9rem; }
         label { display: block; margin-bottom: .35rem; color: var(--navy); font-size: .9rem; font-weight: 800; }
         input, textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; background: #fbfdff; color: var(--navy); font: 600 .95rem/1.65 'Cairo', sans-serif; outline: none; padding: .7rem .85rem; transition: border-color .2s, box-shadow .2s, background .2s; }
@@ -75,7 +81,6 @@
             .support-nav { align-items: flex-start; }
             .brand { font-size: .92rem; }
             .hero { padding-block: 1.6rem; }
-            .content-grid { grid-template-columns: 1fr; }
             .request-list { max-height: none; }
         }
         @media (max-width: 430px) {
@@ -94,63 +99,60 @@
         </nav>
 
         <section class="hero" aria-labelledby="support-title">
-            <div class="hero-kicker"><i class="fa-solid fa-headset" aria-hidden="true"></i><span>نحن هنا للمساعدة</span></div>
-            <h1 id="support-title">تواصل معنا <span style="color: var(--teal);">Contact Us</span></h1>
-            <p>يسعدنا أن نسمع منك. اكتب بياناتك ورسالتك بوضوح وسيراجعها فريق المنصة للمتابعة.</p>
+            <div class="hero-kicker"><i class="fa-solid fa-headset" aria-hidden="true"></i><span>Help for students, teachers, and schools</span></div>
+            <h1 id="support-title">EnglishJO Support</h1>
+            <p>Find helpful information below, or contact our team directly.</p>
         </section>
 
-        <section class="content-grid">
-            <div class="panel">
-                <h2><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>أرسل رسالتك</span></h2>
-                {% if submitted %}
-                    <div class="alert success" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>تم إرسال طلب الدعم بنجاح، وأصبح ظاهرًا في قائمة الطلبات.</span></div>
-                {% endif %}
-                {% if error %}
-                    <div class="alert error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>{{ error }}</span></div>
-                {% endif %}
-                <form method="post" action="{{ url_for('support') }}">
-                    <div class="field">
-                        <label for="support-name">الاسم</label>
-                        <input id="support-name" name="name" type="text" value="{{ form_data.name }}" autocomplete="name" minlength="2" maxlength="100" required>
-                    </div>
-                    <div class="field">
-                        <label for="support-email">البريد الإلكتروني</label>
-                        <input id="support-email" name="email" type="email" value="{{ form_data.email }}" autocomplete="email" maxlength="254" required>
-                    </div>
-                    <div class="field">
-                        <label for="support-subject">عنوان الرسالة</label>
-                        <input id="support-subject" name="subject" type="text" value="{{ form_data.subject }}" maxlength="180" required>
-                    </div>
-                    <div class="field">
-                        <label for="support-message">الرسالة</label>
-                        <textarea id="support-message" name="message" maxlength="5000" required>{{ form_data.message }}</textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button class="submit-button" type="submit"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>إرسال طلب الدعم</span></button>
-                    </div>
-                </form>
-                <p class="public-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> الطلبات المرسلة تظهر في القسم المقابل بشكل عام لتسهيل المتابعة.</p>
-            </div>
+        <section class="info-stack" aria-label="Support information">
+            <article class="panel info-card">
+                <h2>Sign-in help</h2>
+                <p>EnglishJO accounts are created by the student’s school or teacher. If a username, password, or account is not working, contact the administrator who provided the account.</p>
+            </article>
+            <article class="panel info-card">
+                <h2>Microphone and speech recognition</h2>
+                <p>Voice activities require Microphone and Speech Recognition permissions. Open iOS Settings, find EnglishJO, and allow both permissions. Use a quiet environment and speak after the listening indicator appears.</p>
+            </article>
+            <article class="panel info-card">
+                <h2>Learning content</h2>
+                <p>Units, lessons, and vocabulary are assigned and managed by the school. Questions about available content should be sent to the student’s teacher.</p>
+            </article>
+            <article class="panel info-card">
+                <h2>Privacy</h2>
+                <p>Read the <a href="https://englishjo.com/privacy">EnglishJO Privacy Policy</a> for details about account, learning, and voice information.</p>
+            </article>
+        </section>
 
-            <div class="panel">
-                <h2><i class="fa-solid fa-inbox" aria-hidden="true"></i><span>طلبات الدعم المنشورة</span></h2>
-                {% if support_requests %}
-                    <div class="request-list">
-                        {% for item in support_requests %}
-                            <article class="request-item">
-                                <div class="request-header">
-                                    <h3 class="request-subject">{{ item.subject }}</h3>
-                                    <time class="request-date" datetime="{{ item.created_at }}">{{ item.created_at }}</time>
-                                </div>
-                                <div class="request-meta">{{ item.name }} · {{ item.email }}</div>
-                                <p class="request-message">{{ item.message }}</p>
-                            </article>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="empty-state">لا توجد طلبات منشورة حتى الآن. كن أول من يرسل رسالة إلى فريق الدعم.</p>
-                {% endif %}
-            </div>
+        <section class="panel contact-panel" aria-labelledby="contact-title">
+            <h2 id="contact-title"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Contact Us</span></h2>
+            <p class="contact-intro">Have a question or need help? Send us a message and we will get back to you as soon as possible.</p>
+            {% if submitted %}
+                <div class="alert success" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>Thank you. Your message was sent successfully. We will contact you as soon as possible.</span></div>
+            {% endif %}
+            {% if error %}
+                <div class="alert error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>{{ error }}</span></div>
+            {% endif %}
+            <form method="post" action="{{ url_for('support') }}">
+                <div class="field">
+                    <label for="support-name">Name</label>
+                    <input id="support-name" name="name" type="text" value="{{ form_data.name }}" autocomplete="name" minlength="2" maxlength="100" required>
+                </div>
+                <div class="field">
+                    <label for="support-email">Email address</label>
+                    <input id="support-email" name="email" type="email" value="{{ form_data.email }}" autocomplete="email" maxlength="254" required>
+                </div>
+                <div class="field">
+                    <label for="support-subject">Message subject</label>
+                    <input id="support-subject" name="subject" type="text" value="{{ form_data.subject }}" maxlength="180" required>
+                </div>
+                <div class="field">
+                    <label for="support-message">Your message</label>
+                    <textarea id="support-message" name="message" maxlength="5000" required>{{ form_data.message }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="submit-button" type="submit"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Send message</span></button>
+                </div>
+            </form>
         </section>
     </main>
 </body>

@@ -637,16 +637,8 @@ def support():
             form_data = {'name': '', 'email': '', 'subject': '', 'message': ''}
             submitted = True
 
-    conn = get_db_connection()
-    requests = conn.execute('''
-        SELECT id, name, email, subject, message, created_at
-        FROM support_requests
-        ORDER BY datetime(created_at) DESC, id DESC
-    ''').fetchall()
-    conn.close()
     return render_template(
         'support.html',
-        support_requests=requests,
         form_data=form_data,
         error=error,
         submitted=submitted,
